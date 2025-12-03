@@ -34,11 +34,12 @@ interface DashboardScreenProps {
 
 const formatDateSafe = (dateString: string) => {
     if (!dateString) return '';
-    if (dateString.length === 10) {
-        return new Date(dateString + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    }
-    return new Date(dateString).toLocaleDateString();
+    // If ISO string with T, parse it. If simple date YYYY-MM-DD, create from it.
+    const date = new Date(dateString.includes('T') ? dateString : dateString + 'T00:00:00');
+    return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 };
+
+// --- Helper Components ---
 
 const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
     const { t } = useLanguage();
@@ -65,8 +66,8 @@ const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], o
     const hasRated = nanny.ratings?.some(r => r.parentId === currentUser.id);
 
     return (
-        <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex flex-wrap items-center gap-4">
-            <img src={nanny.photo} alt={nanny.fullName} className="w-16 h-16 rounded-full object-cover" />
+        <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex flex-wrap items-center gap-4 transition-all duration-300 hover:shadow-md">
+            <img src={nanny.photo} alt={nanny.fullName} className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border-accent)]" />
             <div className="flex-grow">
                 <h4 className="font-bold text-[var(--text-primary)]">{nanny.fullName}</h4>
                 <p className="text-sm text-[var(--text-light)]">{t('nanny_profile_experience')}: {nanny.profile.experience} {t('nanny_profile_years')}</p>
@@ -77,7 +78,7 @@ const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], o
                 <button onClick={() => onContact(nanny)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_contact')}</button>
                 <button 
                     onClick={() => onRate(nanny)} 
-                    disabled={hasRated}
+                    disabled={!!hasRated}
                     className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
                     {hasRated ? t('button_rated') : t('button_rate')}
                 </button>
@@ -98,92 +99,54 @@ const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], o
     );
 }
 
-const BookingRequestStatus: React.FC<{status: BookingRequest['status']}> = ({ status }) => {
-    const { t } = useLanguage();
-    const statusStyles = {
-        pending: { text: t('booking_status_pending'), bg: 'bg-[var(--bg-status-yellow)]', text_color: 'text-[var(--text-status-yellow)]' },
-        accepted: { text: t('booking_status_accepted'), bg: 'bg-[var(--bg-status-green)]', text_color: 'text-[var(--text-status-green)]' },
-        declined: { text: t('booking_status_declined'), bg: 'bg-[var(--bg-status-red)]', text_color: 'text-[var(--text-status-red)]' }
-    };
-    const currentStatus = statusStyles[status];
-    return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${currentStatus.bg} ${currentStatus.text_color}`}>{currentStatus.text}</span>;
-};
-
-interface ParentBookingCardProps {
-    request: EnrichedBookingRequest;
-    onOpenChat: (req: BookingRequest) => void;
-    onCancel: (id: string) => void;
-    onAssignTask: (nanny: User) => void;
-    onRate: (nanny: User) => void;
-    currentUser: User;
-}
-
-const ParentBookingCard: React.FC<ParentBookingCardProps> = ({ request, onOpenChat, onCancel, onAssignTask, onRate, currentUser }) => {
+// New Component specifically to match the user's screenshot
+const ParentBookingCard: React.FC<{ request: EnrichedBookingRequest }> = ({ request }) => {
     const { t } = useLanguage();
     if (!request.nanny?.profile) return null;
     
-    const hasRated = request.nanny.ratings?.some(r => r.parentId === currentUser.id);
+    let statusColor = 'bg-gray-600';
+    if (request.status === 'accepted') statusColor = 'bg-green-700';
+    if (request.status === 'declined') statusColor = 'bg-red-600';
+    if (request.status === 'pending') statusColor = 'bg-yellow-600';
 
     return (
-        <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <img src={request.nanny.photo} alt={request.nanny.fullName} className="w-16 h-16 rounded-full object-cover self-center sm:self-auto" />
-            <div className="flex-grow">
-                <h4 className="font-bold text-[var(--text-primary)]">{t('booking_request_to')} {request.nanny.fullName}</h4>
-                <p className="text-sm text-[var(--text-secondary)]">
-                    <span className="font-semibold">{t('booking_label_date')}:</span> {formatDateSafe(request.date)}
-                </p>
-                <p className="text-sm text-[var(--text-secondary)]">
-                    <span className="font-semibold">{t('booking_label_time')}:</span> {request.startTime} - {request.endTime}
-                </p>
+        <div className="bg-[#1f2937] p-5 rounded-xl shadow-lg border border-gray-700 relative overflow-hidden">
+             {/* Centered Avatar */}
+            <div className="flex justify-center mb-3">
+                 <img 
+                    src={request.nanny.photo} 
+                    alt={request.nanny.fullName} 
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-600" 
+                 />
             </div>
-            <div className="self-end sm:self-auto flex flex-col items-end gap-2">
-                <BookingRequestStatus status={request.status} />
-                {request.status === 'accepted' && (
-                    <div className="flex flex-col gap-2">
-                        <button 
-                            onClick={() => onOpenChat(request)}
-                            className="text-xs bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-1 px-3 rounded-full transition-colors w-full"
-                        >
-                            {t('activity_card_chat')}
-                        </button>
-                        <button 
-                            onClick={() => onAssignTask(request.nanny!)}
-                            className="text-xs bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-full transition-colors w-full"
-                        >
-                            {t('button_add_task')}
-                        </button>
-                         <button 
-                            onClick={() => onRate(request.nanny!)}
-                            disabled={!!hasRated}
-                            className="text-xs bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-full transition-colors w-full disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                            {hasRated ? t('button_rated') : t('button_rate')}
-                        </button>
-                    </div>
-                )}
-                {request.status === 'pending' && (
-                    <button 
-                        onClick={() => onCancel(request.id)}
-                        className="text-xs text-red-500 hover:text-red-700 underline"
-                    >
-                        Cancel Request
-                    </button>
-                )}
+
+            <h4 className="text-xl font-bold text-white mb-1">Request to {request.nanny.fullName.split(' ')[0]}</h4>
+            
+            <div className="text-gray-400 text-sm space-y-1 mb-4">
+                <p><span className="font-semibold">Date:</span> {formatDateSafe(request.date)}</p>
+                <p><span className="font-semibold">Time:</span> {request.startTime} - {request.endTime}</p>
+            </div>
+
+            {/* Status Pill Bottom Right */}
+            <div className="flex justify-end mt-2">
+                <span className={`px-4 py-1 rounded-full text-sm font-semibold text-white ${statusColor} capitalize`}>
+                    {request.status}
+                </span>
             </div>
         </div>
     );
 }
 
 const StatusTag: React.FC<{ status: string }> = ({ status }) => {
-     const { t } = useLanguage();
      let styles = { bg: 'bg-gray-100', text: 'text-gray-700' };
      if (status === 'accepted' || status === 'completed') styles = { bg: 'bg-[var(--bg-status-green)]', text: 'text-[var(--text-status-green)]' };
      if (status === 'declined' || status === 'canceled') styles = { bg: 'bg-[var(--bg-status-red)]', text: 'text-[var(--text-status-red)]' };
      if (status === 'pending' || status === 'open') styles = { bg: 'bg-[var(--bg-status-yellow)]', text: 'text-[var(--text-status-yellow)]' };
 
-     return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text}`}>{status}</span>;
+     return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text} capitalize`}>{status}</span>;
 }
 
+// ... (HostedOutingCard, NannyBookingCard, NannyTaskItem remain standard) ...
 const HostedOutingCard: React.FC<{ outing: SharedOuting, onUpdateRequest: (parentId: string, status: 'accepted' | 'declined') => void }> = ({ outing, onUpdateRequest }) => {
     const { t } = useLanguage();
     return (
@@ -224,173 +187,11 @@ const HostedOutingCard: React.FC<{ outing: SharedOuting, onUpdateRequest: (paren
     );
 };
 
-const ParentDashboard: React.FC<DashboardScreenProps> = ({ user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking, onClearAllBookings }) => {
-    const { t } = useLanguage();
-    const hostedOutings = sharedOutings.filter(o => o.hostId === user.id);
-    const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
-    const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
-
-    return (
-      <>
-         {/* Profile Completion Warning */}
-        {!user.location && (
-             <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4" role="alert">
-                <div>
-                    <p className="font-bold">{t('parent_profile_form_title')}</p>
-                    <p>{t('profile_form_mandatory_prompt')}</p>
-                </div>
-                <button
-                    onClick={onEditProfile}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                >
-                    {t('button_edit_profile')}
-                </button>
-            </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-6 mb-8">
-             {/* Find Nanny Card */}
-            <div className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-6">
-                <h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-2">{t('dashboard_find_nanny_card_title')}</h4>
-                <p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p>
-                <button
-                    onClick={onSearchNannies}
-                    className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-3 rounded-lg transition-colors text-center"
-                >
-                    {t('button_search_nannies')}
-                </button>
-            </div>
-
-            {/* Community Card */}
-             <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-6">
-                <h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-2">{t('dashboard_community_title')}</h4>
-                <p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p>
-                <button
-                    onClick={onViewActivities}
-                    className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-lg transition-colors text-center"
-                >
-                    {t('dashboard_community_button')}
-                </button>
-            </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-             <div>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
-                    {bookingRequests.length > 0 && (
-                        <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">
-                            Clear All History
-                        </button>
-                    )}
-                </div>
-                {bookingRequests.length > 0 ? (
-                    <div className="space-y-4">
-                        {bookingRequests.map(req => (
-                            <ParentBookingCard 
-                                key={req.id} 
-                                request={req} 
-                                onOpenChat={onOpenBookingChat} 
-                                onCancel={onCancelBooking}
-                                onAssignTask={onOpenTaskModal}
-                                onRate={onRateNanny}
-                                currentUser={user}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)]">{t('dashboard_no_booking_requests')}</p>
-                    </div>
-                )}
-            </div>
-
-             <div>
-                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
-                {myOutingRequests.length > 0 ? (
-                    <div className="space-y-4">
-                        {myOutingRequests.map((req, idx) => (
-                            <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                                <div>
-                                    <h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4>
-                                    <p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p>
-                                </div>
-                                <StatusTag status={req.status} />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)]">{t('dashboard_no_outing_requests')}</p>
-                    </div>
-                )}
-             </div>
-        </div>
-
-        <div className="mt-8">
-            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_skill_requests')}</h3>
-             {mySkillRequests.length > 0 ? (
-                <div className="space-y-4">
-                    {mySkillRequests.map(req => (
-                         <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                             <div>
-                                 <h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4>
-                                 <p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p>
-                             </div>
-                             <div className="flex gap-2">
-                                <button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button>
-                                <StatusTag status={req.status} />
-                             </div>
-                         </div>
-                    ))}
-                </div>
-            ) : (
-                 <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                    <p className="text-[var(--text-light)]">{t('dashboard_no_skill_requests')}</p>
-                </div>
-            )}
-        </div>
-
-        <div className="mt-8">
-            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_hosted_outings_title')}</h3>
-            {hostedOutings.length > 0 ? (
-                <div className="space-y-4">
-                    {hostedOutings.map(outing => (
-                        <HostedOutingCard
-                            key={outing.id}
-                            outing={outing}
-                            onUpdateRequest={(parentId, status) => onUpdateOutingRequestStatus(outing.id, parentId, status)}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                    <p className="text-[var(--text-light)]">{t('dashboard_no_hosted_outings')}</p>
-                </div>
-            )}
-        </div>
-
-        <div className="mt-8">
-            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_added_nannies')}</h3>
-            {addedNannies.length > 0 ? (
-                <div className="space-y-4">
-                    {addedNannies.map(nanny => (
-                        <AddedNannyCard key={nanny.id} nanny={nanny} currentUser={user} tasks={allTasks.filter(t => t.nannyId === nanny.id)} onRemove={onRemoveNanny} onContact={onContactNanny} onView={onViewNanny} onRate={onRateNanny} onAddTask={() => onOpenTaskModal(nanny)} />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                    <p className="text-[var(--text-light)]">{t('dashboard_no_added_nannies')}</p>
-                </div>
-            )}
-        </div>
-      </>
-    );
-};
-
-const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: DashboardScreenProps['onUpdateBookingStatus'], onOpenChat: (req: BookingRequest) => void }> = ({ request, onUpdate, onOpenChat }) => {
+const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: DashboardScreenProps['onUpdateBookingStatus'], onOpenChat: (req: BookingRequest) => void, onClear?: (id: string) => void }> = ({ request, onUpdate, onOpenChat, onClear }) => {
     const { t } = useLanguage();
     const isPending = request.status === 'pending';
+    const isAccepted = request.status === 'accepted';
+
     return (
         <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)]">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -411,10 +212,15 @@ const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: Da
                         </>
                     ) : (
                         <div className="flex flex-col items-end gap-2">
-                            <BookingRequestStatus status={request.status} />
-                            {request.status === 'accepted' && (
+                            <StatusTag status={request.status} />
+                            {isAccepted && (
                                 <button onClick={() => onOpenChat(request)} className="text-xs bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white px-3 py-1 rounded-full transition-colors">
                                     {t('activity_card_chat')}
+                                </button>
+                            )}
+                            {!isPending && onClear && (
+                                <button onClick={() => onClear(request.id)} className="text-xs text-red-500 hover:text-red-700 hover:underline">
+                                    Clear from history
                                 </button>
                             )}
                         </div>
@@ -460,7 +266,170 @@ const NannyTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScreenProps
 };
 
 
-const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests, userTasks, onUpdateBookingStatus, onUpdateTaskStatus, onOpenBookingChat }) => {
+const ParentDashboard: React.FC<DashboardScreenProps> = ({ user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking, onClearAllBookings }) => {
+    const { t } = useLanguage();
+    const hostedOutings = sharedOutings.filter(o => o.hostId === user.id);
+    const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
+    const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
+
+    return (
+      <>
+         {/* Profile Completion Warning */}
+        {!user.location && (
+             <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4" role="alert">
+                <div>
+                    <p className="font-bold">{t('parent_profile_form_title')}</p>
+                    <p>{t('profile_form_mandatory_prompt')}</p>
+                </div>
+                <button
+                    onClick={onEditProfile}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                >
+                    {t('button_edit_profile')}
+                </button>
+            </div>
+        )}
+
+        {/* Expanded 4-Card Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
+                <div>
+                    <h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4>
+                    <p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p>
+                </div>
+                <button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
+            </div>
+
+             <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between">
+                <div>
+                    <h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4>
+                    <p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p>
+                </div>
+                <button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
+            </div>
+
+             <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between">
+                <div>
+                    <h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4>
+                    <p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p>
+                </div>
+                <button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
+            </div>
+
+             <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between">
+                <div>
+                    <h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4>
+                    <p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p>
+                </div>
+                <button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
+            </div>
+        </div>
+
+        {/* Main Dashboard Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+             {/* My Booking Requests */}
+             <div>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
+                    {bookingRequests.length > 0 && (
+                        <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">
+                            Clear All History
+                        </button>
+                    )}
+                </div>
+                {bookingRequests.length > 0 ? (
+                    <div className="space-y-4">
+                        {bookingRequests.map(req => (
+                             // Using the new screenshot-matching card component
+                            <ParentBookingCard key={req.id} request={req} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <p className="text-[var(--text-light)]">{t('dashboard_no_booking_requests')}</p>
+                    </div>
+                )}
+            </div>
+
+            {/* My Added Nannies - This is where ACCEPTED bookings actually go for interaction */}
+            <div>
+                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_added_nannies')}</h3>
+                {addedNannies.length > 0 ? (
+                    <div className="space-y-4">
+                        {addedNannies.map(nanny => (
+                            <AddedNannyCard 
+                                key={nanny.id} 
+                                nanny={nanny} 
+                                currentUser={user} 
+                                tasks={allTasks.filter(t => t.nannyId === nanny.id)} 
+                                onRemove={onRemoveNanny} 
+                                onContact={onContactNanny} 
+                                onView={onViewNanny} 
+                                onRate={onRateNanny} 
+                                onAddTask={() => onOpenTaskModal(nanny)} 
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <p className="text-[var(--text-light)]">{t('dashboard_no_added_nannies')}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* Secondary Sections (Outings/Skills) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+             <div>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
+                {myOutingRequests.length > 0 ? (
+                    <div className="space-y-4">
+                        {myOutingRequests.map((req, idx) => (
+                            <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
+                                <div>
+                                    <h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4>
+                                    <p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p>
+                                </div>
+                                <StatusTag status={req.status} />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <p className="text-[var(--text-light)]">{t('dashboard_no_outing_requests')}</p>
+                    </div>
+                )}
+             </div>
+
+            <div>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_skill_requests')}</h3>
+                 {mySkillRequests.length > 0 ? (
+                    <div className="space-y-4">
+                        {mySkillRequests.map(req => (
+                             <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
+                                 <div>
+                                     <h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4>
+                                     <p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p>
+                                 </div>
+                                 <div className="flex gap-2">
+                                    <button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button>
+                                    <StatusTag status={req.status} />
+                                 </div>
+                             </div>
+                        ))}
+                    </div>
+                ) : (
+                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <p className="text-[var(--text-light)]">{t('dashboard_no_skill_requests')}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+      </>
+    );
+};
+
+const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests, userTasks, onUpdateBookingStatus, onUpdateTaskStatus, onOpenBookingChat, onCancelBooking }) => {
     const { t } = useLanguage();
     const profileComplete = !!user.profile;
     const pendingRequests = bookingRequests.filter(req => req.status === 'pending');
@@ -496,7 +465,8 @@ const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests,
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] mt-8 mb-4">{t('dashboard_booking_history')}</h3>
                      {pastRequests.length > 0 ? (
                         <div className="space-y-4">
-                            {pastRequests.map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateBookingStatus} onOpenChat={onOpenBookingChat} />)}
+                            {/* Pass onClear so nannies can hide accepted/declined history */}
+                            {pastRequests.map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateBookingStatus} onOpenChat={onOpenBookingChat} onClear={onCancelBooking} />)}
                         </div>
                     ) : (
                          <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">

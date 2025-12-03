@@ -10,12 +10,14 @@ interface HeaderProps {
     onLogout: () => void;
     onEditProfile?: () => void;
     onViewSubscription?: () => void;
+    onOpenSettings?: () => void;
     notifications?: Notification[];
     onClearNotifications?: () => void;
     onNotificationClick?: (notification: Notification) => void;
+    noiseReductionEnabled: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditProfile, onViewSubscription, notifications = [], onClearNotifications, onNotificationClick}) => {
+const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditProfile, onViewSubscription, onOpenSettings, notifications = [], onClearNotifications, onNotificationClick, noiseReductionEnabled}) => {
   const { t } = useLanguage();
   const [showMenu, setShowMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -38,10 +40,9 @@ const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditP
     };
   }, []);
 
-  const hasSettings = onEditProfile || onViewSubscription;
+  const hasSettings = onEditProfile || onViewSubscription || onOpenSettings;
   const unreadCount = notifications.length;
 
-  // Helper to safely format date from either 'createdAt' (ISO string) or 'timestamp' (number)
   const formatTime = (notif: Notification) => {
     const dateVal = notif.createdAt || notif.timestamp;
     if (!dateVal) return '';
@@ -64,6 +65,16 @@ const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditP
             <p className="text-sm text-[var(--header-text)]">{t('header_tagline')}</p>
         </div>
         <div className="flex items-center gap-3 sm:gap-4">
+          
+           {/* Noise Reduction Indicator */}
+           {noiseReductionEnabled && (
+               <div className="hidden sm:flex items-center justify-center p-2 text-green-500 bg-green-50 dark:bg-green-900/30 rounded-full" title="Noise Reduction Active">
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                   </svg>
+               </div>
+          )}
+
           <LanguageSelector />
           <ThemeToggleButton />
           {isAuthenticated && user && (
@@ -118,10 +129,6 @@ const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditP
                           </div>
                       )}
                   </div>
-
-                  <div className="hidden sm:block text-right">
-                      <p className="text-sm text-[var(--header-text)]">{t('header_welcome')}, <span className="font-semibold text-[var(--header-text-strong)]">{user.fullName.split(' ')[0]}</span>!</p>
-                  </div>
                   
                   {hasSettings && (
                     <div className="relative" ref={menuRef}>
@@ -157,6 +164,17 @@ const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditP
                                         className="block w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                                     >
                                         {t('menu_subscription_status')}
+                                    </button>
+                                )}
+                                {onOpenSettings && (
+                                     <button
+                                        onClick={() => {
+                                            onOpenSettings();
+                                            setShowMenu(false);
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border-t border-[var(--border-color)]"
+                                    >
+                                        Settings
                                     </button>
                                 )}
                             </div>

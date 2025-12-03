@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { User, Screen } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -9,21 +8,25 @@ interface AiAssistantProps {
   currentScreen: Screen;
 }
 
+export interface AiAssistantRef {
+    openChat: () => void;
+    toggleVisibility: () => void;
+}
+
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
 
-const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
+const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, currentScreen }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { language } = useLanguage(); // Removed setLanguage from here to prevent global updates
+  const [isVisible, setIsVisible] = useState(true);
   
-  // Local state for AI language. Initialize with global language.
+  const { language } = useLanguage();
   const [aiLanguage, setAiLanguage] = useState<string>(language);
   
   const [showLangMenu, setShowLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
-  
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: `Hi ${user.fullName.split(' ')[0]}! 👋 I'm your FamLink assistant. Ask me anything about the app!` }
   ]);
@@ -34,7 +37,19 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // @ts-ignore
+  const apiKey = (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || process.env.API_KEY || '';
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+
+  // Expose methods to parent
+  useImperativeHandle(ref, () => ({
+    openChat: () => {
+        if (isVisible) setIsOpen(true);
+    },
+    toggleVisibility: () => {
+        setIsVisible(prev => !prev);
+    }
+  }));
 
   const displayLanguageMap: { [key: string]: string } = {
     en: 'English',
@@ -45,12 +60,10 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
     ar: 'العربية'
   };
 
-  // Sync local AI language when global language changes
   useEffect(() => {
       setAiLanguage(language);
   }, [language]);
 
-  // Handle click outside to close language menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
@@ -63,9 +76,8 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
     };
   }, []);
 
-  // Context-aware tips based on screen
   useEffect(() => {
-      if (!hasSent && messages.length < 3) { // Only give tips if conversation hasn't really started
+      if (!hasSent && messages.length < 3) {
           const tips: Partial<Record<Screen, string>> = {
               [Screen.Dashboard]: "Tip: You can manage your bookings and tasks directly here.",
               [Screen.NannyListing]: "Tip: Use the search bar to find nannies by name or location.",
@@ -77,10 +89,8 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
 
           const tip = tips[currentScreen];
           if (tip) {
-              // Check if tip is already the last message to avoid spamming
               const lastMsg = messages[messages.length - 1];
               if (lastMsg.text !== tip) {
-                  // Use a small timeout to make it feel natural
                   const timer = setTimeout(() => {
                       setMessages(prev => [...prev, { role: 'model', text: tip }]);
                   }, 1000);
@@ -120,28 +130,19 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
 
     try {
       const targetLangName = displayLanguageMap[aiLanguage] || 'English';
-
       const systemInstruction = `You are the friendly AI assistant for FamLink.
       User: ${user.fullName} (${user.userType}).
       Target Language: ${targetLangName}.
-      
-      Key Features:
-      - Profiles: Manage info, children (parents), availability (nannies).
-      - Bookings: Direct booking of nannies.
-      - Community: Playdates, walks, dads' groups.
-      - Shared Outings: Group outings to save money.
-      - Skill Marketplace: Share skills (cooking, tech) for money.
-      
-      Style: Concise, clear, helpful. Use bolding for key terms. Avoid long paragraphs.
-      CRITICAL INSTRUCTION: You must answer ONLY in ${targetLangName}. Even if the user asks in a different language, translate your response and reply in ${targetLangName}.`;
+      Style: Concise, clear, helpful. Use bolding for key terms.
+      CRITICAL INSTRUCTION: You must answer ONLY in ${targetLangName}.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: userMessage,
+        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
         config: { systemInstruction }
       });
 
-      const text = response.text;
+      const text = response.response.text();
       setMessages(prev => [...prev, { role: 'model', text: text || "I'm having trouble connecting right now." }]);
     } catch (error) {
       console.error("AI Error:", error);
@@ -185,7 +186,6 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
     return text.split('\n').map((line, i) => {
         const trimmed = line.trim();
         if (!trimmed) return <div key={i} className="h-2" />;
-
         if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
              return (
                 <div key={i} className="flex items-start gap-2 ml-1 mb-1">
@@ -194,7 +194,6 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
                 </div>
              );
         }
-        
         if (/^\d+\.\s/.test(trimmed)) {
              const match = trimmed.match(/^(\d+)\.\s+(.*)/);
              if (match) {
@@ -206,17 +205,18 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
                  );
              }
         }
-        
         return <p key={i} className="mb-1.5 leading-relaxed">{parseBold(line)}</p>;
     });
   };
+
+  if (!isVisible) return null;
 
   return (
     <>
       {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white"
+            className="fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white animate-fade-in-up"
             aria-label="Open AI Assistant"
           >
              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
@@ -347,6 +347,6 @@ const AiAssistant: React.FC<AiAssistantProps> = ({ user, currentScreen }) => {
       )}
     </>
   );
-};
+});
 
 export default AiAssistant;
