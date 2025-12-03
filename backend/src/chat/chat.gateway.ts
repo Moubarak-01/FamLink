@@ -34,8 +34,19 @@ export class ChatGateway {
   ) {}
 
   @SubscribeMessage('join_room')
-  handleJoinRoom(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
+  async handleJoinRoom(@MessageBody() data: { roomId: string, userId?: string }, @ConnectedSocket() client: Socket) {
+    // Support both string and object payload for backward compatibility
+    const roomId = typeof data === 'string' ? data : data.roomId;
+    const userId = typeof data === 'object' ? data.userId : null;
+
     client.join(roomId);
+
+    // Feature 6: Mark messages as seen when user joins
+    if (userId) {
+       await this.chatService.markMessagesAsSeen(roomId, userId);
+       // Broadcast to everyone in room that messages are seen
+       this.server.to(roomId).emit('messages_seen', { roomId, seenBy: userId });
+    }
   }
 
   @SubscribeMessage('leave_room')
@@ -64,6 +75,7 @@ export class ChatGateway {
       senderName: sender.fullName,
       senderPhoto: sender.photo,
       timestamp: savedMessage['createdAt'],
+      status: 'sent' // Initial status
     };
 
     client.to(data.roomId).emit('receive_message', {
@@ -71,7 +83,6 @@ export class ChatGateway {
       message: messagePayload,
     });
 
-    // Trigger notification logic
     this.sendChatNotification(data.roomId, data.message.senderId, sender.fullName, data.message.text);
 
     return messagePayload;
@@ -79,24 +90,20 @@ export class ChatGateway {
 
   private async sendChatNotification(roomId: string, senderId: string, senderName: string, text: string) {
       try {
-          // Validate ID format to prevent crashes
           if (!Types.ObjectId.isValid(roomId)) return;
 
           const notificationMsg = `New message from ${senderName}`;
           let recipients: string[] = [];
 
-          // Try Booking (Direct Chat)
           const booking = await this.bookingModel.findById(roomId).exec();
           if (booking) {
               if (booking.parentId.toString() !== senderId) recipients.push(booking.parentId.toString());
               if (booking.nannyId.toString() !== senderId) recipients.push(booking.nannyId.toString());
           } else {
-              // Try Activity (Group Chat)
               const activity = await this.activityModel.findById(roomId).exec();
               if (activity) {
                   recipients = activity.participants.map(p => p.toString()).filter(id => id !== senderId);
               } else {
-                  // Try Outing (Group Chat)
                   const outing = await this.outingModel.findById(roomId).exec();
                   if (outing) {
                       if (outing.hostId.toString() !== senderId) recipients.push(outing.hostId.toString());
@@ -106,7 +113,6 @@ export class ChatGateway {
                           }
                       });
                   } else {
-                      // Try Skill (Task Chat)
                       const skill = await this.skillTaskModel.findById(roomId).exec();
                       if (skill) {
                            if (skill.requesterId.toString() !== senderId) recipients.push(skill.requesterId.toString());

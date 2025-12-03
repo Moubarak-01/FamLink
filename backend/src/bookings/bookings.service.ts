@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Booking, BookingDocument } from '../schemas/booking.schema';
@@ -13,6 +13,18 @@ export class BookingsService {
   ) {}
 
   async create(createBookingDto: any, parentId: string): Promise<BookingDocument> {
+    // Feature 2: Validation to prevent double booking on accepted dates
+    const existingBooking = await this.bookingModel.findOne({
+        nannyId: createBookingDto.nannyId,
+        parentId: parentId,
+        date: createBookingDto.date,
+        status: 'accepted'
+    }).exec();
+
+    if (existingBooking) {
+        throw new BadRequestException('You already have a confirmed booking with this nanny for this date.');
+    }
+
     const booking = new this.bookingModel({
       ...createBookingDto,
       parentId: parentId,

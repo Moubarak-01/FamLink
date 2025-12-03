@@ -12,6 +12,7 @@ export class ChatService {
       roomId,
       senderId,
       text,
+      status: 'sent'
     });
     return message.save();
   }
@@ -21,6 +22,15 @@ export class ChatService {
       .populate('senderId', 'fullName photo')
       .sort({ createdAt: 1 })
       .exec();
+  }
+
+  // Feature 6: Mark messages as seen
+  async markMessagesAsSeen(roomId: string, userId: string): Promise<void> {
+    // Update messages in this room that were NOT sent by the current user
+    await this.messageModel.updateMany(
+        { roomId, senderId: { $ne: userId }, status: { $ne: 'seen' } },
+        { status: 'seen' }
+    ).exec();
   }
 
   async deleteMessage(id: string): Promise<any> {

@@ -5,7 +5,7 @@ export type MessageDocument = Message & Document;
 
 @Schema({ timestamps: true })
 export class Message {
-  @Prop({ required: true }) // Could be ActivityID, OutingID, TaskID, or BookingID
+  @Prop({ required: true })
   roomId: string; 
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
@@ -14,8 +14,8 @@ export class Message {
   @Prop({ required: true })
   text: string;
   
-  @Prop({ default: false })
-  read: boolean;
+  @Prop({ enum: ['sent', 'delivered', 'seen'], default: 'sent' })
+  status: string;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

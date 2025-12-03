@@ -18,7 +18,6 @@ export class UserTasksService {
     });
     const savedTask = await task.save();
 
-    // Notify the Nanny
     await this.notificationsService.create(
         createTaskDto.nannyId,
         `New task assigned: ${createTaskDto.description}`,
@@ -30,12 +29,35 @@ export class UserTasksService {
   }
 
   async findAllForUser(userId: string): Promise<UserTaskDocument[]> {
+    // Feature 5: 7-day expiration logic
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     return this.userTaskModel.find({
-      $or: [{ parentId: userId }, { nannyId: userId }]
+      $or: [{ parentId: userId }, { nannyId: userId }],
+      // Filter out tasks that are completed, NOT marked to keep, and older than 7 days
+      $nor: [
+          { 
+              status: 'completed', 
+              keepPermanently: false, 
+              completedAt: { $lt: sevenDaysAgo } 
+          }
+      ]
     }).sort({ dueDate: 1 }).exec();
   }
 
   async updateStatus(taskId: string, status: string): Promise<UserTaskDocument> {
-    return this.userTaskModel.findByIdAndUpdate(taskId, { status }, { new: true }).exec();
+    const updateData: any = { status };
+    if (status === 'completed') {
+        updateData.completedAt = new Date();
+    } else {
+        updateData.completedAt = null;
+    }
+    return this.userTaskModel.findByIdAndUpdate(taskId, updateData, { new: true }).exec();
+  }
+
+  // Feature 5: Endpoint to prevent deletion
+  async keepTaskPermanently(taskId: string): Promise<UserTaskDocument> {
+    return this.userTaskModel.findByIdAndUpdate(taskId, { keepPermanently: true }, { new: true }).exec();
   }
 }

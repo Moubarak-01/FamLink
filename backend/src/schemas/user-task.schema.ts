@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
@@ -20,6 +19,12 @@ export class UserTask {
 
   @Prop({ enum: ['pending', 'completed'], default: 'pending' })
   status: string;
+
+  @Prop()
+  completedAt: Date;
+
+  @Prop({ default: false })
+  keepPermanently: boolean;
 }
 
 export const UserTaskSchema = SchemaFactory.createForClass(UserTask);

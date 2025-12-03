@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -21,7 +20,7 @@ export class ReviewsService {
     });
     const savedReview = await review.save();
 
-    // Update the target user's average rating
+    // Update the target user's average rating immediately
     await this.updateUserRating(targetId);
 
     return savedReview;
@@ -36,7 +35,8 @@ export class ReviewsService {
     if (reviews.length === 0) return;
 
     const total = reviews.reduce((acc, curr) => acc + curr.rating, 0);
-    const average = total / reviews.length;
+    // Round to 1 decimal place
+    const average = Math.round((total / reviews.length) * 10) / 10;
 
     await this.userModel.findByIdAndUpdate(userId, { 
         'profile.rating': average 
