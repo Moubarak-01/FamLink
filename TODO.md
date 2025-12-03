@@ -1,0 +1,5 @@
+- [ ] Fix AuthService.validateUser to use bcrypt.compare for password verification
+- [ ] Change AuthService to call findOneByEmail instead of findByEmail
+- [ ] Update AuthService.register to return login token after user creation
+- [ ] Add proper error handling in AuthController with UnauthorizedException
+- [ ] Test sign up and login functionality

@@ -1,0 +1,265 @@
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { ASSESSMENT_QUESTIONS } from '../constants';
+import { Answer, Question, User } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
+
+interface QuestionnaireProps {
+  user: User;
+  onSubmit: (answers: Answer[]) => void;
+  error: string | null;
+  onBack: () => void;
+}
+
+// Fisher-Yates shuffle algorithm
+const shuffleArray = (array: any[]) => {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+};
+
+
+const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, onBack }) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const { t, language } = useLanguage();
+
+  const questions = useMemo(() => {
+    const allQuestions = ASSESSMENT_QUESTIONS(t);
+    
+    // Separate questions by type
+    const singleChoice = allQuestions.filter(q => q.type === 'single-choice');
+    const multipleChoice = allQuestions.filter(q => q.type === 'multiple-choice');
+    const openEnded = allQuestions.filter(q => q.type === 'open-ended');
+
+    // Select specific amounts to maintain assessment balance
+    // Target: 10 Single Choice, 3 Multiple Choice, 2 Open Ended = 15 Total
+    const selectedSingle = shuffleArray([...singleChoice]).slice(0, 10);
+    const selectedMultiple = shuffleArray([...multipleChoice]).slice(0, 3);
+    const selectedOpen = shuffleArray([...openEnded]).slice(0, 2);
+
+    // Combine and shuffle the final set so types are mixed during the test
+    const combined = [...selectedSingle, ...selectedMultiple, ...selectedOpen];
+    return shuffleArray(combined);
+  }, [t]);
+
+  const isSuspended = useMemo(() => {
+    if (user.userType === 'nanny' && user.suspendedUntil) {
+      return new Date(user.suspendedUntil) > new Date();
+    }
+    return false;
+  }, [user]);
+  
+  const suspensionRemainingText = useMemo(() => {
+    if (isSuspended && user.suspendedUntil) {
+        const end = new Date(user.suspendedUntil).getTime();
+        const now = new Date().getTime();
+        const diff = end - now;
+        
+        if (diff > 0) {
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            return `${hours} ${t('unit_hours')} ${minutes} ${t('unit_minutes')}`;
+        }
+    }
+    return '';
+  }, [isSuspended, user.suspendedUntil, t]);
+
+  if (isSuspended) {
+    return (
+      <div className="p-8 text-center min-h-[400px] flex flex-col justify-center items-center">
+        <div className="mb-4 text-5xl">🛑</div>
+        <h2 className="text-2xl font-bold text-[var(--accent-red)] mb-4">{t('account_suspended_title')}</h2>
+        <p className="text-[var(--text-secondary)] max-w-md mx-auto">{t('account_suspended_message')}</p>
+        <p className="text-[var(--text-secondary)] mt-4">{t('account_suspended_try_again')}</p>
+        <p className="text-lg font-semibold text-[var(--text-primary)] mt-2 bg-[var(--bg-accent-light)] px-4 py-2 rounded-lg">{suspensionRemainingText}</p>
+        <div className="mt-8">
+            <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full">
+                {t('button_back')}
+            </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const currentAnswer = answers.find(a => a.questionId === currentQuestion.id)?.answer || (currentQuestion.type === 'multiple-choice' ? [] : '');
+
+  const isCurrentQuestionAnswered = useMemo(() => {
+    if (currentQuestion.type === 'multiple-choice') {
+      return Array.isArray(currentAnswer) && currentAnswer.length > 0;
+    }
+    if (currentQuestion.type === 'open-ended') {
+      return typeof currentAnswer === 'string' && currentAnswer.trim().length > 3;
+    }
+    // single-choice
+    return typeof currentAnswer === 'string' && currentAnswer !== '';
+  }, [currentAnswer, currentQuestion.type]);
+
+  useEffect(() => {
+    setValidationError(null); // Clear validation error on question change
+  }, [currentQuestionIndex]);
+
+  const handleAnswerUpdate = (answerValue: string | string[]) => {
+    const questionId = currentQuestion.id;
+    const newAnswers = answers.filter(a => a.questionId !== questionId);
+    setAnswers([...newAnswers, { questionId, answer: answerValue }]);
+    setValidationError(null);
+  };
+
+  const handleSingleChoice = (option: string) => {
+    handleAnswerUpdate(option);
+  };
+  
+  const handleMultipleChoice = (option: string) => {
+    const currentSelection = (Array.isArray(currentAnswer) ? currentAnswer : []) as string[];
+    const newSelection = currentSelection.includes(option)
+      ? currentSelection.filter(item => item !== option)
+      : [...currentSelection, option];
+    handleAnswerUpdate(newSelection);
+  };
+  
+  const handleOpenEndedChange = (text: string) => {
+    handleAnswerUpdate(text);
+  };
+
+  const goToNextQuestion = () => {
+     if (!isCurrentQuestionAnswered) {
+      setValidationError(t('alert_answer_required'));
+      return;
+    }
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  };
+
+  const goToPrevQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  const progressPercentage = (answers.length / questions.length) * 100;
+  
+  const renderAnswerOptions = () => {
+    switch(currentQuestion.type) {
+        case 'single-choice':
+            return (
+                <div className="space-y-3">
+                    {currentQuestion.options.map((option, index) => (
+                    <button
+                        key={index}
+                        onClick={() => handleSingleChoice(option)}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 text-[var(--text-primary)] ${
+                        currentAnswer === option
+                            ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
+                            : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
+                        }`}
+                    >
+                        {option}
+                    </button>
+                    ))}
+                </div>
+            );
+        case 'multiple-choice':
+            return (
+                 <div className="space-y-3">
+                    {currentQuestion.options.map((option, index) => (
+                    <button
+                        key={index}
+                        onClick={() => handleMultipleChoice(option)}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-4 text-[var(--text-primary)] ${
+                         (currentAnswer as string[]).includes(option)
+                            ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
+                            : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
+                        }`}
+                    >
+                        <div className={`w-5 h-5 border-2 rounded ${ (currentAnswer as string[]).includes(option) ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)]' : 'border-gray-300'}`}></div>
+                        <span>{option}</span>
+                    </button>
+                    ))}
+                </div>
+            );
+        case 'open-ended':
+            return (
+                <textarea
+                    value={currentAnswer as string}
+                    onChange={(e) => handleOpenEndedChange(e.target.value)}
+                    rows={5}
+                    placeholder={t('profile_form_description_placeholder')}
+                    className="mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]"
+                />
+            );
+    }
+  }
+
+  return (
+    <div className="p-6 sm:p-8">
+      <div className="mb-6">
+        <div className="flex justify-between mb-1">
+          <span className="text-base font-medium text-[var(--text-accent)]">{t('questionnaire_title')}</span>
+          <span className="text-sm font-medium text-[var(--text-accent)]">{currentQuestionIndex + 1}/{questions.length}</span>
+        </div>
+        <div className="w-full bg-[var(--bg-accent-light)] rounded-full h-2.5">
+          <div className="bg-[var(--accent-primary)] h-2.5 rounded-full transition-all duration-500" style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}></div>
+        </div>
+      </div>
+      
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+        <strong className="font-bold">{t('error_oops')}</strong>
+        <span className="block sm:inline ml-2">{error}</span>
+      </div>}
+       {validationError && <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+        <span className="block sm:inline">{validationError}</span>
+      </div>}
+
+
+      <div className="mb-6 min-h-[80px]">
+        <p className="text-sm text-[var(--text-light)] mb-1">{t('questionnaire_question_of', { current: currentQuestionIndex + 1, total: questions.length })}</p>
+        <h3 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">{currentQuestion.text}</h3>
+      </div>
+      
+      {renderAnswerOptions()}
+      
+      <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex justify-between items-center">
+        <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full">
+          {t('button_back')}
+        </button>
+        <div className="flex items-center gap-2">
+           <button onClick={goToPrevQuestion} disabled={currentQuestionIndex === 0} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold py-2 px-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed">
+            {t('button_prev')}
+          </button>
+          {currentQuestionIndex === questions.length - 1 ? (
+            <button
+              onClick={() => {
+                if (!isCurrentQuestionAnswered) {
+                  setValidationError(t('alert_answer_required'));
+                  return;
+                }
+                onSubmit(answers)
+              }}
+              className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 px-6 rounded-full shadow-md transform hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isCurrentQuestionAnswered}
+            >
+              {t('button_submit_assessment')}
+            </button>
+          ) : (
+            <button
+              onClick={goToNextQuestion}
+              className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 px-6 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {t('button_next')}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Questionnaire;

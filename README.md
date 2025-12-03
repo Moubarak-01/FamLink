@@ -166,4 +166,7 @@ If you encounter **"Signup failed"**, **"Network Error"**, or **AI issues**, che
 ## 📄 License
 
 This project is licensed under the MIT License.
+<<<<<<< HEAD
+=======
 # FamLink
+>>>>>>> c95593594e201872a7035392194a57db62287258

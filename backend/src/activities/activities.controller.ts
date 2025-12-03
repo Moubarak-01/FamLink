@@ -1,0 +1,27 @@
+
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
+import { ActivitiesService } from './activities.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+@Controller('activities')
+export class ActivitiesController {
+  constructor(private readonly activitiesService: ActivitiesService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  create(@Request() req, @Body() createActivityDto: any) {
+    return this.activitiesService.create(createActivityDto, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  findAll() {
+    return this.activitiesService.findAll();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/join')
+  join(@Request() req, @Param('id') id: string) {
+    return this.activitiesService.join(id, req.user.userId);
+  }
+}
