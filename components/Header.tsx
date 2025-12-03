@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Notification } from '../types';
 import LanguageSelector from './LanguageSelector';
@@ -41,6 +40,13 @@ const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditP
 
   const hasSettings = onEditProfile || onViewSubscription;
   const unreadCount = notifications.length;
+
+  // Helper to safely format date from either 'createdAt' (ISO string) or 'timestamp' (number)
+  const formatTime = (notif: Notification) => {
+    const dateVal = notif.createdAt || notif.timestamp;
+    if (!dateVal) return '';
+    return new Date(dateVal).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  };
 
   return (
     <header 
@@ -101,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({isAuthenticated, user, onLogout, onEditP
                                               <p className="text-sm text-[var(--text-primary)] font-medium line-clamp-2">{notif.message}</p>
                                               {notif.type === 'chat' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Chat</span>}
                                           </div>
-                                          <p className="text-xs text-[var(--text-light)]">{new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                          <p className="text-xs text-[var(--text-light)]">{formatTime(notif)}</p>
                                       </button>
                                   ))
                               ) : (

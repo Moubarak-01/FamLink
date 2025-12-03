@@ -1,4 +1,3 @@
-
 import { api } from './api';
 import { BookingRequest } from '../types';
 
@@ -16,5 +15,15 @@ export const bookingService = {
   async updateStatus(bookingId: string, status: 'accepted' | 'declined') {
     const response = await api.patch<BookingRequest>(`/bookings/${bookingId}/status`, { status });
     return response.data;
+  },
+
+  async delete(id: string) {
+      const response = await api.delete(`/bookings/${id}`);
+      return response.data;
+  },
+
+  async deleteAll() {
+      const response = await api.delete('/bookings');
+      return response.data;
   }
 };

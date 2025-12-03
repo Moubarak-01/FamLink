@@ -1,12 +1,15 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification, NotificationDocument } from '../schemas/notification.schema';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
-  constructor(@InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>) {}
+  constructor(
+      @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
+      private notificationsGateway: NotificationsGateway
+  ) {}
 
   async create(userId: string, message: string, type: string, relatedId?: string): Promise<NotificationDocument> {
     const notification = new this.notificationModel({
@@ -16,7 +19,20 @@ export class NotificationsService {
       relatedId,
       read: false,
     });
-    return notification.save();
+    const savedNotification = await notification.save();
+    
+    // Send real-time update via Socket.io
+    this.notificationsGateway.sendNotification(userId, {
+        id: savedNotification._id.toString(),
+        userId,
+        message,
+        type,
+        read: false,
+        relatedId,
+        createdAt: savedNotification['createdAt']
+    });
+
+    return savedNotification;
   }
 
   async findAllForUser(userId: string): Promise<NotificationDocument[]> {

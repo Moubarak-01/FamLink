@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { User, Child, ActivityCategory, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -15,7 +14,7 @@ interface ParentProfileFormProps {
     children: Child[];
     skillsToTeach: SkillCategory[];
     phone: string;
-  }) => void;
+  }) => Promise<void> | void; // Ensure return type allows Promise
   onBack: () => void;
 }
 
@@ -118,11 +117,12 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
     }
 
     setIsSubmitting(true);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    onSubmit({ fullName, photo, location, interests, children, skillsToTeach, phone });
-    setIsSubmitting(false);
+    try {
+        // Await the actual submission process from parent component
+        await onSubmit({ fullName, photo, location, interests, children, skillsToTeach, phone });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const getInputClass = (value: string) => {

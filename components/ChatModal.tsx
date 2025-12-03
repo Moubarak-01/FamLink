@@ -1,8 +1,8 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { Activity, User, SharedOuting, SkillRequest, BookingRequest } from '../types';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Activity, User, SharedOuting, SkillRequest, BookingRequest, ChatMessage } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { socketService } from '../services/socketService';
+import { chatService } from '../services/chatService';
 
 interface ChatModalProps {
   activity?: Activity;
@@ -20,6 +20,8 @@ interface ChatModalProps {
 const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose, onSendMessage, onDeleteMessage, onDeleteAllMessages, onReportUser }) => {
   const { t } = useLanguage();
   const [message, setMessage] = useState('');
+  const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasSent, setHasSent] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,8 +30,26 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   // Determine which context we are in
   const contextItem = activity || outing || skillRequest || bookingRequest;
   const contextId = contextItem?.id || '';
-  const messages = contextItem?.messages || [];
   
+  // Merge history with any real-time messages passed in props
+  const realtimeMessages = contextItem?.messages || [];
+  
+  // De-duplicate messages based on ID and sort
+  const allMessages = useMemo(() => {
+      const combined = [...historyMessages, ...realtimeMessages];
+      const unique = new Map();
+      combined.forEach(msg => {
+          if (msg && msg.id) {
+              unique.set(msg.id, msg);
+          }
+      });
+      return Array.from(unique.values()).sort((a, b) => {
+          const dateA = new Date(a.timestamp || Date.now()).getTime();
+          const dateB = new Date(b.timestamp || Date.now()).getTime();
+          return dateA - dateB;
+      });
+  }, [historyMessages, realtimeMessages]);
+
   const isHost = activity ? activity.hostId === currentUser.id : 
                  outing ? outing.hostId === currentUser.id : 
                  skillRequest ? skillRequest.requesterId === currentUser.id : 
@@ -58,7 +78,25 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       targetUserIdForReport = isParent ? bookingRequest.nannyId : bookingRequest.parentId;
   }
 
-  // Join the socket room when the modal opens
+  // Fetch History on Mount
+  useEffect(() => {
+      const fetchHistory = async () => {
+          if (contextId) {
+              setIsLoadingHistory(true);
+              try {
+                  const history = await chatService.getHistory(contextId);
+                  setHistoryMessages(history);
+              } catch (error) {
+                  console.error("Failed to fetch chat history", error);
+              } finally {
+                  setIsLoadingHistory(false);
+              }
+          }
+      };
+      fetchHistory();
+  }, [contextId]);
+
+  // Join the socket room
   useEffect(() => {
       if (contextId) {
           socketService.joinRoom(contextId);
@@ -76,7 +114,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [allMessages]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -126,8 +164,22 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       return 'rotate-0';
   };
 
-  const formatTime = (timestamp: number) => {
+  const formatTime = (timestamp: number | string) => {
+      if (!timestamp) return '';
       return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Helper to safely get name
+  const getSenderName = (name?: string) => {
+      return (name || 'Unknown').split(' ')[0];
+  };
+
+  // Helper to safely get photo
+  const getSenderPhoto = (photo?: string, id?: string) => {
+      if (photo) return photo;
+      // Fallback avatar based on ID char code
+      const numId = id ? id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 70 : 0;
+      return `https://i.pravatar.cc/150?img=${numId}`;
   };
 
   return (
@@ -159,7 +211,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                     </button>
                 )}
 
-                {isHost && messages.length > 0 && (
+                {isHost && allMessages.length > 0 && (
                     <button 
                         onClick={handleClearAll} 
                         className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors flex-shrink-0 mr-1"
@@ -184,12 +236,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         
         {/* Messages Area */}
         <div className="flex-1 p-4 overflow-y-auto bg-[var(--bg-card-subtle)] space-y-4 scrollbar-thin scrollbar-thumb-gray-300">
-            {messages.length > 0 ? (
-                messages.map((msg, index) => {
+            {isLoadingHistory && (
+                <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[var(--accent-primary)]"></div>
+                </div>
+            )}
+            
+            {allMessages.length > 0 ? (
+                allMessages.map((msg, index) => {
+                    if (!msg) return null; // Extra safety check
                     const isCurrentUser = msg.senderId === currentUser.id;
                     return (
                         <div key={msg.id || index} className={`flex items-end gap-2 group ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                            {!isCurrentUser && <img src={msg.senderPhoto} alt={msg.senderName} className="w-8 h-8 rounded-full object-cover border border-[var(--border-color)]" />}
+                            {!isCurrentUser && <img src={getSenderPhoto(msg.senderPhoto, msg.senderId)} alt={msg.senderName} className="w-8 h-8 rounded-full object-cover border border-[var(--border-color)]" />}
                             <div className="relative max-w-[75%]">
                                 <div 
                                     className={`p-3 shadow-sm text-sm relative 
@@ -198,21 +257,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                         : 'bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] rounded-2xl rounded-bl-none'
                                     }`}
                                 >
-                                    {!isCurrentUser && <p className="text-xs font-bold text-[var(--accent-secondary)] mb-1">{msg.senderName.split(' ')[0]}</p>}
-                                    <p className="break-words whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                                    {!isCurrentUser && <p className="text-xs font-bold text-[var(--accent-secondary)] mb-1">{getSenderName(msg.senderName)}</p>}
+                                    <p className="break-words whitespace-pre-wrap leading-relaxed">{msg.text || ''}</p>
                                     <div className={`text-[10px] mt-1 text-right opacity-70 ${isCurrentUser ? 'text-white' : 'text-[var(--text-light)]'}`}>
-                                        {formatTime(msg.timestamp)}
+                                        {formatTime(msg.timestamp || Date.now())}
                                     </div>
                                 </div>
                                 
-                                {/* Delete Button for Individual Message */}
                                 {isCurrentUser && (
                                     <button 
                                         type="button"
                                         onClick={(e) => handleDelete(e, msg.id)}
                                         className="absolute -top-2.5 -left-2.5 bg-white dark:bg-gray-700 text-red-500 border border-red-200 dark:border-red-900 rounded-full p-1.5 shadow-md hover:bg-red-50 dark:hover:bg-red-900/50 z-50 cursor-pointer transition-transform hover:scale-110 flex items-center justify-center"
                                         title="Delete message"
-                                        aria-label="Delete message"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -220,17 +277,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                     </button>
                                 )}
                             </div>
-                             {isCurrentUser && <img src={msg.senderPhoto} alt={msg.senderName} className="w-8 h-8 rounded-full object-cover border-2 border-[var(--accent-primary)]" />}
+                             {isCurrentUser && <img src={getSenderPhoto(msg.senderPhoto, msg.senderId)} alt={msg.senderName} className="w-8 h-8 rounded-full object-cover border-2 border-[var(--accent-primary)]" />}
                         </div>
                     );
                 })
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-[var(--text-light)] opacity-60">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    <p className="text-sm">No messages yet.</p>
-                </div>
+                !isLoadingHistory && (
+                    <div className="flex flex-col items-center justify-center h-full text-[var(--text-light)] opacity-60">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <p className="text-sm">No messages yet.</p>
+                    </div>
+                )
             )}
             <div ref={messagesEndRef} />
         </div>

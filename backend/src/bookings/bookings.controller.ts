@@ -1,5 +1,4 @@
-
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -23,5 +22,17 @@ export class BookingsController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body('status') status: string) {
       return this.bookingsService.updateStatus(id, status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+      return this.bookingsService.remove(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  removeAll() {
+      return this.bookingsService.removeAll();
   }
 }

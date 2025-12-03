@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User, BookingRequest, Task, SharedOuting, OutingRequest, SkillRequest } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -29,7 +28,17 @@ interface DashboardScreenProps {
   onViewSkillMarketplace: () => void;
   onEditProfile: () => void;
   onOpenBookingChat: (request: BookingRequest) => void;
+  onCancelBooking: (id: string) => void;
+  onClearAllBookings: () => void;
 }
+
+const formatDateSafe = (dateString: string) => {
+    if (!dateString) return '';
+    if (dateString.length === 10) {
+        return new Date(dateString + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    return new Date(dateString).toLocaleDateString();
+};
 
 const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
     const { t } = useLanguage();
@@ -39,18 +48,15 @@ const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
     today.setHours(0, 0, 0, 0);
     const isOverdue = dueDate < today && !isCompleted;
 
-    const formattedDate = new Date(task.dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-
     return (
         <li className={`flex items-center justify-between text-sm py-1 ${isCompleted ? 'text-[var(--text-light)]' : 'text-[var(--text-primary)]'}`}>
             <span className={isCompleted ? 'line-through' : ''}>{task.description}</span>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}>
-                {isOverdue ? t('task_overdue') : `${t('task_due_on', {date: ''})}${formattedDate}`}
+                {isOverdue ? t('task_overdue') : `${t('task_due_on', {date: ''})}${formatDateSafe(task.dueDate)}`}
             </span>
         </li>
     );
 };
-
 
 const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], onRemove: (id: string) => void, onContact: (nanny: User) => void, onView: (id: string) => void, onRate: (nanny: User) => void, onAddTask: () => void}> = ({ nanny, currentUser, tasks, onRemove, onContact, onView, onRate, onAddTask }) => {
     const { t } = useLanguage();
@@ -103,16 +109,28 @@ const BookingRequestStatus: React.FC<{status: BookingRequest['status']}> = ({ st
     return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${currentStatus.bg} ${currentStatus.text_color}`}>{currentStatus.text}</span>;
 };
 
-const ParentBookingCard: React.FC<{ request: EnrichedBookingRequest, onOpenChat: (req: BookingRequest) => void }> = ({ request, onOpenChat }) => {
+interface ParentBookingCardProps {
+    request: EnrichedBookingRequest;
+    onOpenChat: (req: BookingRequest) => void;
+    onCancel: (id: string) => void;
+    onAssignTask: (nanny: User) => void;
+    onRate: (nanny: User) => void;
+    currentUser: User;
+}
+
+const ParentBookingCard: React.FC<ParentBookingCardProps> = ({ request, onOpenChat, onCancel, onAssignTask, onRate, currentUser }) => {
     const { t } = useLanguage();
     if (!request.nanny?.profile) return null;
+    
+    const hasRated = request.nanny.ratings?.some(r => r.parentId === currentUser.id);
+
     return (
         <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <img src={request.nanny.photo} alt={request.nanny.fullName} className="w-16 h-16 rounded-full object-cover self-center sm:self-auto" />
             <div className="flex-grow">
                 <h4 className="font-bold text-[var(--text-primary)]">{t('booking_request_to')} {request.nanny.fullName}</h4>
                 <p className="text-sm text-[var(--text-secondary)]">
-                    <span className="font-semibold">{t('booking_label_date')}:</span> {new Date(request.date).toLocaleDateString()}
+                    <span className="font-semibold">{t('booking_label_date')}:</span> {formatDateSafe(request.date)}
                 </p>
                 <p className="text-sm text-[var(--text-secondary)]">
                     <span className="font-semibold">{t('booking_label_time')}:</span> {request.startTime} - {request.endTime}
@@ -121,11 +139,34 @@ const ParentBookingCard: React.FC<{ request: EnrichedBookingRequest, onOpenChat:
             <div className="self-end sm:self-auto flex flex-col items-end gap-2">
                 <BookingRequestStatus status={request.status} />
                 {request.status === 'accepted' && (
+                    <div className="flex flex-col gap-2">
+                        <button 
+                            onClick={() => onOpenChat(request)}
+                            className="text-xs bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-1 px-3 rounded-full transition-colors w-full"
+                        >
+                            {t('activity_card_chat')}
+                        </button>
+                        <button 
+                            onClick={() => onAssignTask(request.nanny!)}
+                            className="text-xs bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-full transition-colors w-full"
+                        >
+                            {t('button_add_task')}
+                        </button>
+                         <button 
+                            onClick={() => onRate(request.nanny!)}
+                            disabled={!!hasRated}
+                            className="text-xs bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-full transition-colors w-full disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {hasRated ? t('button_rated') : t('button_rate')}
+                        </button>
+                    </div>
+                )}
+                {request.status === 'pending' && (
                     <button 
-                        onClick={() => onOpenChat(request)}
-                        className="text-xs bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-1 px-3 rounded-full transition-colors"
+                        onClick={() => onCancel(request.id)}
+                        className="text-xs text-red-500 hover:text-red-700 underline"
                     >
-                        {t('activity_card_chat')}
+                        Cancel Request
                     </button>
                 )}
             </div>
@@ -143,14 +184,13 @@ const StatusTag: React.FC<{ status: string }> = ({ status }) => {
      return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text}`}>{status}</span>;
 }
 
-
 const HostedOutingCard: React.FC<{ outing: SharedOuting, onUpdateRequest: (parentId: string, status: 'accepted' | 'declined') => void }> = ({ outing, onUpdateRequest }) => {
     const { t } = useLanguage();
     return (
         <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)]">
             <h4 className="font-bold text-[var(--text-primary)]">{outing.title}</h4>
             <p className="text-sm text-[var(--text-secondary)]">
-                <span className="font-semibold">{t('booking_label_date')}:</span> {new Date(outing.date).toLocaleDateString()} at {outing.time}
+                <span className="font-semibold">{t('booking_label_date')}:</span> {formatDateSafe(outing.date)} at {outing.time}
             </p>
             <p className="text-sm text-[var(--text-secondary)]">📍 {outing.location}</p>
             <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
@@ -184,7 +224,7 @@ const HostedOutingCard: React.FC<{ outing: SharedOuting, onUpdateRequest: (paren
     );
 };
 
-const ParentDashboard: React.FC<Pick<DashboardScreenProps, 'user' | 'addedNannies' | 'bookingRequests' | 'allTasks' | 'sharedOutings' | 'skillRequests' | 'onCancelSubscription' | 'onSearchNannies' | 'onRemoveNanny' | 'onContactNanny' | 'onViewNanny' | 'onRateNanny' | 'onOpenTaskModal' | 'onViewActivities' | 'onViewOutings' | 'onUpdateOutingRequestStatus' | 'onViewSkillMarketplace' | 'onEditProfile' | 'onOpenBookingChat'>> = ({ user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, onViewSkillMarketplace, onEditProfile, onOpenBookingChat }) => {
+const ParentDashboard: React.FC<DashboardScreenProps> = ({ user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking, onClearAllBookings }) => {
     const { t } = useLanguage();
     const hostedOutings = sharedOutings.filter(o => o.hostId === user.id);
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
@@ -232,50 +272,31 @@ const ParentDashboard: React.FC<Pick<DashboardScreenProps, 'user' | 'addedNannie
                     {t('dashboard_community_button')}
                 </button>
             </div>
-
-             {/* Dads Card */}
-             <div className="bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-600 p-6">
-                <h4 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">{t('dashboard_dads_title')}</h4>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{t('dashboard_dads_subtitle')}</p>
-                <button
-                    onClick={onViewActivities}
-                    className="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 rounded-lg transition-colors text-center"
-                >
-                    {t('dashboard_dads_button')}
-                </button>
-            </div>
-            
-            {/* Child Sharing Card */}
-            <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-6">
-                <h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-2">{t('dashboard_child_sharing_title')}</h4>
-                <p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p>
-                <button
-                    onClick={onViewOutings}
-                    className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 rounded-lg transition-colors text-center"
-                >
-                    {t('dashboard_child_sharing_button')}
-                </button>
-            </div>
-            
-            {/* Skill Sharing Card */}
-             <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-6">
-                <h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-2">{t('dashboard_skill_sharing_title')}</h4>
-                <p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p>
-                <button
-                    onClick={onViewSkillMarketplace}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-colors text-center"
-                >
-                    {t('dashboard_skill_sharing_button')}
-                </button>
-            </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
              <div>
-                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_booking_requests')}</h3>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
+                    {bookingRequests.length > 0 && (
+                        <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">
+                            Clear All History
+                        </button>
+                    )}
+                </div>
                 {bookingRequests.length > 0 ? (
                     <div className="space-y-4">
-                        {bookingRequests.map(req => <ParentBookingCard key={req.id} request={req} onOpenChat={onOpenBookingChat} />)}
+                        {bookingRequests.map(req => (
+                            <ParentBookingCard 
+                                key={req.id} 
+                                request={req} 
+                                onOpenChat={onOpenBookingChat} 
+                                onCancel={onCancelBooking}
+                                onAssignTask={onOpenTaskModal}
+                                onRate={onRateNanny}
+                                currentUser={user}
+                            />
+                        ))}
                     </div>
                 ) : (
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
@@ -292,7 +313,7 @@ const ParentDashboard: React.FC<Pick<DashboardScreenProps, 'user' | 'addedNannie
                             <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
                                 <div>
                                     <h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4>
-                                    <p className="text-sm text-[var(--text-secondary)]">{req.date} • {req.childName}</p>
+                                    <p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p>
                                 </div>
                                 <StatusTag status={req.status} />
                             </div>
@@ -376,7 +397,7 @@ const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: Da
                 <div className="flex-grow">
                     <h4 className="font-bold text-[var(--text-primary)]">{t('booking_request_from')} {request.parentName}</h4>
                     <p className="text-sm text-[var(--text-secondary)]">
-                        <span className="font-semibold">{t('booking_label_date')}:</span> {new Date(request.date).toLocaleDateString()}
+                        <span className="font-semibold">{t('booking_label_date')}:</span> {formatDateSafe(request.date)}
                     </p>
                     <p className="text-sm text-[var(--text-secondary)]">
                         <span className="font-semibold">{t('booking_label_time')}:</span> {request.startTime} - {request.endTime}
@@ -431,7 +452,7 @@ const NannyTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScreenProps
                      <StatusTag status={task.status} />
                 </div>
                 <p className={`text-xs font-medium mt-1 ${isOverdue ? 'text-[var(--accent-red)]' : 'text-[var(--text-light)]'}`}>
-                    {isOverdue ? t('task_overdue') + ': ' : t('task_due_on', {date: ''})} {new Date(task.dueDate).toLocaleDateString()}
+                    {isOverdue ? t('task_overdue') + ': ' : t('task_due_on', {date: ''})} {formatDateSafe(task.dueDate)}
                 </p>
             </div>
         </div>
@@ -439,7 +460,7 @@ const NannyTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScreenProps
 };
 
 
-const NannyDashboard: React.FC<Pick<DashboardScreenProps, 'user' | 'bookingRequests' | 'userTasks' | 'onUpdateBookingStatus' | 'onUpdateTaskStatus' | 'onOpenBookingChat'>> = ({ user, bookingRequests, userTasks, onUpdateBookingStatus, onUpdateTaskStatus, onOpenBookingChat }) => {
+const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests, userTasks, onUpdateBookingStatus, onUpdateTaskStatus, onOpenBookingChat }) => {
     const { t } = useLanguage();
     const profileComplete = !!user.profile;
     const pendingRequests = bookingRequests.filter(req => req.status === 'pending');

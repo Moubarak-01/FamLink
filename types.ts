@@ -1,4 +1,3 @@
-
 export interface Question {
   id: number;
   type: 'single-choice' | 'multiple-choice' | 'open-ended';
@@ -73,7 +72,8 @@ export interface Notification {
   message: string;
   type: NotificationType;
   read: boolean;
-  timestamp: number;
+  timestamp?: number; // Keep for backward compatibility if needed
+  createdAt?: string; // Add field from MongoDB schema
   relatedId?: string; // ID of the booking, task, etc.
 }
 

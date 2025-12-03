@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -22,5 +21,13 @@ export class ChatService {
       .populate('senderId', 'fullName photo')
       .sort({ createdAt: 1 })
       .exec();
+  }
+
+  async deleteMessage(id: string): Promise<any> {
+    return this.messageModel.findByIdAndDelete(id).exec();
+  }
+
+  async deleteAllMessages(roomId: string): Promise<any> {
+    return this.messageModel.deleteMany({ roomId }).exec();
   }
 }

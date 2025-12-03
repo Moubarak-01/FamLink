@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Answer, Screen, UserType, Subscription, Plan, User, NannyProfile, Rating, BookingRequest, Task, Activity, SharedOuting, OutingRequest, SkillRequest, SkillOffer, Child, ActivityCategory, SkillCategory, ChatMessage, Notification, NotificationType } from './types';
 import Header from './components/Header';
@@ -41,6 +40,7 @@ import { bookingService } from './services/bookingService';
 import { notificationService } from './services/notificationService';
 import { reviewService } from './services/reviewService';
 import { taskService } from './services/taskService';
+import { chatService } from './services/chatService';
 
 const getAvatarId = (id: string) => {
     return id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 70;
@@ -187,7 +187,6 @@ const App: React.FC = () => {
               try {
                   const profile = await authService.getProfile();
                   setCurrentUser(profile);
-                  // Note: We don't navigate immediately here to avoid flash, let the next useEffect handle data fetching
                   navigateTo(Screen.Dashboard, true);
               } catch (e) {
                   console.log("Failed to auto-login, token might be invalid");
@@ -198,82 +197,49 @@ const App: React.FC = () => {
       checkAuth();
   }, []);
 
-  // FETCH DATA WHEN USER LOGS IN
-  useEffect(() => {
-    if (currentUser) {
-        const fetchData = async () => {
-            try {
-                // Parallel data fetching
-                const [
-                    nanniesRes,
-                    activitiesRes,
-                    outingsRes,
-                    skillsRes,
-                    bookingsRes,
-                    notificationsRes,
-                    tasksRes
-                ] = await Promise.all([
-                    userService.getNannies(),
-                    activityService.getAll(),
-                    outingService.getAll(),
-                    marketplaceService.getAll(),
-                    bookingService.getAll(),
-                    notificationService.getAll(),
-                    taskService.getAll()
-                ]);
+  // === REFRESH DATA FUNCTION ===
+  const refreshData = useCallback(async () => {
+    if (!currentUser) return;
+    try {
+        const [
+            nanniesRes,
+            activitiesRes,
+            outingsRes,
+            skillsRes,
+            bookingsRes,
+            notificationsRes,
+            tasksRes
+        ] = await Promise.all([
+            userService.getNannies(),
+            activityService.getAll(),
+            outingService.getAll(),
+            marketplaceService.getAll(),
+            bookingService.getAll(),
+            notificationService.getAll(),
+            taskService.getAll()
+        ]);
 
-                setApprovedNannies(nanniesRes.filter(n => n.profile)); // Only show nannies with profiles
-                setActivities(activitiesRes);
-                setSharedOutings(outingsRes);
-                setSkillRequests(skillsRes);
-                setBookingRequests(bookingsRes);
-                setNotifications(notificationsRes);
-                setTasks(tasksRes);
+        setApprovedNannies(nanniesRes.filter(n => n.profile));
+        setActivities(activitiesRes);
+        setSharedOutings(outingsRes);
+        setSkillRequests(skillsRes);
+        setBookingRequests(bookingsRes);
+        setNotifications(notificationsRes);
+        setTasks(tasksRes);
 
-            } catch (e) {
-                console.error("Error fetching app data:", e);
-                // In mock mode (browser preview), this will fail if backend isn't running.
-            }
-        };
-        fetchData();
+    } catch (e) {
+        console.error("Error refreshing app data:", e);
     }
   }, [currentUser]);
 
+  // Fetch data on login
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+
   // Centralized function to process messages (sent or received)
   const processIncomingMessage = useCallback((id: string, message: ChatMessage) => {
-      const messageExists = (msgs: ChatMessage[] | undefined) => msgs?.some(m => m.id === message.id);
-
-      // Helper to update list
-      const updateList = (list: any[], setList: React.Dispatch<React.SetStateAction<any[]>>) => {
-          setList(prev => {
-              const exists = prev.some(item => item.id === id);
-              if (!exists) return prev;
-              return prev.map(item => {
-                  if (item.id === id && !messageExists(item.messages)) {
-                      return { ...item, messages: [...(item.messages || []), message] };
-                  }
-                  return item;
-              });
-          });
-      };
-
-      updateList(activities, setActivities);
-      updateList(sharedOutings, setSharedOutings);
-      updateList(skillRequests, setSkillRequests);
-      updateList(bookingRequests, setBookingRequests);
-
-      // If chat is open, update the activeChat item ref
-      setActiveChat(prevChat => {
-          if (prevChat && prevChat.item.id === id) {
-             const updatedMessages = [...(prevChat.item.messages || [])];
-             if(!messageExists(updatedMessages)) {
-                 updatedMessages.push(message);
-                 return { ...prevChat, item: { ...prevChat.item, messages: updatedMessages } };
-             }
-          }
-          return prevChat;
-      });
-
       // Add notification if message is not from current user
       if (currentUser && message.senderId !== currentUser.id) {
            setNotifications(prev => [{
@@ -282,11 +248,12 @@ const App: React.FC = () => {
                message: `New message from ${message.senderName.split(' ')[0]}`,
                type: 'chat',
                read: false,
+               createdAt: new Date().toISOString(),
                timestamp: Date.now(),
                relatedId: id
            }, ...prev]);
       }
-  }, [currentUser, activities, sharedOutings, skillRequests, bookingRequests]);
+  }, [currentUser]);
 
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -296,6 +263,8 @@ const App: React.FC = () => {
       
       setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n).filter(n => !n.read));
       
+      await refreshData();
+
       if (notification.type === 'chat' && notification.relatedId) {
           const act = activities.find(a => a.id === notification.relatedId);
           if(act) { setActiveChat({type: 'activity', item: act}); return; }
@@ -311,6 +280,13 @@ const App: React.FC = () => {
 
       } else if (notification.type === 'booking') {
           navigateTo(Screen.Dashboard);
+          if (notification.relatedId) {
+             const booking = bookingRequests.find(b => b.id === notification.relatedId);
+             if (booking && booking.status === 'accepted') {
+                 setActiveChat({type: 'booking', item: booking});
+             }
+          }
+
       } else if (notification.type === 'outing') {
           navigateTo(Screen.ChildOutings);
       } else if (notification.type === 'skill') {
@@ -359,7 +335,6 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setError(null);
     setViewingNannyId(null);
-    // Clear data
     setActivities([]);
     setSharedOutings([]);
     setBookingRequests([]);
@@ -392,7 +367,6 @@ const App: React.FC = () => {
              localStorage.setItem('rememberedUser', email);
          }
          
-         // Logic for redirection
          if (data.user.userType === 'parent') {
             if (!data.user.location) navigateTo(Screen.ParentProfileForm);
             else navigateTo(Screen.Dashboard);
@@ -421,7 +395,6 @@ const App: React.FC = () => {
       const assessmentResult = await evaluateAnswers(finalAnswers, language);
       let updatedUser = { ...currentUser, assessmentResult };
       
-      // Persist assessment
       await userService.updateProfile({ assessmentResult });
 
       setCurrentUser(updatedUser);
@@ -437,7 +410,6 @@ const App: React.FC = () => {
   
   const handleSubscribe = async (plan: Plan) => {
     if (!currentUser) return;
-    // In real app, this redirects to Stripe
     const renewalDate = new Date();
     renewalDate.setMonth(renewalDate.getMonth() + 1);
     
@@ -568,7 +540,6 @@ const App: React.FC = () => {
           await reviewService.create(targetUserId, ratingValue, comment);
           setRatingTargetUser(null);
           alert(t('alert_rating_success'));
-          // Optional: Refresh data
           const nanniesRes = await userService.getNannies();
           setApprovedNannies(nanniesRes.filter(n => n.profile));
       } catch(e) {
@@ -598,13 +569,14 @@ const App: React.FC = () => {
         setBookingRequests(prev => [...prev, newBooking]);
         setBookingNannyInfo(null);
         alert(t('alert_booking_request_sent'));
+        refreshData(); 
     } catch(e) { alert("Error creating booking"); }
   };
   
   const handleUpdateBookingStatus = async (requestId: string, status: 'accepted' | 'declined') => {
       try {
           const updatedBooking = await bookingService.updateStatus(requestId, status);
-          setBookingRequests(prev => prev.map(req => req.id === requestId ? updatedBooking : req));
+          refreshData();
       } catch(e) { alert("Error updating booking"); }
   };
   
@@ -651,8 +623,9 @@ const App: React.FC = () => {
 
   const handleSendMessage = (id: string, messageText: string) => {
     if (!currentUser) return;
+    const tempId = `msg-${Date.now()}`;
     const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: tempId,
       senderId: currentUser.id,
       senderName: currentUser.fullName,
       senderPhoto: currentUser.photo || `https://i.pravatar.cc/150?img=${getAvatarId(currentUser.id)}`,
@@ -660,11 +633,30 @@ const App: React.FC = () => {
       timestamp: Date.now(),
     };
 
-    processIncomingMessage(id, newMessage);
-    socketService.sendMessage(id, newMessage);
+    // Optimistically add to UI with temp ID
+    setActiveChat(prev => {
+        if (prev && prev.item.id === id) {
+             return { ...prev, item: { ...prev.item, messages: [...(prev.item.messages || []), newMessage] } };
+        }
+        return prev;
+    });
+
+    // Send via socket and wait for acknowledgement (saved message with real ID)
+    socketService.sendMessage(id, newMessage, (savedMessage) => {
+        // Swap temp ID with real ID in state
+        setActiveChat(prev => {
+            if (prev && prev.item.id === id) {
+                 const updatedMessages = (prev.item.messages || []).map(msg => 
+                    msg.id === tempId ? savedMessage : msg
+                 );
+                 return { ...prev, item: { ...prev.item, messages: updatedMessages } };
+            }
+            return prev;
+        });
+    });
   };
 
-  const handleDeleteMessage = (contextId: string, messageId: string) => {
+  const handleDeleteMessage = async (contextId: string, messageId: string) => {
       // Optimistic UI update
       const filterMsgs = (item: any) => ({
           ...item,
@@ -680,11 +672,25 @@ const App: React.FC = () => {
       } else if (bookingRequests.some(b => b.id === contextId)) {
            setBookingRequests(prev => prev.map(b => b.id === contextId ? filterMsgs(b) : b));
       }
+
+      // Also update active chat if open
+      setActiveChat(prev => {
+          if (prev && prev.item.id === contextId) {
+              return { ...prev, item: filterMsgs(prev.item) };
+          }
+          return prev;
+      });
+
+      try {
+          await chatService.deleteMessage(messageId);
+      } catch (e) {
+          console.error("Failed to delete message", e);
+          alert("Failed to delete message from server");
+      }
   };
 
-  const handleDeleteAllMessages = (contextId: string) => {
-       // Optimistic UI update
-      const clearMsgs = (item: any) => ({ ...item, messages: [] });
+  const handleDeleteAllMessages = async (contextId: string) => {
+       const clearMsgs = (item: any) => ({ ...item, messages: [] });
        if (activities.some(a => a.id === contextId)) {
           setActivities(prev => prev.map(a => a.id === contextId ? clearMsgs(a) : a));
       } else if (sharedOutings.some(o => o.id === contextId)) {
@@ -693,6 +699,20 @@ const App: React.FC = () => {
            setSkillRequests(prev => prev.map(s => s.id === contextId ? clearMsgs(s) : s));
       } else if (bookingRequests.some(b => b.id === contextId)) {
            setBookingRequests(prev => prev.map(b => b.id === contextId ? clearMsgs(b) : b));
+      }
+      
+      setActiveChat(prev => {
+          if (prev && prev.item.id === contextId) {
+              return { ...prev, item: clearMsgs(prev.item) };
+          }
+          return prev;
+      });
+
+      try {
+          await chatService.deleteAllMessages(contextId);
+      } catch (e) {
+          console.error("Failed to delete all messages", e);
+          alert("Failed to delete messages from server");
       }
   };
 
@@ -754,6 +774,28 @@ const App: React.FC = () => {
       alert("User reported. Our team will review the case.");
   };
 
+  const handleCancelBooking = async (id: string) => {
+    if (window.confirm("Are you sure you want to cancel this request?")) {
+        try {
+            await bookingService.delete(id);
+            setBookingRequests(prev => prev.filter(b => b.id !== id));
+        } catch(e) {
+            alert("Failed to cancel booking.");
+        }
+    }
+  };
+
+  const handleClearAllBookings = async () => {
+    if (window.confirm("Are you sure you want to clear all booking history? This cannot be undone.")) {
+        try {
+            await bookingService.deleteAll();
+            setBookingRequests([]);
+        } catch(e) {
+            alert("Failed to clear history.");
+        }
+    }
+  };
+
 
   const currentUserAddedNannies = useMemo(() => {
     if (currentUser?.userType !== 'parent') return [];
@@ -783,11 +825,12 @@ const App: React.FC = () => {
       if (currentUser.userType === 'nanny') {
          return tasks.filter(task => task.nannyId === currentUser.id);
       } else {
-         return tasks.filter(task => task.parentId === currentUser.id); // Parents see tasks they assigned?
+         return tasks.filter(task => task.parentId === currentUser.id);
       }
   }, [currentUser, tasks]);
 
   const renderScreen = () => {
+    // ... (same as previous response)
     if (viewingNannyId && currentScreen === Screen.NannyProfileDetail) {
       const nanny = approvedNannies.find(n => n.id === viewingNannyId);
       const hasPendingRequest = currentUser 
@@ -828,7 +871,7 @@ const App: React.FC = () => {
       case Screen.SubscriptionStatus:
         return currentUser ? <SubscriptionStatusScreen user={currentUser} onCancelSubscription={handleCancelSubscription} onBack={goBack} /> : null;
       case Screen.Dashboard:
-        return currentUser ? <DashboardScreen user={currentUser} addedNannies={currentUserAddedNannies} bookingRequests={userBookingRequests} allTasks={tasks} userTasks={userTasks} sharedOutings={sharedOutings} skillRequests={skillRequests} onCancelSubscription={handleCancelSubscription} onLogout={handleLogout} onSearchNannies={() => navigateTo(Screen.NannyListing)} onRemoveNanny={handleRemoveNanny} onContactNanny={handleContactAttempt} onViewNanny={handleViewNannyProfile} onRateNanny={handleOpenRatingModal} onUpdateBookingStatus={handleUpdateBookingStatus} onOpenTaskModal={handleOpenTaskModal} onUpdateTaskStatus={handleUpdateTaskStatus} onViewActivities={() => navigateTo(Screen.CommunityActivities)} onViewOutings={() => navigateTo(Screen.ChildOutings)} onUpdateOutingRequestStatus={handleUpdateOutingRequestStatus} onViewSkillMarketplace={() => navigateTo(Screen.SkillMarketplace)} onEditProfile={handleEditProfile} onOpenBookingChat={(booking) => setActiveChat({ type: 'booking', item: booking })} /> : null;
+        return currentUser ? <DashboardScreen user={currentUser} addedNannies={currentUserAddedNannies} bookingRequests={userBookingRequests} allTasks={tasks} userTasks={userTasks} sharedOutings={sharedOutings} skillRequests={skillRequests} onCancelSubscription={handleCancelSubscription} onLogout={handleLogout} onSearchNannies={() => navigateTo(Screen.NannyListing)} onRemoveNanny={handleRemoveNanny} onContactNanny={handleContactAttempt} onViewNanny={handleViewNannyProfile} onRateNanny={handleOpenRatingModal} onUpdateBookingStatus={handleUpdateBookingStatus} onOpenTaskModal={handleOpenTaskModal} onUpdateTaskStatus={handleUpdateTaskStatus} onViewActivities={() => navigateTo(Screen.CommunityActivities)} onViewOutings={() => navigateTo(Screen.ChildOutings)} onUpdateOutingRequestStatus={handleUpdateOutingRequestStatus} onViewSkillMarketplace={() => navigateTo(Screen.SkillMarketplace)} onEditProfile={handleEditProfile} onOpenBookingChat={(booking) => setActiveChat({ type: 'booking', item: booking })} onCancelBooking={handleCancelBooking} onClearAllBookings={handleClearAllBookings} /> : null;
       case Screen.NannyListing:
         return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
       case Screen.CommunityActivities:
