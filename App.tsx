@@ -29,6 +29,7 @@ import CreateSkillRequestModal from './components/CreateSkillRequestModal';
 import MakeSkillOfferModal from './components/MakeSkillOfferModal';
 import ChatModal from './components/ChatModal';
 import SubscriptionStatusScreen from './components/SubscriptionStatusScreen';
+// Import Ref type
 import AiAssistant, { AiAssistantRef } from './components/AiAssistant';
 import SettingsModal from './components/SettingsModal';
 import { socketService } from './services/socketService';
@@ -128,6 +129,8 @@ const App: React.FC = () => {
   const [activeChat, setActiveChat] = useState<{ type: 'activity' | 'outing' | 'skill' | 'booking', item: Activity | SharedOuting | SkillRequest | BookingRequest } | null>(null);
   const [noiseReductionEnabled, setNoiseReductionEnabled] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  
+  // Create a ref for the AI Assistant
   const aiAssistantRef = useRef<AiAssistantRef>(null);
 
   useEffect(() => {
@@ -172,13 +175,26 @@ const App: React.FC = () => {
       checkAuth();
   }, []);
 
+  // Global Keyboard Shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Ignore shortcuts if typing in an input
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
-      if (e.shiftKey && e.key.toLowerCase() === 'n') { e.preventDefault(); aiAssistantRef.current?.openChat(); }
-      if (e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); aiAssistantRef.current?.toggleVisibility(); }
+
+      // Shift + N: Open New AI Chat (if visible but closed)
+      if (e.shiftKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        aiAssistantRef.current?.openChat();
+      }
+      
+      // Shift + A: Toggle AI Assistant Visibility
+      if (e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        aiAssistantRef.current?.toggleVisibility();
+      }
     };
+
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
@@ -250,7 +266,7 @@ const App: React.FC = () => {
   const handleCloseCreateActivityModal = () => setIsCreateActivityModalOpen(false);
   const handleCreateActivity = async (activityData: any) => { if (!currentUser) return; try { const newActivity = await activityService.create(activityData); setActivities(prev => [newActivity, ...prev]); handleCloseCreateActivityModal(); } catch(e) { alert("Error creating activity"); } };
   const handleJoinActivity = async (activityId: string) => { if (!currentUser) return; try { const updatedActivity = await activityService.join(activityId); setActivities(prev => prev.map(act => act.id === activityId ? updatedActivity : act)); } catch(e) { alert("Error joining activity"); } };
-  const handleSendMessage = (id: string, messageText: string) => { if (!currentUser) return; const tempId = `msg-${Date.now()}`; const newMessage: ChatMessage = { id: tempId, senderId: currentUser.id, senderName: currentUser.fullName, senderPhoto: currentUser.photo || `https://i.pravatar.cc/150?img=${getAvatarId(currentUser.id)}`, text: messageText, timestamp: Date.now(), }; setActiveChat(prev => { if (prev && prev.item.id === id) { return { ...prev, item: { ...prev.item, messages: [...(prev.item.messages || []), newMessage] } }; } return prev; }); socketService.sendMessage(id, newMessage, (savedMessage) => { setActiveChat(prev => { if (prev && prev.item.id === id) { const updatedMessages = (prev.item.messages || []).map(msg => msg.id === tempId ? savedMessage : msg); return { ...prev, item: { ...prev.item, messages: updatedMessages } }; } return prev; }); }); };
+  const handleSendMessage = (id: string, messageText: string) => { if (!currentUser) return; const tempId = `msg-${Date.now()}`; const newMessage: ChatMessage = { id: tempId, senderId: currentUser.id, senderName: currentUser.fullName, senderPhoto: currentUser.photo || `https://i.pravatar.cc/150?img=${getAvatarId(currentUser.id)}`, text: messageText, timestamp: Date.now(), status: 'sent' }; setActiveChat(prev => { if (prev && prev.item.id === id) { return { ...prev, item: { ...prev.item, messages: [...(prev.item.messages || []), newMessage] } }; } return prev; }); socketService.sendMessage(id, newMessage, (savedMessage) => { setActiveChat(prev => { if (prev && prev.item.id === id) { const updatedMessages = (prev.item.messages || []).map(msg => msg.id === tempId ? savedMessage : msg); return { ...prev, item: { ...prev.item, messages: updatedMessages } }; } return prev; }); }); };
   const handleDeleteMessage = async (contextId: string, messageId: string) => { const filterMsgs = (item: any) => ({ ...item, messages: (item.messages || []).filter((m: ChatMessage) => m.id !== messageId) }); if (activities.some(a => a.id === contextId)) setActivities(prev => prev.map(a => a.id === contextId ? filterMsgs(a) : a)); else if (sharedOutings.some(o => o.id === contextId)) setSharedOutings(prev => prev.map(o => o.id === contextId ? filterMsgs(o) : o)); else if (skillRequests.some(s => s.id === contextId)) setSkillRequests(prev => prev.map(s => s.id === contextId ? filterMsgs(s) : s)); else if (bookingRequests.some(b => b.id === contextId)) setBookingRequests(prev => prev.map(b => b.id === contextId ? filterMsgs(b) : b)); setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: filterMsgs(prev.item) }; return prev; }); try { await chatService.deleteMessage(messageId); } catch (e) { alert("Failed to delete message"); } };
   const handleDeleteAllMessages = async (contextId: string) => { const clearMsgs = (item: any) => ({ ...item, messages: [] }); if (activities.some(a => a.id === contextId)) setActivities(prev => prev.map(a => a.id === contextId ? clearMsgs(a) : a)); else if (sharedOutings.some(o => o.id === contextId)) setSharedOutings(prev => prev.map(o => o.id === contextId ? clearMsgs(o) : o)); else if (skillRequests.some(s => s.id === contextId)) setSkillRequests(prev => prev.map(s => s.id === contextId ? clearMsgs(s) : s)); else if (bookingRequests.some(b => b.id === contextId)) setBookingRequests(prev => prev.map(b => b.id === contextId ? clearMsgs(b) : b)); setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: clearMsgs(prev.item) }; return prev; }); try { await chatService.deleteAllMessages(contextId); } catch (e) { alert("Failed to delete messages"); } };
   const handleOpenCreateOutingModal = () => setIsCreateOutingModalOpen(true);
@@ -375,7 +391,15 @@ const App: React.FC = () => {
 
       <Header isAuthenticated={!!currentUser} user={currentUser} onLogout={handleLogout} onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined} onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined} onOpenSettings={() => setIsSettingsModalOpen(true)} notifications={currentUser ? notifications.filter(n => !n.read) : []} onClearNotifications={handleClearNotifications} onNotificationClick={handleNotificationClick} noiseReductionEnabled={noiseReductionEnabled} />
       <main className="w-full max-w-3xl mx-auto p-4 sm:p-6 md:p-8 flex-grow"><div className="bg-[var(--bg-card)] rounded-2xl shadow-lg overflow-hidden transition-all duration-500">{renderScreen()}</div></main>
-      {showAiAssistant && currentUser && <AiAssistant ref={aiAssistantRef} user={currentUser} currentScreen={currentScreen} />}
+      
+      {showAiAssistant && currentUser && (
+          <AiAssistant 
+            ref={aiAssistantRef} 
+            user={currentUser} 
+            currentScreen={currentScreen} 
+          />
+      )}
+      
       <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>{t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
     </div>
   );

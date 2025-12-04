@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Activity, ActivityCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import LocationAutocomplete from './LocationAutocomplete';
 
 interface CreateActivityModalProps {
   onClose: () => void;
@@ -71,13 +71,11 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({ onClose, onSu
 
                          <div>
                             <label htmlFor="location" className={labelStyles}>{t('activity_label_location')}</label>
-                            <input
-                                type="text"
-                                id="location"
+                            <LocationAutocomplete
                                 value={location}
-                                onChange={e => setLocation(e.target.value)}
-                                required
+                                onChange={setLocation}
                                 className={inputStyles}
+                                placeholder="Where is this happening?"
                             />
                         </div>
 

@@ -187,7 +187,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
                 <LocationAutocomplete 
                     value={location}
                     onChange={setLocation}
-                    placeholder="Search city, address..."
+                    placeholder="Search city (e.g. Paris, London)..."
                     className={getInputClass(location)}
                 />
             </div>

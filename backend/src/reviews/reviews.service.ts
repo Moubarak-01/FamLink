@@ -20,7 +20,7 @@ export class ReviewsService {
     });
     const savedReview = await review.save();
 
-    // Feature 3: Update the target user's average rating immediately
+    // Update the target user's average rating AND count immediately
     await this.updateUserRating(targetId);
 
     return savedReview;
@@ -38,8 +38,10 @@ export class ReviewsService {
     // Round to 1 decimal place
     const average = Math.round((total / reviews.length) * 10) / 10;
 
+    // UPDATE HERE: Save both rating and ratingCount
     await this.userModel.findByIdAndUpdate(userId, { 
-        'profile.rating': average 
+        'profile.rating': average,
+        'profile.ratingCount': reviews.length 
     });
   }
 }

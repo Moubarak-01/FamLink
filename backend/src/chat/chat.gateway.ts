@@ -80,8 +80,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('send_message')
-  async handleMessage(@MessageBody() data: { roomId: string, message: any }, @ConnectedSocket() client: Socket) {
-    const savedMessage = await this.chatService.saveMessage(data.roomId, data.message.senderId, data.message.text);
+  async handleMessage(@MessageBody() data: { roomId: string, message: { senderId: string, text: string, mac: string } }, @ConnectedSocket() client: Socket) {
+    // UPDATE 1: Pulled text (ciphertext) and mac from data.message
+    const { senderId, text, mac } = data.message;
+    
+    // UPDATE 2: Passed mac to saveMessage
+    const savedMessage = await this.chatService.saveMessage(data.roomId, senderId, text, mac);
     
     let initialStatus = 'sent';
     const receiverIdStr = savedMessage.receiverId ? savedMessage.receiverId.toString() : null;
@@ -98,6 +102,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const payload = {
       id: savedMessage._id.toString(),
       text: savedMessage.text,
+      mac: savedMessage.mac, // UPDATE 3: Included mac in the outgoing payload
       senderId: savedMessage.senderId['_id'].toString(),
       senderName: savedMessage.senderId['fullName'],
       senderPhoto: savedMessage.senderId['photo'],

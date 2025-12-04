@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -13,6 +12,7 @@ import { PaymentModule } from './payment/payment.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UserTasksModule } from './user-tasks/user-tasks.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -39,6 +39,7 @@ import { UserTasksModule } from './user-tasks/user-tasks.module';
     NotificationsModule,
     ReviewsModule,
     UserTasksModule,
+    LocationsModule, 
   ],
   controllers: [],
   providers: [],

@@ -1,5 +1,6 @@
 import { api } from './api';
 import { ChatMessage } from '../types';
+import { cryptoService } from './cryptoService'; // Import new service
 
 export const chatService = {
   async getHistory(roomId: string): Promise<ChatMessage[]> {
@@ -10,14 +11,21 @@ export const chatService = {
         // msg.senderId is populated with { _id, fullName, photo } from the backend
         const sender = typeof msg.senderId === 'object' ? msg.senderId : {}; 
         
-        return {
+        const transformedMsg: ChatMessage = {
             id: msg.id || msg._id,
             senderId: sender.id || sender._id || msg.senderId || 'unknown',
             senderName: sender.fullName || 'Unknown',
             senderPhoto: sender.photo || '',
             text: msg.text,
+            mac: msg.mac, // Include mac from backend
             timestamp: msg.createdAt || Date.now(),
+            status: msg.status
         };
+
+        // DECRYPTION STEP for historical messages
+        transformedMsg.plaintext = cryptoService.decryptMessage(transformedMsg);
+        
+        return transformedMsg;
     });
   },
 

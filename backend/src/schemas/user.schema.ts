@@ -51,6 +51,9 @@ export class NannyProfile {
 
   @Prop({ default: 0 })
   rating: number;
+
+  @Prop({ default: 0 }) // <-- ADDED THIS FIELD
+  ratingCount: number;
 }
 
 @Schema()

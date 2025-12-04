@@ -13,8 +13,8 @@ const NannyCard: React.FC<{ nanny: User, onViewProfile: (nannyId: string) => voi
     if (!nanny.profile) return null;
 
     const { id, fullName, profile } = nanny;
-    // FIX: Property 'photo' does not exist on type 'Partial<NannyProfile>'. It exists on User.
-    const { rating, location, description, experience, availability } = profile;
+    // FIX: Destructure ratingCount
+    const { rating, ratingCount, location, description, experience, availability } = profile; 
 
     return (
         <div onClick={() => onViewProfile(id)} className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden flex flex-col sm:flex-row items-center gap-6 p-5 border border-[var(--border-color)] hover:shadow-xl hover:border-[var(--border-accent)] cursor-pointer transition-all duration-300">
@@ -24,10 +24,11 @@ const NannyCard: React.FC<{ nanny: User, onViewProfile: (nannyId: string) => voi
                     <h3 className="text-xl font-bold text-[var(--text-primary)]">{fullName}</h3>
                     <div className="flex items-center gap-1 text-yellow-500 font-bold">
                         <span>⭐</span>
-                        <span>{rating > 0 ? `${rating.toFixed(1)} (${nanny.ratings?.length || 0})` : t('nanny_card_new')}</span>
+                        {/* UPDATE HERE: Use ratingCount instead of ratings.length */}
+                        <span>{rating > 0 ? `${rating.toFixed(1)} (${ratingCount || 0})` : t('nanny_card_new')}</span>
                     </div>
                 </div>
-                <p className="text-sm text-[var(--text-light)] font-medium mb-2">{location}</p>
+                <p className="text-sm text-[var(--text-light)] font-medium mb-2">{typeof location === 'string' ? location : location.address}</p>
                 <p className="text-[var(--text-secondary)] text-sm mb-3 line-clamp-2">{description}</p>
                 <div className="flex flex-wrap gap-2 justify-center sm:justify-start text-xs">
                     <span className="bg-purple-100 text-purple-700 font-semibold px-2 py-1 rounded-full">🕒 {experience} {t('nanny_card_years_experience')}</span>
@@ -52,7 +53,7 @@ const NannyListingScreen: React.FC<NannyListingScreenProps> = ({ nannies, onBack
     const lowercasedQuery = searchQuery.toLowerCase();
     return nannies.filter(nanny =>
       nanny.fullName.toLowerCase().includes(lowercasedQuery) ||
-      (nanny.profile?.location && nanny.profile.location.toLowerCase().includes(lowercasedQuery))
+      (nanny.profile?.location && (typeof nanny.profile.location === 'string' ? nanny.profile.location : nanny.profile.location.address).toLowerCase().includes(lowercasedQuery))
     );
   }, [nannies, searchQuery]);
 

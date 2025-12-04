@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SkillRequest, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import LocationAutocomplete from './LocationAutocomplete';
 
 interface CreateSkillRequestModalProps {
   onClose: () => void;
@@ -59,7 +60,12 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                         </div>
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('skill_request_label_location')}</label>
-                            <input type="text" id="location" value={location} onChange={e => setLocation(e.target.value)} required className={inputStyles} />
+                            <LocationAutocomplete
+                                value={location}
+                                onChange={setLocation}
+                                className={inputStyles}
+                                placeholder="City or Neighborhood"
+                            />
                         </div>
                         <div>
                             <label htmlFor="budget" className={labelStyles}>{t('skill_request_label_budget')}</label>

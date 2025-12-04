@@ -8,6 +8,7 @@ interface AiAssistantProps {
   currentScreen: Screen;
 }
 
+// Define the ref interface
 export interface AiAssistantRef {
     openChat: () => void;
     toggleVisibility: () => void;
@@ -50,10 +51,14 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   const apiKey = getApiKey();
   const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
 
-  // Expose methods to parent
+  // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
-    openChat: () => { if (isVisible) setIsOpen(true); },
-    toggleVisibility: () => { setIsVisible(prev => !prev); }
+    openChat: () => {
+        if (isVisible) setIsOpen(true);
+    },
+    toggleVisibility: () => {
+        setIsVisible(prev => !prev);
+    }
   }));
 
   const displayLanguageMap: { [key: string]: string } = {

@@ -13,7 +13,8 @@ export class ChatService {
     @InjectModel('SkillTask') private skillTaskModel: Model<SkillTaskDocument>,
   ) {}
 
-  async saveMessage(roomId: string, senderId: string, text: string): Promise<MessageDocument> {
+  // UPDATE: Added 'mac' to function signature and model instantiation
+  async saveMessage(roomId: string, senderId: string, text: string, mac: string): Promise<MessageDocument> {
     let receiverId = null;
     const booking = await this.bookingModel.findById(roomId).exec();
     if (booking) {
@@ -28,7 +29,8 @@ export class ChatService {
          }
     }
 
-    const message = new this.messageModel({ roomId, senderId, receiverId, text, status: 'sent' });
+    // UPDATE: Passed 'mac' to the new Message model
+    const message = new this.messageModel({ roomId, senderId, receiverId, text, mac, status: 'sent' });
     return message.save();
   }
 

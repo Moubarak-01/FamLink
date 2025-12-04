@@ -16,8 +16,11 @@ export class Message {
   receiverId: string;
 
   @Prop({ required: true })
-  text: string;
+  text: string; // Stores Ciphertext
   
+  @Prop({ required: true }) // NEW: Message Authentication Code
+  mac: string;
+
   @Prop({ enum: ['sent', 'delivered', 'seen'], default: 'sent' })
   status: string;
 

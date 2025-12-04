@@ -31,7 +31,8 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
     }
     
     const { id, fullName, email, profile, photo } = nanny;
-    const { phone, location, experience, availability, certifications, description, rating, availableDates } = profile;
+    // FIX: Destructure ratingCount
+    const { phone, location, experience, availability, certifications, description, rating, ratingCount, availableDates } = profile;
 
     const DetailItem: React.FC<{label: string, value: string | string[], icon: string}> = ({ label, value, icon }) => (
         <div className="bg-[var(--bg-card-subtle)] p-4 rounded-lg">
@@ -48,8 +49,8 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
         </div>
     );
 
-    // Correctly formatted Google Maps Embed URL
-    const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(location || '')}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+    const locationString = typeof location === 'string' ? location : location.address;
+    const mapUrl = `https://maps.google.com/maps?q=$${encodeURIComponent(locationString || '')}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
 
     return (
         <div className="p-6 sm:p-8">
@@ -60,7 +61,8 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
                     <p className="text-[var(--text-light)]">{email}</p>
                     <div className="mt-2 flex items-center justify-center sm:justify-start gap-1 text-yellow-500 font-bold">
                         <span>⭐</span>
-                        <span>{rating > 0 ? `${rating.toFixed(1)} / 5.0` : t('nanny_card_new')}</span>
+                        {/* UPDATE HERE: Use ratingCount */}
+                        <span>{rating > 0 ? `${rating.toFixed(1)} (${ratingCount || 0} reviews)` : t('nanny_card_new')}</span>
                     </div>
                 </div>
                 {onReportUser && (
@@ -81,9 +83,9 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <DetailItem label={t('nanny_profile_experience')} value={`${experience} ${t('nanny_profile_years')}`} icon="🕒" />
-                <DetailItem label={t('nanny_profile_availability')} value={availability} icon="📅" />
-                <DetailItem label={t('nanny_profile_location')} value={location} icon="📍" />
+                <DetailItem label={t('nanny_profile_experience')} value={`${experience} ${t('nanny_profile_years')}`} icon="💼" />
+                <DetailItem label={t('nanny_profile_availability')} value={availability} icon="🕒" />
+                <DetailItem label={t('nanny_profile_location')} value={locationString} icon="📍" />
                 <DetailItem label={t('nanny_profile_certifications')} value={certifications} icon="📜" />
             </div>
 

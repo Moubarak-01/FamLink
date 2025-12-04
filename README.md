@@ -1,6 +1,10 @@
+Here's the updated README.md incorporating all the requested changes, including the dark mode display fixes, the new keyboard shortcuts, and the End-to-End Encryption features.
+
+Markdown
+
 # FamLink ✨
 
-**FamLink** is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
+FamLink is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
 
 ---
 
@@ -13,31 +17,31 @@ The application is fully architected and implemented with a **React Frontend** a
 
 ---
 
-## 🆕 Latest Implementations (v1.3 - Community & Safety Update)
+## 🆕 Latest Implementations (v1.5 - UI & Encryption Update)
 
-We have recently added robust real-time notification systems and enhanced data persistence.
+This release focuses on user experience enhancements, including better dark mode support and the introduction of End-to-End Encryption logic.
 
-### 1. Optimistic Nanny Removal
-* **Feature:** Instant UI feedback when removing nannies from the dashboard. The UI updates immediately before the server response, reverting only if an error occurs.
+### 1. UI Refinements & Dark Mode Fixes
+* **Improved Settings Display:** Fixed visibility issues in dark mode for settings modals and toggle switches.
+* **Adaptive Text:** Modals now correctly adapt their text color based on the active theme (Light/Dark).
 
-### 2. Advanced Booking Logic
-* **Feature:** Prevents double bookings. A parent cannot send a new request for a date if they already have an accepted booking with that nanny for the same date. Also validates against the nanny's set availability.
+### 2. Keyboard Shortcuts
+We have added global keyboard shortcuts to improve accessibility and navigation speed:
+* **`Shift + N`**: Open a new AI Assistant chat session instantly.
+* **`Shift + A`**: Toggle the AI Assistant visibility (hide/show) on the screen.
+*(Note: These shortcuts are now listed in the Settings menu for easy reference)*
 
-### 3. Smart Reviews System
-* **Feature:** Auto-calculates average ratings. When a new review is submitted, the backend immediately updates the nanny's average score in the database.
+### 3. End-to-End Encryption (E2E) Architecture
+* **Secure Messaging:** Implemented a robust cryptographic service layer (`cryptoService.ts`).
+* **Client-Side Encryption:** Messages are now encrypted on the device before being sent via WebSocket. The server only sees and stores the ciphertext.
+* **Decryption:** Incoming messages are decrypted locally on the user's device, ensuring privacy.
+* **Integrity Check:** Added Message Authentication Code (MAC) verification to prevent tampering.
 
-### 4. Inclusive UI Text
-* **Feature:** Changed "Moms" to "Parents" throughout the application to foster a more inclusive community environment.
-
-### 5. Task Expiration & Persistence
-* **Feature:** Completed tasks now auto-expire after 7 days to keep the dashboard clean. Users can optionally choose to "Keep" a completed task permanently.
-
-### 6. Message Read Receipts (WhatsApp-style)
-* **Feature:** Real-time chat now supports status indicators:
-    * ✓ Sent (Gray)
-    * ✓✓ Delivered (Gray)
-    * ✓✓ Seen (Blue)
-* **Tech:** Implemented via Socket.io room events tracking when a user joins a chat room.
+### 4. Persistent Message Status (WhatsApp-style)
+* **Feature:** Message status relies on database persistence and user connection state.
+    * ✓ **Sent** (Gray): Message successfully saved to the server database.
+    * ✓✓ **Delivered** (Gray): Recipient user has successfully connected to the server.
+    * ✓✓ **Seen** (Blue): Recipient user has the chat window open and focused.
 
 ---
 
@@ -49,6 +53,7 @@ We have recently added robust real-time notification systems and enhanced data p
 * **Real-time**: Socket.io (WebSockets) for Chat and Notifications.
 * **AI**: Google Gemini API (`@google/genai`) for Nanny Assessment and Assistant.
 * **Localization**: Custom i18n (English, French, Spanish, Japanese, Chinese, Arabic).
+* **Security**: Custom E2E Encryption logic (Mock/Simulated for demo).
 
 ---
 
@@ -64,7 +69,7 @@ Create a file named `.env.local` in the project root.
 # Required for AI Assessment and Assistant
 VITE_GEMINI_API_KEY=AIzaSyC... (Your Google Gemini API Key)
 2. Backend Environment (/backend Directory)
-Create a file named .env inside the backend/ folder.
+Create a file named .env inside the /backend/ folder.
 
 Code snippet
 
@@ -73,7 +78,7 @@ JWT_SECRET=super_secure_secret_key_change_this
 PORT=3001
 STRIPE_SECRET_KEY=sk_test_placeholder_key
 📦 Installation & Setup
-Prerequisites
+Prerequisites:
 Node.js (v16 or higher)
 
 MongoDB (Running locally or a cloud Atlas URI)
@@ -84,17 +89,7 @@ Navigate to the backend folder:
 Bash
 
 cd backend
-Install Dependencies:
-
-Bash
-
 npm install
-Ensure .env exists (see Configuration section above).
-
-Start the Server:
-
-Bash
-
 npm run start:dev
 The server will start on http://localhost:3001.
 
@@ -105,44 +100,13 @@ Bash
 
 cd ..
 # (Or just stay in the root if you haven't entered backend/)
-Install Dependencies:
-
-Bash
-
 npm install
-Start the Development Server:
-
-Bash
-
 npm run dev
 The app will open at http://localhost:5173.
 
-🔧 Troubleshooting & Common Fixes
-If you encounter "Signup failed", "Network Error", or AI issues, check the following:
-
-"Signup failed" / Network Error
-
-Cause: The Frontend cannot talk to the Backend.
-
-Fix 1 (Server Status): Ensure the NestJS server is running (npm run start:dev in /backend) and listening on port 3001.
-
-Fix 2 (Database): Ensure MongoDB is running (mongod). If the backend fails to start, it's usually a database connection error.
-
-Fix 3 (CORS): The backend is configured to allow CORS from http://localhost:5173. If you are running on a different port, check backend/src/main.ts.
-
-AI Assistant / Assessment Not Working
-
-Cause: Missing or incorrectly named API Key.
-
-Fix: In your root .env.local file, ensure the key is named VITE_GEMINI_API_KEY. Old configurations using just GEMINI_API_KEY will not work in the browser due to Vite security restrictions.
-
-"Cannot connect to server" Message
-
-The app includes an automatic fallback to "Mock Mode" for sockets if the backend is down, but API calls (Login/Signup) will fail with a specific message if the server is unreachable.
-
 🌟 Features Overview
 1. 🛡️ Safety & Trust
-AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety before they can create a profile.
+AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety.
 
 Authentication: Secure JWT-based login and signup for Parents and Nannies.
 
@@ -150,6 +114,8 @@ Authentication: Secure JWT-based login and signup for Parents and Nannies.
 Context-Aware: A floating chatbot (Gemini 2.5 Flash) that helps users navigate the app and answers parenting questions.
 
 Multilingual: Supports 6 languages natively.
+
+Shortcuts: Use Shift + A to toggle visibility.
 
 3. 👥 Community & Marketplace
 Mom-to-Mom Activities: Schedule playdates, walks, and workouts.
@@ -159,38 +125,31 @@ Child Outing Sharing: Coordinate group outings to share costs and supervision.
 Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the community.
 
 4. 💼 Management Dashboard
-Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete) with cancellation options.
+Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete).
 
-Real-time Chat: Instant messaging for activities, outings, and bookings. Now supports message history persistence and deletion.
+Real-time Chat: Instant messaging for activities, outings, and bookings with robust persistence and E2E encryption.
 
-Notifications: Real-time alerts for new bookings, tasks, chat messages, and status updates with direct navigation logic.
+Notifications: Real-time alerts for all key events.
 
 Tasks: Assign specific to-do items to hired nannies.
 
 📂 Folder Structure
 Bash
 
-/                       # Frontend Root
-  ├── src/
-  │   ├── components/   # React UI Components
-  │   │   ├── dashboard/ # Split dashboard components (ParentDashboard, NannyDashboard, Widgets)
-  │   │   └── ...       # Other components (ChatModal, etc.)
-  │   ├── services/     # API Clients (Axios, Socket.io, chatService)
-  │   ├── contexts/     # React Contexts (Theme, Language)
-  │   ├── locales/      # Translation files
-  │   ├── hooks/        # Custom Hooks (useAppLogic for centralized logic)
-  │   ├── App.tsx       # Main Logic & Routing
-  │   └── types.ts      # TypeScript Interfaces
-  ├── backend/          # Backend Root (NestJS)
-  │   ├── src/
-  │   │   ├── schemas/      # MongoDB Models (User, Activity, Message, etc.)
-  │   │   ├── auth/         # Authentication Module
-  │   │   ├── chat/         # WebSocket Gateway, Chat Controller & Service
-  │   │   ├── bookings/     # Booking Logic & Notifications
-  │   │   ├── notifications/# Real-time Alert System
-  │   │   ├── [modules]/    # Feature Modules (Activities, Outings, etc.)
-  │   │   ├── app.module.ts # Root Module
-  │   │   └── main.ts       # Entry Point
-  └── package.json      # Frontend Dependencies
+/                             # Frontend Root
+ ├── src/
+ │   ├── components/           # React UI Components
+ │   ├── services/             # API Clients (Axios, Socket.io, chatService, cryptoService)
+ │   ├── contexts/             # React Contexts (Theme, Language)
+ │   ├── hooks/                # Custom Hooks (useAppLogic, useSocketListeners)
+ │   ├── App.tsx               # Main Logic & Routing
+ │   └── types.ts              # TypeScript Interfaces (Updated for E2E)
+ ├── backend/                    # Backend Root (NestJS)
+ │   ├── src/
+ │   │   ├── schemas/          # MongoDB Models (Updated for E2E MAC field)
+ │   │   ├── chat/             # WebSocket Gateway, Chat Controller & Service
+ │   │   ├── notifications/    # Real-time Alert System
+ │   │   └── [modules]/        # Feature Modules (Auth, Bookings, Activities, etc.)
+ └── package.json            # Frontend Dependencies
 📄 License
 This project is licensed under the MIT License.

@@ -1,3 +1,5 @@
+// types.ts
+
 export interface Question {
   id: number;
   type: 'single-choice' | 'multiple-choice' | 'open-ended';
@@ -26,6 +28,7 @@ export interface LocationData {
 export interface NannyProfile {
   phone: string;
   rating: number;
+  ratingCount: number; // <-- ADDED THIS FIELD
   location: LocationData | string; 
   description: string;
   experience: string;
@@ -48,7 +51,9 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderPhoto: string;
-  text: string;
+  text: string; // <-- Now stores ciphertext
+  plaintext?: string; // <-- New field for decrypted message
+  mac?: string; // <-- New field for Message Authentication Code
   timestamp: number;
   status: MessageStatus;
 }

@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { SharedOuting } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import LocationAutocomplete from './LocationAutocomplete';
 
 interface CreateOutingModalProps {
   onClose: () => void;
@@ -48,7 +48,12 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
                         </div>
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('outing_label_location')}</label>
-                            <input type="text" id="location" value={location} onChange={e => setLocation(e.target.value)} required className={inputStyles} />
+                             <LocationAutocomplete
+                                value={location}
+                                onChange={setLocation}
+                                className={inputStyles}
+                                placeholder="Where are you going?"
+                            />
                         </div>
                         
                         <div className="flex items-center mt-2">

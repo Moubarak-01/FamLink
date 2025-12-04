@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage, Notification } from '../types';
 import { authService } from './authService';
+import { cryptoService } from './cryptoService'; // Import new service
 
 class SocketService {
   private socket: Socket | null = null;
@@ -38,7 +39,12 @@ class SocketService {
       this.connected = false;
     });
 
-    this.socket.on('receive_message', (data) => this.messageHandlers.forEach(h => h(data)));
+    // DECRYPTION STEP for incoming message
+    this.socket.on('receive_message', (data) => {
+      data.message.plaintext = cryptoService.decryptMessage(data.message);
+      this.messageHandlers.forEach(h => h(data));
+    });
+    
     this.socket.on('message_status_update', (data) => this.statusHandlers.forEach(h => h(data)));
     this.socket.on('messages_status_update', (data) => this.statusHandlers.forEach(h => h(data)));
     this.socket.on('user_presence', (data) => this.presenceHandlers.forEach(h => h(data)));
@@ -64,8 +70,25 @@ class SocketService {
 
   sendMessage(roomId: string, message: ChatMessage, callback?: (savedMessage: ChatMessage) => void) {
     if (this.socket && this.connected) {
-      this.socket.emit('send_message', { roomId, message }, (response: any) => {
-          if (callback && response) callback(response);
+      // ENCRYPTION STEP
+      const { ciphertext, mac } = cryptoService.encryptMessage(message.text);
+      
+      // Prepare payload with ciphertext and MAC
+      const encryptedPayload = {
+        roomId, 
+        message: { 
+            ...message, 
+            text: ciphertext, // Replace plaintext with ciphertext
+            mac: mac           // Attach MAC
+        } 
+      };
+
+      this.socket.emit('send_message', encryptedPayload, (response: any) => {
+          if (callback && response) {
+              // Decrypt saved message before passing to callback
+              response.plaintext = cryptoService.decryptMessage(response);
+              callback(response);
+          }
       });
     }
   }

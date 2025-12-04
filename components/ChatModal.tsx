@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Activity, User, SharedOuting, SkillRequest, BookingRequest, ChatMessage } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { socketService } from '../services/socketService';
@@ -58,7 +58,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   const realtimeMessages = contextItem?.messages || [];
   const allMessages = useMemo(() => {
       const combined = [...historyMessages, ...realtimeMessages];
-      const unique = new Map();
+      const unique = new Map<string, ChatMessage>();
       combined.forEach(msg => { if (msg && msg.id) unique.set(msg.id, msg); });
       return Array.from(unique.values()).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
   }, [historyMessages, realtimeMessages]);
@@ -182,7 +182,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                         )}
 
                         <div className={`relative max-w-[75%] p-2 px-3 rounded-lg shadow-sm text-sm ${isMe ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none'}`}>
-                            <p className="break-words whitespace-pre-wrap leading-relaxed pr-2">{msg.text}</p>
+                            {/* Display plaintext or fallback to ciphertext */}
+                            <p className="break-words whitespace-pre-wrap leading-relaxed pr-2">{msg.plaintext || msg.text}</p> 
                             <div className="flex justify-end items-center gap-1 mt-1 select-none">
                                 <span className="text-[10px] text-gray-500">
                                     {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
