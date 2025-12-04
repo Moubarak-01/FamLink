@@ -23,14 +23,13 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasSent, setHasSent] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const contextItem = activity || outing || skillRequest || bookingRequest;
   const contextId = contextItem?.id || '';
   
-  // Feature 3: Check connection/permission
+  // Chat Permission Check
   let isChatDisabled = false;
   let disabledReason = '';
   if (bookingRequest && bookingRequest.status !== 'accepted') {
@@ -55,28 +54,22 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       });
   }, [historyMessages, realtimeMessages]);
 
-  // ... (title logic same as before) ...
   let title = '';
   let description = '';
-  let targetUserIdForReport = '';
 
   if (activity) {
       title = t('chat_modal_title');
       description = activity.description;
-      targetUserIdForReport = activity.hostId === currentUser.id ? '' : activity.hostId; 
   } else if (outing) {
       title = outing.title;
       description = outing.description;
-      targetUserIdForReport = outing.hostId;
   } else if (skillRequest) {
       title = skillRequest.title;
       description = skillRequest.description;
-      targetUserIdForReport = skillRequest.requesterId;
   } else if (bookingRequest) {
       const isParent = currentUser.id === bookingRequest.parentId;
       title = `Chat with ${isParent ? (bookingRequest.nannyName || 'Nanny') : bookingRequest.parentName}`;
       description = `Booking on ${new Date(bookingRequest.date).toLocaleDateString()}`;
-      targetUserIdForReport = isParent ? bookingRequest.nannyId : bookingRequest.parentId;
   }
 
   useEffect(() => {
@@ -100,7 +93,28 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       if (contextId) {
           socketService.joinRoom(contextId, currentUser.id);
       }
+      
+      // Listen for status updates to update history messages dynamically
+      const unsubscribeStatus = socketService.onStatusUpdate((data) => {
+          if (data.roomId === contextId) {
+              // Update local history state if the message exists there
+              setHistoryMessages(prev => prev.map(msg => {
+                  if (data.status === 'seen') {
+                       // If 'seen' event, mark all other user's messages as seen (logic usually handled by backend, here we just update specific or all)
+                       if (msg.senderId !== data.userId && msg.status !== 'seen') {
+                           return { ...msg, status: 'seen' };
+                       }
+                  }
+                  if (msg.id === data.messageId) {
+                      return { ...msg, status: data.status };
+                  }
+                  return msg;
+              }));
+          }
+      });
+
       return () => {
+          unsubscribeStatus();
           if (contextId) {
               socketService.leaveRoom(contextId);
           }
@@ -115,14 +129,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     scrollToBottom();
   }, [allMessages]);
 
-  // Feature 2: Render ticks
+  // Feature: Render Double Ticks
   const renderStatusTicks = (status: string) => {
       if (status === 'seen') {
-          return <span className="text-blue-500 text-[10px] ml-1">✓✓</span>; // Blue double tick
+          return <span className="text-blue-500 text-[10px] ml-1 font-bold">✓✓</span>; // Blue double tick
       } else if (status === 'delivered') {
-          return <span className="text-gray-400 text-[10px] ml-1">✓✓</span>; // Gray double tick
+          return <span className="text-gray-400 text-[10px] ml-1 font-bold">✓✓</span>; // Gray double tick
       }
-      return <span className="text-gray-400 text-[10px] ml-1">✓</span>; // Gray single tick (sent)
+      return <span className="text-gray-400 text-[10px] ml-1 font-bold">✓</span>; // Gray single tick (sent)
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -134,30 +148,13 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     }
   };
 
-  // ... (Rest of handlers similar to original) ...
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
   };
-  const handleDelete = (e: React.MouseEvent, msgId: string) => {
-      e.stopPropagation();
-      e.preventDefault(); 
-      if (window.confirm("Delete this message?")) onDeleteMessage(contextId, msgId);
-  }
-  const handleClearAll = () => {
-      if (window.confirm("Clear all messages?")) onDeleteAllMessages(contextId);
-  }
-  const getRotationClass = () => {
-      if (hasSent) return 'rotate-90'; 
-      if (isHovered) return 'rotate-90';
-      return 'rotate-0';
-  };
-  const formatTime = (timestamp: number | string) => {
-      if (!timestamp) return '';
-      return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+
   const getSenderName = (name?: string) => (name || 'Unknown').split(' ')[0];
   const getSenderPhoto = (photo?: string, id?: string) => {
       if (photo) return photo;
@@ -173,9 +170,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex justify-between items-center z-10">
             <div className="flex-1 overflow-hidden">
                 <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">{title}</h2>
-                <div className="flex items-center gap-2">
-                    <p className="text-sm text-[var(--text-light)] truncate max-w-[80%]">{description}</p>
-                </div>
+                <p className="text-sm text-[var(--text-light)] truncate max-w-[80%]">{description}</p>
             </div>
              <div className="flex items-center gap-1">
                 <button onClick={onClose} className="text-[var(--text-light)] hover:text-[var(--text-primary)] p-2 rounded-full hover:bg-[var(--bg-hover)]">
@@ -200,7 +195,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                     {!isCurrentUser && <p className="text-xs font-bold text-[var(--accent-secondary)] mb-1">{getSenderName(msg.senderName)}</p>}
                                     <p className="break-words whitespace-pre-wrap leading-relaxed">{msg.text || ''}</p>
                                     <div className={`text-[10px] mt-1 text-right opacity-70 ${isCurrentUser ? 'text-white' : 'text-[var(--text-light)]'} flex justify-end items-center gap-1`}>
-                                        {formatTime(msg.timestamp || Date.now())}
+                                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         {isCurrentUser && renderStatusTicks(msg.status || 'sent')}
                                     </div>
                                 </div>

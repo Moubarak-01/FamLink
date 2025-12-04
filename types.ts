@@ -31,7 +31,7 @@ export interface NannyProfile {
   experience: string;
   certifications: string[];
   availability: string;
-  availableDates?: string[]; // Feature 1: Availability
+  availableDates?: string[];
 }
 
 export interface Rating {
@@ -75,7 +75,7 @@ export interface Task {
   description: string;
   dueDate: string;
   status: 'pending' | 'completed';
-  completedAt?: string; // Feature 5: Expiration
+  completedAt?: string;
   keepPermanently?: boolean;
 }
 
@@ -93,6 +93,7 @@ export interface Notification {
   type: NotificationType;
   read: boolean;
   createdAt?: string;
+  timestamp?: number;
   relatedId?: string;
 }
 
