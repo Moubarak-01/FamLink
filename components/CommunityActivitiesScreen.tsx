@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Activity, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
+import { activityService } from '../services/activityService';
 
 interface CommunityActivitiesScreenProps {
     user: User;
@@ -10,18 +11,50 @@ interface CommunityActivitiesScreenProps {
     onCreateActivity: () => void;
     onJoinActivity: (activityId: string) => void;
     onOpenChat: (activity: Activity) => void;
+    refreshData?: () => void;
 }
 
-const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin: (id: string) => void, onChat: (activity: Activity) => void }> = ({ activity, currentUserId, onJoin, onChat }) => {
+// Helper to get host name safely from populated object or flat string
+const getHostName = (hostId: any, hostName?: string) => {
+    if (typeof hostId === 'object' && hostId?.fullName) return hostId.fullName;
+    if (hostName) return hostName;
+    return 'Unknown User';
+};
+
+const getHostPhoto = (hostId: any, hostPhoto?: string) => {
+     if (typeof hostId === 'object' && hostId?.photo) return hostId.photo;
+     if (hostPhoto) return hostPhoto;
+     return 'https://i.pravatar.cc/150?u=default';
+};
+
+const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin: (id: string) => void, onChat: (activity: Activity) => void, onDelete: (id: string) => void }> = ({ activity, currentUserId, onJoin, onChat, onDelete }) => {
     const { t } = useLanguage();
     const isParticipant = activity.participants.includes(currentUserId);
-    const isHost = activity.hostId === currentUserId;
+    const hostIdStr = typeof activity.hostId === 'object' ? activity.hostId._id : activity.hostId;
+    const isHost = hostIdStr === currentUserId;
+
+    const displayHostName = getHostName(activity.hostId, activity.hostName);
+    const displayHostPhoto = getHostPhoto(activity.hostId, activity.hostPhoto);
 
     return (
-        <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)]">
+        <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
+            <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
+                className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-100 transition-opacity"
+                title="Delete Activity"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+
+            {activity.image && (
+                <div className="w-full h-48 bg-gray-100">
+                    <img src={activity.image} alt={activity.category} className="w-full h-full object-cover" />
+                </div>
+            )}
+
             <div className="p-5">
                 <div className="flex items-start gap-4">
-                    <img src={activity.hostPhoto} alt={activity.hostName} className="w-12 h-12 rounded-full object-cover" />
+                    <img src={displayHostPhoto} alt={displayHostName} className="w-12 h-12 rounded-full object-cover border-2 border-purple-100" />
                     <div className="flex-1">
                         <div className="flex justify-between items-start">
                             <div>
@@ -31,22 +64,22 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                                 <p className="text-[var(--text-secondary)] mt-2 text-sm">{activity.description}</p>
                             </div>
                             <div className="text-right flex-shrink-0 ml-4">
-                                <p className="text-sm font-bold text-[var(--text-primary)]">{new Date(activity.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                <p className="text-sm font-bold text-[var(--text-primary)]">{new Date(activity.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                                 <p className="text-sm text-[var(--text-secondary)]">{activity.time}</p>
                             </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div>
-                                <p className="text-xs text-[var(--text-light)]">{t('activity_card_hosted_by', { name: activity.hostName })}</p>
+                                <p className="text-xs text-[var(--text-light)]">Hosted by <span className="font-medium text-[var(--text-primary)]">{displayHostName}</span></p>
                                 <p className="text-xs text-[var(--text-light)] font-medium">📍 {activity.location}</p>
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-auto">
                                 <button 
                                   onClick={() => onChat(activity)}
                                   disabled={!isParticipant}
-                                  className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:text-gray-400 disabled:cursor-not-allowed"
+                                  className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:text-gray-400 disabled:cursor-not-allowed mr-2"
                                 >
-                                    {isParticipant ? `${t('activity_card_chat')} (${activity.participants.length})` : t('activity_card_join_to_chat')}
+                                    {t('activity_card_chat')} {activity.participants.length > 1 && `(${activity.participants.length})`}
                                 </button>
                                 {!isHost && (
                                     <button onClick={() => onJoin(activity.id)} disabled={isParticipant} className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-1.5 px-4 rounded-full text-xs disabled:opacity-50">
@@ -62,34 +95,28 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
     );
 };
 
-
-const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ user, activities, onBack, onCreateActivity, onJoinActivity, onOpenChat }) => {
+const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ user, activities, onBack, onCreateActivity, onJoinActivity, onOpenChat, refreshData }) => {
     const { t } = useLanguage();
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     
-    const recommendedActivities = useMemo(() => {
-        if (!user.location && !user.interests?.length) return [];
+    const handleDelete = async (id: string) => {
+        if(window.confirm("Are you sure you want to delete this activity?")) {
+            try {
+                await activityService.delete(id);
+                if (refreshData) refreshData(); 
+            } catch (e) { alert("Delete failed"); }
+        }
+    };
 
-        return [...activities]
-            .map(activity => {
-                let score = 0;
-                if (user.location && activity.location.includes(user.location)) {
-                    score += 10;
-                }
-                if (user.interests?.includes(activity.category)) {
-                    score += 5;
-                }
-                // Bonus for future activities
-                if (new Date(activity.date) >= new Date()) {
-                    score += 1;
-                }
-                return { ...activity, score };
-            })
-            .filter(activity => activity.score > 0 && activity.hostId !== user.id)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 3);
-    }, [activities, user]);
+    const handleClearAll = async () => {
+        if(window.confirm("Delete ALL activities? This cannot be undone.")) {
+            try {
+                await activityService.deleteAll();
+                if (refreshData) refreshData();
+            } catch (e) { alert("Clear all failed"); }
+        }
+    };
 
     const displayedActivities = useMemo(() => {
         if (viewMode === 'calendar' && selectedDate) {
@@ -102,6 +129,11 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
 
     return (
         <div className="p-8">
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800">← Back</button>
+                <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded-md">Clear All</button>
+            </div>
+
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t('community_activities_title')}</h2>
                 <p className="text-[var(--text-secondary)] max-w-xl mx-auto">{t('community_activities_subtitle')}</p>
@@ -120,16 +152,6 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
                 </div>
             </div>
             
-            {recommendedActivities.length > 0 && viewMode === 'list' && !selectedDate && (
-                <div className="mb-8">
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('community_recommendations_title')}</h3>
-                    <div className="space-y-6">
-                        {recommendedActivities.map(activity => <ActivityCard key={activity.id} activity={activity} currentUserId={user.id} onJoin={onJoinActivity} onChat={onOpenChat} />)}
-                    </div>
-                     <hr className="my-8 border-[var(--border-color)]" />
-                </div>
-            )}
-            
             {viewMode === 'calendar' && (
                 <div className="mb-8">
                     <Calendar 
@@ -142,7 +164,16 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
 
             <div className="space-y-6">
                 {displayedActivities.length > 0 ? (
-                    displayedActivities.map(activity => <ActivityCard key={activity.id} activity={activity} currentUserId={user.id} onJoin={onJoinActivity} onChat={onOpenChat} />)
+                    displayedActivities.map(activity => (
+                        <ActivityCard 
+                            key={activity.id} 
+                            activity={activity} 
+                            currentUserId={user.id} 
+                            onJoin={onJoinActivity} 
+                            onChat={onOpenChat} 
+                            onDelete={handleDelete}
+                        />
+                    ))
                 ) : (
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                         <p className="text-[var(--text-light)] font-medium">
@@ -150,15 +181,6 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
                         </p>
                     </div>
                 )}
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex justify-start">
-                <button
-                onClick={onBack}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full"
-                >
-                {t('button_back_dashboard')}
-                </button>
             </div>
         </div>
     );

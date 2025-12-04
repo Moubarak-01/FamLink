@@ -40,6 +40,9 @@ export class SkillTask {
   @Prop({ required: true })
   budget: number;
 
+  @Prop()
+  image: string; // Base64 image string
+
   @Prop({ enum: ['open', 'in_progress', 'completed'], default: 'open' })
   status: string;
 

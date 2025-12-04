@@ -1,3 +1,4 @@
+// moubarak-01/famlink/FamLink-b923137ae4aaec857ed19fa053c6966af163c9b5/App.tsx
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Answer, Screen, UserType, Subscription, Plan, User, NannyProfile, Rating, BookingRequest, Task, Activity, SharedOuting, OutingRequest, SkillRequest, SkillOffer, Child, ActivityCategory, SkillCategory, ChatMessage, Notification, NotificationType } from './types';
 import Header from './components/Header';
@@ -44,7 +45,8 @@ import { reviewService } from './services/reviewService';
 import { taskService } from './services/taskService';
 import { chatService } from './services/chatService';
 
-const getAvatarId = (id: string) => {
+const getAvatarId = (id?: string) => {
+    if (!id || typeof id !== 'string') return 0; // FIX: Handle null/undefined/non-string ID
     return id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 70;
 };
 
@@ -281,6 +283,74 @@ const App: React.FC = () => {
   const handleNotificationClick = async (notification: Notification) => { try { await notificationService.markRead(notification.id); } catch (e) {} setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n).filter(n => !n.read)); await refreshData(); if (notification.type === 'chat' && notification.relatedId) { const act = activities.find(a => a.id === notification.relatedId); if(act) { setActiveChat({type: 'activity', item: act}); return; } const out = sharedOutings.find(o => o.id === notification.relatedId); if(out) { setActiveChat({type: 'outing', item: out}); return; } const skill = skillRequests.find(s => s.id === notification.relatedId); if(skill) { setActiveChat({type: 'skill', item: skill}); return; } const booking = bookingRequests.find(b => b.id === notification.relatedId); if(booking) { setActiveChat({type: 'booking', item: booking}); return; } } else if (notification.type === 'booking') { navigateTo(Screen.Dashboard); if (notification.relatedId) { const booking = bookingRequests.find(b => b.id === notification.relatedId); if (booking && booking.status === 'accepted') setActiveChat({type: 'booking', item: booking}); } } else if (notification.type === 'outing') navigateTo(Screen.ChildOutings); else if (notification.type === 'skill') navigateTo(Screen.SkillMarketplace); else if (notification.type === 'task') navigateTo(Screen.Dashboard); };
   const handleClearNotifications = async () => { if (currentUser) { try { await notificationService.markAllRead(); setNotifications([]); } catch(e) {} } };
 
+  const handleKeepTask = async (id: string) => { try { await taskService.keepTask(id); setTasks(prev => prev.map(t => t.id === id ? { ...t, keepPermanently: true } : t)); } catch(e) { alert("Failed to update task"); } };
+
+  // Delete task handler
+  const handleDeleteTask = async (id: string) => {
+      try {
+          await taskService.delete(id);
+          setTasks(prev => prev.filter(t => t.id !== id));
+      } catch(e) {
+          alert("Failed to delete task");
+      }
+  };
+  
+  // Bulk delete handlers
+  const handleDeleteActivities = async () => {
+    if (!currentUser || !window.confirm("Are you sure you want to delete ALL of your created activities?")) return;
+    try {
+        await activityService.deleteAllHosted();
+        setActivities(prev => prev.filter(a => a.hostId !== currentUser.id));
+        alert("All hosted activities have been deleted.");
+    } catch(e) {
+        alert("Failed to delete activities.");
+    }
+  };
+
+  const handleDeleteOutings = async () => {
+      if (!currentUser || !window.confirm("Are you sure you want to delete ALL of your created shared outings?")) return;
+      try {
+          await outingService.deleteAllHosted();
+          setSharedOutings(prev => prev.filter(o => o.hostId !== currentUser.id));
+          alert("All hosted shared outings have been deleted.");
+      } catch(e) {
+          alert("Failed to delete shared outings.");
+      }
+  };
+
+  const handleDeleteSkillRequests = async () => {
+      if (!currentUser || !window.confirm("Are you sure you want to delete ALL of your created skill requests?")) return;
+      try {
+          await marketplaceService.deleteAllCreated();
+          setSkillRequests(prev => prev.filter(r => r.requesterId !== currentUser.id));
+          alert("All created skill requests have been deleted.");
+      } catch(e) {
+          alert("Failed to delete skill requests.");
+      }
+  };
+
+  // NEW: Individual delete handlers for lists
+  const handleDeleteOuting = async (id: string) => {
+      if (!window.confirm("Are you sure you want to delete this outing?")) return;
+      try {
+          await outingService.deleteOuting(id); 
+          setSharedOutings(prev => prev.filter(o => o.id !== id));
+      } catch(e) {
+          alert("Failed to delete outing.");
+      }
+  };
+
+  const handleDeleteSkillRequest = async (id: string) => {
+      if (!window.confirm("Are you sure you want to delete this skill request?")) return;
+      try {
+          await marketplaceService.deleteSkillRequest(id); 
+          setSkillRequests(prev => prev.filter(r => r.id !== id));
+      } catch(e) {
+          alert("Failed to delete skill request.");
+      }
+  };
+
+
   const currentUserAddedNannies = useMemo(() => {
     if (currentUser?.userType !== 'parent') return [];
     const manualNannies = (currentUser.addedNannyIds || []).map(id => approvedNannies.find(n => n.id === id)).filter((n): n is User => !!n);
@@ -319,18 +389,6 @@ const App: React.FC = () => {
       if (booking) { setContactNannyInfo(null); setActiveChat({ type: 'booking', item: booking }); } else { alert("You must have an accepted booking with this nanny to chat."); }
   };
 
-  const handleKeepTask = async (id: string) => { try { await taskService.keepTask(id); setTasks(prev => prev.map(t => t.id === id ? { ...t, keepPermanently: true } : t)); } catch(e) { alert("Failed to update task"); } };
-
-  // NEW: Delete task handler
-  const handleDeleteTask = async (id: string) => {
-      try {
-          await taskService.delete(id);
-          setTasks(prev => prev.filter(t => t.id !== id));
-      } catch(e) {
-          alert("Failed to delete task");
-      }
-  };
-
   const renderScreen = () => {
     if (viewingNannyId && currentScreen === Screen.NannyProfileDetail) {
       const nanny = approvedNannies.find(n => n.id === viewingNannyId);
@@ -352,11 +410,64 @@ const App: React.FC = () => {
       case Screen.ParentProfileForm: return currentUser ? <ParentProfileForm user={currentUser} onSubmit={handleParentProfileSubmit} onBack={goBack} /> : null;
       case Screen.Subscription: return currentUser ? <SubscriptionScreen onSubscribe={handleSubscribe} onBack={goBack} /> : null;
       case Screen.SubscriptionStatus: return currentUser ? <SubscriptionStatusScreen user={currentUser} onCancelSubscription={handleCancelSubscription} onBack={goBack} /> : null;
-      case Screen.Dashboard: return currentUser ? <DashboardScreen user={currentUser} addedNannies={currentUserAddedNannies} bookingRequests={userBookingRequests} allTasks={tasks} userTasks={userTasks} sharedOutings={sharedOutings} skillRequests={skillRequests} onCancelSubscription={handleCancelSubscription} onLogout={handleLogout} onSearchNannies={() => navigateTo(Screen.NannyListing)} onRemoveNanny={handleRemoveNanny} onContactNanny={handleContactAttempt} onViewNanny={handleViewNannyProfile} onRateNanny={handleOpenRatingModal} onUpdateBookingStatus={handleUpdateBookingStatus} onOpenTaskModal={handleOpenTaskModal} onUpdateTaskStatus={handleUpdateTaskStatus} onViewActivities={() => navigateTo(Screen.CommunityActivities)} onViewOutings={() => navigateTo(Screen.ChildOutings)} onUpdateOutingRequestStatus={handleUpdateOutingRequestStatus} onViewSkillMarketplace={() => navigateTo(Screen.SkillMarketplace)} onEditProfile={handleEditProfile} onOpenBookingChat={(booking) => setActiveChat({ type: 'booking', item: booking })} onCancelBooking={currentUser.userType === 'parent' ? handleCancelBooking : handleNannyHideBooking} onClearAllBookings={handleClearAllBookings} onKeepTask={handleKeepTask} onDeleteTask={handleDeleteTask} /> : null;
+      case Screen.Dashboard: return currentUser ? <DashboardScreen 
+          user={currentUser} 
+          addedNannies={currentUserAddedNannies} 
+          bookingRequests={userBookingRequests} 
+          allTasks={tasks} 
+          userTasks={userTasks} 
+          activities={activities}
+          sharedOutings={sharedOutings} 
+          skillRequests={skillRequests} 
+          onCancelSubscription={handleCancelSubscription} 
+          onLogout={handleLogout} 
+          onSearchNannies={() => navigateTo(Screen.NannyListing)} 
+          onRemoveNanny={handleRemoveNanny} 
+          onContactNanny={handleContactAttempt} 
+          onViewNanny={handleViewNannyProfile} 
+          onRateNanny={handleOpenRatingModal} 
+          onUpdateBookingStatus={handleUpdateBookingStatus} 
+          onOpenTaskModal={handleOpenTaskModal} 
+          onUpdateTaskStatus={handleUpdateTaskStatus} 
+          onViewActivities={() => navigateTo(Screen.CommunityActivities)} 
+          onViewOutings={() => navigateTo(Screen.ChildOutings)} 
+          onUpdateOutingRequestStatus={handleUpdateOutingRequestStatus} 
+          onViewSkillMarketplace={() => navigateTo(Screen.SkillMarketplace)} 
+          onEditProfile={handleEditProfile} 
+          onOpenBookingChat={(booking) => setActiveChat({ type: 'booking', item: booking })} 
+          onCancelBooking={currentUser.userType === 'parent' ? handleCancelBooking : handleNannyHideBooking} 
+          onClearAllBookings={handleClearAllBookings} 
+          onKeepTask={handleKeepTask} 
+          onDeleteTask={handleDeleteTask}
+          // Bulk Delete Handlers
+          onDeleteActivities={handleDeleteActivities}
+          onDeleteOutings={handleDeleteOutings}
+          onDeleteSkillRequests={handleDeleteSkillRequests}
+        /> : null;
       case Screen.NannyListing: return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
       case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen user={currentUser} activities={activities} onBack={goBack} onCreateActivity={() => setIsCreateActivityModalOpen(true)} onJoinActivity={handleJoinActivity} onOpenChat={(activity) => setActiveChat({ type: 'activity', item: activity })} /> : null;
-      case Screen.ChildOutings: const enrichedOutings = sharedOutings.map(o => ({ ...o, isHostVerified: false })); return currentUser ? <ChildOutingScreen user={currentUser} outings={enrichedOutings} onBack={goBack} onCreateOuting={() => setIsCreateOutingModalOpen(true)} onRequestJoin={setRequestOutingInfo} onOpenChat={(outing) => setActiveChat({ type: 'outing', item: outing })} onRateHost={(hostId) => { const host = approvedNannies.find(n => n.id === hostId) || { id: hostId, fullName: 'Host', photo: '' } as User; setRatingTargetUser(host); }} /> : null;
-      case Screen.SkillMarketplace: return currentUser ? <SkillMarketplaceScreen user={currentUser} requests={skillRequests} onBack={goBack} onCreateRequest={() => setIsCreateSkillRequestModalOpen(true)} onMakeOffer={setMakeOfferSkillRequestInfo} onUpdateOffer={handleUpdateSkillOfferStatus} onOpenChat={(skill) => setActiveChat({ type: 'skill', item: skill })} /> : null;
+      case Screen.ChildOutings: 
+        const enrichedOutings = sharedOutings.map(o => ({ ...o, isHostVerified: false, isHost: o.hostId === currentUser?.id })); 
+        return currentUser ? <ChildOutingScreen 
+          user={currentUser} 
+          outings={enrichedOutings} 
+          onBack={goBack} 
+          onCreateOuting={() => setIsCreateOutingModalOpen(true)} 
+          onRequestJoin={setRequestOutingInfo} 
+          onOpenChat={(outing) => setActiveChat({ type: 'outing', item: outing })} 
+          onRateHost={(hostId) => { const host = approvedNannies.find(n => n.id === hostId) || { id: hostId, fullName: 'Host', photo: '' } as User; setRatingTargetUser(host); }} 
+          onDeleteOuting={handleDeleteOuting} 
+        /> : null;
+      case Screen.SkillMarketplace: return currentUser ? <SkillMarketplaceScreen 
+          user={currentUser} 
+          requests={skillRequests} 
+          onBack={goBack} 
+          onCreateRequest={() => setIsCreateSkillRequestModalOpen(true)} 
+          onMakeOffer={setMakeOfferSkillRequestInfo} 
+          onUpdateOffer={handleUpdateSkillOfferStatus} 
+          onOpenChat={(skill) => setActiveChat({ type: 'skill', item: skill })}
+          onDeleteSkillRequest={handleDeleteSkillRequest}
+        /> : null;
       default: return <WelcomeScreen onSelectUserType={handleSelectUserType} onLogin={() => navigateTo(Screen.Login)} />;
     }
   };

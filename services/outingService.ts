@@ -1,4 +1,3 @@
-
 import { api } from './api';
 import { SharedOuting } from '../types';
 
@@ -21,5 +20,15 @@ export const outingService = {
   async updateRequestStatus(outingId: string, parentId: string, status: string) {
       const response = await api.patch(`/outings/${outingId}/requests/${parentId}`, { status });
       return response.data;
+  },
+
+  async delete(id: string) {
+    const response = await api.delete(`/outings/${id}`);
+    return response.data;
+  },
+
+  async deleteAll() {
+    const response = await api.delete(`/outings`);
+    return response.data;
   }
 };

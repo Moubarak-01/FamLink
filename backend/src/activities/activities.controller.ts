@@ -1,5 +1,4 @@
-
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -23,5 +22,17 @@ export class ActivitiesController {
   @Patch(':id/join')
   join(@Request() req, @Param('id') id: string) {
     return this.activitiesService.join(id, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+      return this.activitiesService.delete(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  removeAll() {
+      return this.activitiesService.deleteAll();
   }
 }

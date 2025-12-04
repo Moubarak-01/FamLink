@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -17,7 +16,10 @@ export class OutingsService {
   }
 
   async findAll(): Promise<OutingDocument[]> {
-    return this.outingModel.find().populate('hostId', 'fullName photo isVerified').exec();
+    return this.outingModel.find()
+      .populate('hostId', 'fullName photo isVerified')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async requestJoin(outingId: string, requestDto: any, userId: string): Promise<OutingDocument> {
@@ -30,11 +32,18 @@ export class OutingsService {
   }
 
   async updateRequestStatus(outingId: string, parentId: string, status: string): Promise<OutingDocument> {
-       // Find the outing and update the status of the specific request
        return this.outingModel.findOneAndUpdate(
            { _id: outingId, "requests.parentId": parentId },
            { $set: { "requests.$.status": status } },
            { new: true }
        ).exec();
+  }
+
+  async delete(id: string): Promise<any> {
+      return this.outingModel.findByIdAndDelete(id).exec();
+  }
+
+  async deleteAll(): Promise<any> {
+      return this.outingModel.deleteMany({}).exec();
   }
 }

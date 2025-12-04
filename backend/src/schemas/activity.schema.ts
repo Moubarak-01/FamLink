@@ -23,6 +23,9 @@ export class Activity {
   @Prop({ required: true })
   time: string; // HH:MM
 
+  @Prop()
+  image: string; // Base64 image string
+
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
   participants: string[];
 }

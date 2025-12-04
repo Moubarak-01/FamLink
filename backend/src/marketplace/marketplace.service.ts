@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -20,6 +19,7 @@ export class MarketplaceService {
     return this.skillTaskModel.find()
       .populate('requesterId', 'fullName photo')
       .populate('offers.helperId', 'fullName photo')
+      .sort({ createdAt: -1 })
       .exec();
   }
 
@@ -40,11 +40,17 @@ export class MarketplaceService {
        ).exec();
        
        if (status === 'accepted' && task) {
-           // If accepted, set task status to in_progress
            task.status = 'in_progress';
            await task.save();
        }
-       
        return task;
+  }
+
+  async delete(id: string): Promise<any> {
+      return this.skillTaskModel.findByIdAndDelete(id).exec();
+  }
+
+  async deleteAll(): Promise<any> {
+      return this.skillTaskModel.deleteMany({}).exec();
   }
 }

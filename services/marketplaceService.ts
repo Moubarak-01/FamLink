@@ -1,4 +1,3 @@
-
 import { api } from './api';
 import { SkillRequest } from '../types';
 
@@ -20,6 +19,16 @@ export const marketplaceService = {
 
   async updateOfferStatus(taskId: string, helperId: string, status: 'accepted' | 'declined') {
     const response = await api.patch<SkillRequest>(`/marketplace/${taskId}/offers/${helperId}`, { status });
+    return response.data;
+  },
+
+  async delete(id: string) {
+    const response = await api.delete(`/marketplace/${id}`);
+    return response.data;
+  },
+
+  async deleteAll() {
+    const response = await api.delete(`/marketplace`);
     return response.data;
   }
 };

@@ -28,7 +28,7 @@ export interface LocationData {
 export interface NannyProfile {
   phone: string;
   rating: number;
-  ratingCount: number; // <-- ADDED THIS FIELD
+  ratingCount: number;
   location: LocationData | string; 
   description: string;
   experience: string;
@@ -51,9 +51,9 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderPhoto: string;
-  text: string; // <-- Now stores ciphertext
-  plaintext?: string; // <-- New field for decrypted message
-  mac?: string; // <-- New field for Message Authentication Code
+  text: string; // Stores ciphertext
+  plaintext?: string; // Decrypted message
+  mac?: string; // Message Authentication Code
   timestamp: number;
   status: MessageStatus;
 }
@@ -128,7 +128,7 @@ export type SkillCategory = 'cooking' | 'cleaning' | 'tutoring' | 'tech' | 'craf
 
 export interface Activity {
   id: string;
-  hostId: string;
+  hostId: any; // Handles object (User) or string
   hostName: string;
   hostPhoto: string;
   category: ActivityCategory;
@@ -136,6 +136,7 @@ export interface Activity {
   location: string;
   date: string;
   time: string;
+  image?: string; // Added image
   participants: string[];
   messages?: ChatMessage[];
 }
@@ -152,7 +153,7 @@ export interface OutingRequest {
 
 export interface SharedOuting {
     id: string;
-    hostId: string;
+    hostId: any; // Handles object (User) or string
     hostName: string;
     hostPhoto: string;
     title: string;
@@ -163,6 +164,7 @@ export interface SharedOuting {
     time: string;
     maxChildren: number;
     costDetails: string;
+    image?: string; // Added image
     requests: OutingRequest[];
     messages?: ChatMessage[];
 }
@@ -178,7 +180,7 @@ export interface SkillOffer {
 
 export interface SkillRequest {
     id: string;
-    requesterId: string;
+    requesterId: any; // Handles object (User) or string
     requesterName: string;
     requesterPhoto: string;
     category: SkillCategory;
@@ -186,6 +188,7 @@ export interface SkillRequest {
     description: string;
     location: string;
     budget: number;
+    image?: string; // Added image
     status: 'open' | 'in_progress' | 'completed';
     offers: SkillOffer[];
     messages?: ChatMessage[];

@@ -1,6 +1,7 @@
 import React from 'react';
 import { SkillRequest, User, SkillOffer } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { marketplaceService } from '../services/marketplaceService';
 
 interface SkillMarketplaceScreenProps {
     user: User;
@@ -10,6 +11,7 @@ interface SkillMarketplaceScreenProps {
     onMakeOffer: (request: SkillRequest) => void;
     onUpdateOffer: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void;
     onOpenChat: (request: SkillRequest) => void;
+    refreshData?: () => void;
 }
 
 const OfferStatus: React.FC<{ status: SkillOffer['status'] }> = ({ status }) => {
@@ -23,19 +25,50 @@ const OfferStatus: React.FC<{ status: SkillOffer['status'] }> = ({ status }) => 
     return <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${currentStatus.bg} ${currentStatus.text_color}`}>{currentStatus.text}</span>;
 };
 
-const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string, onMakeOffer: (request: SkillRequest) => void, onUpdateOffer: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void, onOpenChat: (request: SkillRequest) => void }> = ({ request, currentUserId, onMakeOffer, onUpdateOffer, onOpenChat }) => {
+const getRequesterName = (reqId: any, reqName?: string) => {
+    if (typeof reqId === 'object' && reqId?.fullName) return reqId.fullName;
+    if (reqName) return reqName;
+    return 'Unknown User';
+};
+
+const getRequesterPhoto = (reqId: any, reqPhoto?: string) => {
+     if (typeof reqId === 'object' && reqId?.photo) return reqId.photo;
+     if (reqPhoto) return reqPhoto;
+     return 'https://i.pravatar.cc/150?u=default';
+};
+
+const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string, onMakeOffer: (request: SkillRequest) => void, onUpdateOffer: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void, onOpenChat: (request: SkillRequest) => void, onDelete: (id: string) => void }> = ({ request, currentUserId, onMakeOffer, onUpdateOffer, onOpenChat, onDelete }) => {
     const { t } = useLanguage();
-    const isOwner = request.requesterId === currentUserId;
+    const reqIdStr = typeof request.requesterId === 'object' ? request.requesterId._id : request.requesterId;
+    const isOwner = reqIdStr === currentUserId;
     
-    // Check if user has an accepted offer
     const hasAcceptedOffer = request.offers.some(o => o.helperId === currentUserId && o.status === 'accepted');
     const canChat = isOwner || hasAcceptedOffer;
 
+    const displayName = getRequesterName(request.requesterId, request.requesterName);
+    const displayPhoto = getRequesterPhoto(request.requesterId, request.requesterPhoto);
+
     return (
-        <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)]">
+        <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
+            {/* Delete Button */}
+             <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(request.id); }}
+                className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-100 transition-opacity"
+                title="Delete Request"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+
+            {/* Image Display */}
+            {request.image && (
+                <div className="w-full h-48 bg-gray-100">
+                    <img src={request.image} alt={request.title} className="w-full h-full object-cover" />
+                </div>
+            )}
+
             <div className="p-5">
                 <div className="flex items-start gap-4">
-                    <img src={request.requesterPhoto} alt={request.requesterName} className="w-12 h-12 rounded-full object-cover" />
+                    <img src={displayPhoto} alt={displayName} className="w-12 h-12 rounded-full object-cover" />
                     <div className="flex-1">
                         <div className="flex justify-between items-start">
                             <div>
@@ -43,7 +76,7 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
                                     {t(`skill_cat_${request.category}`)}
                                 </span>
                                 <h3 className="font-bold text-lg text-[var(--text-primary)] mt-1">{request.title}</h3>
-                                <p className="text-xs text-[var(--text-light)] mb-2">{t('skill_card_requested_by', { name: request.requesterName })}</p>
+                                <p className="text-xs text-[var(--text-light)] mb-2">{t('skill_card_requested_by', { name: displayName })}</p>
                             </div>
                              <div className="text-right flex-shrink-0 ml-4">
                                 <p className="text-lg font-bold text-[var(--text-primary)]">€{request.budget}</p>
@@ -105,11 +138,34 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
     );
 };
 
-const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, requests, onBack, onCreateRequest, onMakeOffer, onUpdateOffer, onOpenChat }) => {
+const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, requests, onBack, onCreateRequest, onMakeOffer, onUpdateOffer, onOpenChat, refreshData }) => {
     const { t } = useLanguage();
     
+    const handleDelete = async (id: string) => {
+        if(window.confirm("Are you sure you want to delete this request?")) {
+            try {
+                await marketplaceService.delete(id);
+                if (refreshData) refreshData();
+            } catch (e) { alert("Delete failed"); }
+        }
+    };
+
+    const handleClearAll = async () => {
+        if(window.confirm("Delete ALL requests? This cannot be undone.")) {
+            try {
+                await marketplaceService.deleteAll();
+                if (refreshData) refreshData();
+            } catch (e) { alert("Clear all failed"); }
+        }
+    };
+
     return (
         <div className="p-8">
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800">← Back</button>
+                <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded-md">Clear All</button>
+            </div>
+
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t('skill_marketplace_title')}</h2>
                 <p className="text-[var(--text-secondary)] max-w-xl mx-auto">{t('skill_marketplace_subtitle')}</p>
@@ -126,7 +182,17 @@ const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, r
             
             <div className="space-y-6">
                 {requests.length > 0 ? (
-                    requests.map(request => <SkillRequestCard key={request.id} request={request} currentUserId={user.id} onMakeOffer={onMakeOffer} onUpdateOffer={onUpdateOffer} onOpenChat={onOpenChat} />)
+                    requests.map(request => (
+                        <SkillRequestCard 
+                            key={request.id} 
+                            request={request} 
+                            currentUserId={user.id} 
+                            onMakeOffer={onMakeOffer} 
+                            onUpdateOffer={onUpdateOffer} 
+                            onOpenChat={onOpenChat} 
+                            onDelete={handleDelete}
+                        />
+                    ))
                 ) : (
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                         <p className="text-[var(--text-light)] font-medium">No tasks posted yet. Be the first to post one!</p>

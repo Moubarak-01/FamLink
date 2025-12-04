@@ -1,202 +1,135 @@
-
-import React from 'react';
-import { SharedOuting, User } from '../types';
+import React, { useState } from 'react';
+import { SharedOuting } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import LocationInput from './LocationInput';
 
-interface ChildOutingScreenProps {
-    user: User;
-    outings: (SharedOuting & { isHostVerified?: boolean })[];
-    onBack: () => void;
-    onCreateOuting: () => void;
-    onRequestJoin: (outing: SharedOuting) => void;
-    onOpenChat: (outing: SharedOuting) => void;
-    onRateHost?: (hostId: string) => void;
+interface CreateOutingModalProps {
+  onClose: () => void;
+  onSubmit: (outingData: any) => void;
 }
 
-const OutingCard: React.FC<{ outing: SharedOuting & { isHostVerified?: boolean }, currentUserId: string, onRequestJoin: (outing: SharedOuting) => void, onOpenChat: (outing: SharedOuting) => void, onRateHost?: (hostId: string) => void }> = ({ outing, currentUserId, onRequestJoin, onOpenChat, onRateHost }) => {
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
+
+const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit }) => {
     const { t } = useLanguage();
-    const isHost = outing.hostId === currentUserId;
-    const acceptedRequests = outing.requests.filter(r => r.status === 'accepted').length;
-    const slotsAvailable = outing.maxChildren - acceptedRequests;
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [location, setLocation] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [time, setTime] = useState('10:00');
+    const [maxChildren, setMaxChildren] = useState(1);
+    const [costDetails, setCostDetails] = useState('');
+    const [liveLocationEnabled, setLiveLocationEnabled] = useState(false);
+    const [image, setImage] = useState<string>('');
+    const [imagePreview, setImagePreview] = useState<string>('');
     
-    // Check if current user has any active requests (pending or accepted)
-    const myRequests = outing.requests.filter(r => r.parentId === currentUserId);
-    const hasPending = myRequests.some(r => r.status === 'pending');
-    const isAccepted = myRequests.some(r => r.status === 'accepted');
-    const hasAnyRequest = hasPending || isAccepted;
+    const inputStyles = "mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]";
+    const labelStyles = "block text-sm font-medium text-[var(--text-secondary)]";
 
-    const canChat = isHost || isAccepted;
-
-    // Determine logic for requesting another child
-    let showRequestButton = false;
-    let buttonText = '';
-
-    if (!isHost && slotsAvailable > 0) {
-        if (!hasAnyRequest) {
-            showRequestButton = true;
-            buttonText = t('outing_card_request_to_join');
-        } else {
-            // Already requested. Only allow another request if more than 1 slot available.
-            if (slotsAvailable > 1) {
-                showRequestButton = true;
-                buttonText = t('outing_card_request_another');
-            }
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          setImagePreview(URL.createObjectURL(file));
+          const base64 = await toBase64(file);
+          setImage(base64);
         }
-    }
-    
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title.trim() || !description.trim() || !location.trim() || !costDetails.trim()) {
+            alert('Please fill in all fields.');
+            return;
+        }
+        onSubmit({ title, description, location, date, time, maxChildren, costDetails, liveLocationEnabled, image });
+    };
+
     return (
-        <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)]">
-            <div className="p-5">
-                <div className="flex items-start gap-4">
-                    <div className="relative">
-                        <img src={outing.hostPhoto} alt={outing.hostName} className="w-12 h-12 rounded-full object-cover" />
-                        {outing.isHostVerified && (
-                            <span className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5" title="Verified Parent">
-                                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="font-bold text-lg text-[var(--text-primary)]">{outing.title}</h3>
-                                <p className="text-xs text-[var(--text-light)] mb-2">{t('outing_card_hosted_by', { name: outing.hostName })}</p>
-                            </div>
-                            <div className="text-right flex-shrink-0 ml-4">
-                                <p className="text-sm font-bold text-[var(--text-primary)]">{new Date(outing.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                                <p className="text-sm text-[var(--text-secondary)]">{outing.time}</p>
-                            </div>
-                        </div>
-                        <p className="text-[var(--text-secondary)] mt-1 text-sm">{outing.description}</p>
-                        <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                            <div>
-                                <p className="text-xs text-[var(--text-light)] font-medium">📍 {outing.location}</p>
-                                <p className="text-xs text-[var(--text-light)] mt-1">💰 {outing.costDetails}</p>
-                                {outing.liveLocationEnabled && (
-                                    <p className="text-xs text-green-600 flex items-center mt-1 font-semibold">
-                                        <span className="mr-1 relative flex h-2 w-2">
-                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                        </span>
-                                        Live Location Enabled
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap justify-end">
-                                {canChat && (
-                                    <button 
-                                        onClick={() => onOpenChat(outing)}
-                                        className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] mr-2"
-                                    >
-                                        {t('activity_card_chat')}
-                                    </button>
-                                )}
-                                
-                                {(isAccepted || isHost) && outing.liveLocationEnabled && (
-                                    <button className="text-xs bg-green-100 text-green-700 hover:bg-green-200 font-bold py-1 px-2 rounded-lg" title="Track Live Location">
-                                        📍 Track
-                                    </button>
-                                )}
-
-                                {isAccepted && !isHost && onRateHost && (
-                                    <button 
-                                        onClick={() => onRateHost(outing.hostId)}
-                                        className="text-xs bg-yellow-100 text-yellow-700 hover:bg-yellow-200 font-bold py-1 px-2 rounded-lg"
-                                    >
-                                        ⭐ Rate Host
-                                    </button>
-                                )}
-
-                                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${slotsAvailable > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {slotsAvailable > 0 ? t('outing_card_slots_available', { count: slotsAvailable }) : 'Full'}
+        <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4" onClick={onClose}>
+            <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit} className="p-8">
+                    <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('create_outing_modal_title')}</h2>
+                    
+                    <div className="space-y-4">
+                         {/* Image Upload Section */}
+                         <div>
+                            <label className={labelStyles}>Outing Image (Optional)</label>
+                            <div className="mt-2 flex items-center gap-4">
+                                <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
+                                {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
                                 </span>
-                                
-                                {showRequestButton ? (
-                                    <button 
-                                        onClick={() => onRequestJoin(outing)} 
-                                        className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-1.5 px-4 rounded-full text-xs"
-                                    >
-                                        {buttonText}
-                                    </button>
-                                ) : (
-                                    !isHost && hasAnyRequest && (
-                                        <span className="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
-                                            {t('outing_card_requested')}
-                                        </span>
-                                    )
-                                )}
+                                <label htmlFor="outing-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                                    Upload
+                                    <input id="outing-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
+                                </label>
+                                {image && <button type="button" onClick={() => {setImage(''); setImagePreview('')}} className="text-sm text-red-500 hover:underline">Remove</button>}
                             </div>
                         </div>
+
+                        <div>
+                            <label htmlFor="title" className={labelStyles}>{t('outing_label_title')}</label>
+                            <input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('outing_placeholder_title')} className={inputStyles} />
+                        </div>
+                        <div>
+                            <label htmlFor="description" className={labelStyles}>{t('outing_label_description')}</label>
+                            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className={inputStyles} />
+                        </div>
+                        <div>
+                            <label htmlFor="location" className={labelStyles}>{t('outing_label_location')}</label>
+                             <LocationInput
+                                value={location}
+                                onChange={setLocation}
+                                className={inputStyles}
+                                placeholder="Where are you going?"
+                            />
+                        </div>
+                        
+                        <div className="flex items-center mt-2">
+                            <input 
+                                type="checkbox" 
+                                id="liveLocation" 
+                                checked={liveLocationEnabled} 
+                                onChange={e => setLiveLocationEnabled(e.target.checked)}
+                                className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)] border-gray-300 rounded cursor-pointer"
+                            />
+                            <label htmlFor="liveLocation" className="ml-2 block text-sm text-[var(--text-primary)] cursor-pointer">
+                                Enable Live Location Sharing for participants
+                            </label>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="date" className={labelStyles}>{t('outing_label_date')}</label>
+                                <input type="date" id="date" value={date} onChange={e => setDate(e.target.value)} required min={new Date().toISOString().split('T')[0]} className={inputStyles} />
+                            </div>
+                            <div>
+                                <label htmlFor="time" className={labelStyles}>{t('outing_label_time')}</label>
+                                <input type="time" id="time" value={time} onChange={e => setTime(e.target.value)} required className={inputStyles} />
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="maxChildren" className={labelStyles}>{t('outing_label_max_children')}</label>
+                            <input type="number" id="maxChildren" value={maxChildren} onChange={e => setMaxChildren(parseInt(e.target.value, 10))} required min="1" className={inputStyles} />
+                        </div>
+                        <div>
+                            <label htmlFor="cost" className={labelStyles}>{t('outing_label_cost')}</label>
+                            <input type="text" id="cost" value={costDetails} onChange={e => setCostDetails(e.target.value)} required placeholder={t('outing_placeholder_cost')} className={inputStyles} />
+                        </div>
                     </div>
-                </div>
-            </div>
-            
-            {/* Host View of Requests - Include Emergency Contact */}
-            {isHost && outing.requests.length > 0 && (
-                 <div className="bg-[var(--bg-card-subtle)] px-5 py-3 border-t border-[var(--border-color)]">
-                    <h5 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-2">Participants</h5>
-                    <ul className="space-y-2">
-                        {outing.requests.map((req, idx) => (
-                            <li key={idx} className="text-xs text-[var(--text-primary)] flex flex-col border-b border-[var(--border-color)] last:border-0 pb-1">
-                                <div className="flex justify-between">
-                                    <span className="font-semibold">{req.childName} ({req.childAge})</span>
-                                    <span className={`capitalize ${req.status === 'accepted' ? 'text-green-600' : req.status === 'declined' ? 'text-red-600' : 'text-yellow-600'}`}>{req.status}</span>
-                                </div>
-                                {req.status === 'accepted' && (
-                                    <span className="text-[var(--text-light)] mt-0.5">
-                                        🆘 Contact: {req.emergencyContactName} ({req.emergencyContactPhone})
-                                    </span>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                 </div>
-            )}
-        </div>
-    );
-};
-
-const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({ user, outings, onBack, onCreateOuting, onRequestJoin, onOpenChat, onRateHost }) => {
-    const { t } = useLanguage();
-
-    return (
-        <div className="p-8">
-            <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t('child_outings_title')}</h2>
-                <p className="text-[var(--text-secondary)] max-w-xl mx-auto">{t('child_outings_subtitle')}</p>
-            </div>
-
-            <div className="mb-6 text-center">
-                 <button 
-                    onClick={onCreateOuting}
-                    className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform hover:scale-105"
-                >
-                    {t('button_create_outing')}
-                </button>
-            </div>
-            
-            <div className="space-y-6">
-                {outings.length > 0 ? (
-                    outings.map(outing => <OutingCard key={outing.id} outing={outing} currentUserId={user.id} onRequestJoin={onRequestJoin} onOpenChat={onOpenChat} onRateHost={onRateHost} />)
-                ) : (
-                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)] font-medium">No shared outings yet. Be the first to create one!</p>
+                    
+                    <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                        <button type="button" onClick={onClose} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg">{t('button_back')}</button>
+                        <button type="submit" className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">{t('button_post_outing')}</button>
                     </div>
-                )}
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex justify-start">
-                <button
-                onClick={onBack}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full"
-                >
-                {t('button_back_dashboard')}
-                </button>
+                </form>
             </div>
         </div>
     );
 };
 
-export default ChildOutingScreen;
+export default CreateOutingModal;

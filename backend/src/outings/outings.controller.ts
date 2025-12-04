@@ -1,5 +1,4 @@
-
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
 import { OutingsService } from './outings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -29,5 +28,17 @@ export class OutingsController {
   @Patch(':id/requests/:parentId')
   updateRequestStatus(@Param('id') id: string, @Param('parentId') parentId: string, @Body('status') status: string) {
       return this.outingsService.updateRequestStatus(id, parentId, status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+      return this.outingsService.delete(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  removeAll() {
+      return this.outingsService.deleteAll();
   }
 }

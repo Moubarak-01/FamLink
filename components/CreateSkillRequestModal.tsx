@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { SkillRequest, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import LocationInput from './LocationInput'; // Replaced LocationAutocomplete
+import LocationInput from './LocationInput'; 
 
 interface CreateSkillRequestModalProps {
   onClose: () => void;
-  onSubmit: (requestData: Omit<SkillRequest, 'id' | 'requesterId' | 'requesterName' | 'requesterPhoto' | 'status' | 'offers'>) => void;
+  onSubmit: (requestData: any) => void;
 }
+
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
 
 const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClose, onSubmit }) => {
     const { t } = useLanguage();
@@ -15,6 +22,8 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
     const [budget, setBudget] = useState<number | ''>(10);
+    const [image, setImage] = useState<string>('');
+    const [imagePreview, setImagePreview] = useState<string>('');
     
     const inputStyles = "mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]";
     const labelStyles = "block text-sm font-medium text-[var(--text-secondary)]";
@@ -28,13 +37,22 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
         { key: 'other', label: t('skill_cat_other') },
     ];
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          setImagePreview(URL.createObjectURL(file));
+          const base64 = await toBase64(file);
+          setImage(base64);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim() || !description.trim() || !location.trim() || budget === '' || budget <= 0) {
             alert('Please fill in all fields with valid values.');
             return;
         }
-        onSubmit({ category, title, description, location, budget: Number(budget) });
+        onSubmit({ category, title, description, location, budget: Number(budget), image });
     };
 
     return (
@@ -44,6 +62,21 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                     <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('create_skill_request_title')}</h2>
                     
                     <div className="space-y-4">
+                        {/* Image Upload Section */}
+                        <div>
+                            <label className={labelStyles}>Task Image (Optional)</label>
+                            <div className="mt-2 flex items-center gap-4">
+                                <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
+                                {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
+                                </span>
+                                <label htmlFor="task-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
+                                    Upload
+                                    <input id="task-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
+                                </label>
+                                {image && <button type="button" onClick={() => {setImage(''); setImagePreview('')}} className="text-sm text-red-500 hover:underline">Remove</button>}
+                            </div>
+                        </div>
+
                          <div>
                             <label htmlFor="category" className={labelStyles}>{t('skill_request_label_category')}</label>
                             <select id="category" value={category} onChange={e => setCategory(e.target.value as SkillCategory)} className={inputStyles}>
@@ -60,7 +93,6 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                         </div>
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('skill_request_label_location')}</label>
-                             {/* UPDATED USAGE: Use LocationInput in autocomplete mode */}
                              <LocationInput
                                 value={location}
                                 onChange={setLocation}

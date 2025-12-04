@@ -1,5 +1,6 @@
+// moubarak-01/famlink/FamLink-b923137ae4aaec857ed19fa053c6966af163c9b5/components/DashboardScreen.tsx
 import React from 'react';
-import { User, BookingRequest, Task, SharedOuting, SkillRequest } from '../types';
+import { User, BookingRequest, Task, SharedOuting, SkillRequest, Activity } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type EnrichedBookingRequest = BookingRequest & { nanny?: User, parent?: User };
@@ -10,6 +11,7 @@ interface DashboardScreenProps {
   bookingRequests: EnrichedBookingRequest[];
   allTasks: Task[];
   userTasks: Task[];
+  activities: Activity[]; // <-- ADDED
   sharedOutings: SharedOuting[];
   skillRequests?: SkillRequest[];
   onCancelSubscription: () => void;
@@ -32,6 +34,9 @@ interface DashboardScreenProps {
   onClearAllBookings: () => void;
   onKeepTask?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
+  onDeleteActivities: () => void; // <-- ADDED
+  onDeleteOutings: () => void; // <-- ADDED
+  onDeleteSkillRequests: () => void; // <-- ADDED
 }
 
 const formatDateSafe = (dateString: string) => {
@@ -255,13 +260,26 @@ const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: Da
     );
 };
 
-const ParentDashboard: React.FC<DashboardScreenProps> = ({ user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking, onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus }) => {
+const ParentDashboard: React.FC<DashboardScreenProps> = ({ 
+    user, addedNannies, bookingRequests, allTasks, userTasks, 
+    sharedOutings, skillRequests, activities, // <-- ADDED ACTIVITIES PROP
+    onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, 
+    onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, 
+    onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking, 
+    onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus,
+    onDeleteActivities, onDeleteOutings, onDeleteSkillRequests // <-- NEW DELETE HANDLERS
+}) => {
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
     const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
     
     // Parent sees tasks they created
     const myTasks = allTasks.filter(t => t.parentId === user.id);
+
+    // NEW: Check for hosted entries
+    const hasHostedActivities = activities.some(a => a.hostId === user.id);
+    const hasHostedOutings = sharedOutings.some(o => o.hostId === user.id);
+    const hasCreatedSkillRequests = skillRequests?.some(s => s.requesterId === user.id);
 
     return (
       <>
@@ -279,13 +297,43 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({ user, addedNannies, b
             <div className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
                 <div><h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4><p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
             </div>
-             <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between">
+             {/* Connect with Parents (Activities) Card */}
+             <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between relative">
+                 {hasHostedActivities && (
+                     <button 
+                         onClick={onDeleteActivities} 
+                         className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                         title="Delete all hosted activities"
+                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                     </button>
+                 )}
                 <div><h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4><p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
             </div>
-             <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between">
+             {/* Child Outing Sharing Card */}
+             <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between relative">
+                  {hasHostedOutings && (
+                     <button 
+                         onClick={onDeleteOutings} 
+                         className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                         title="Delete all hosted outings"
+                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                     </button>
+                 )}
                 <div><h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4><p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
             </div>
-             <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between">
+             {/* Skill Sharing & Help Card */}
+             <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between relative">
+                {hasCreatedSkillRequests && (
+                     <button 
+                         onClick={onDeleteSkillRequests} 
+                         className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                         title="Delete all created skill requests"
+                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                     </button>
+                )}
                 <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
             </div>
         </div>

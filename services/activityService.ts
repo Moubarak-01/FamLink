@@ -1,4 +1,3 @@
-
 import { api } from './api';
 import { Activity } from '../types';
 
@@ -15,6 +14,16 @@ export const activityService = {
 
   async join(id: string) {
     const response = await api.patch<Activity>(`/activities/${id}/join`);
+    return response.data;
+  },
+
+  async delete(id: string) {
+    const response = await api.delete(`/activities/${id}`);
+    return response.data;
+  },
+
+  async deleteAll() {
+    const response = await api.delete(`/activities`);
     return response.data;
   }
 };
