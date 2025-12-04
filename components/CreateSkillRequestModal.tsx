@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SkillRequest, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import LocationAutocomplete from './LocationAutocomplete';
+import LocationInput from './LocationInput'; // Replaced LocationAutocomplete
 
 interface CreateSkillRequestModalProps {
   onClose: () => void;
@@ -14,7 +14,7 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
-    const [budget, setBudget] = useState<number | ''>('');
+    const [budget, setBudget] = useState<number | ''>(10);
     
     const inputStyles = "mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]";
     const labelStyles = "block text-sm font-medium text-[var(--text-secondary)]";
@@ -60,7 +60,8 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                         </div>
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('skill_request_label_location')}</label>
-                            <LocationAutocomplete
+                             {/* UPDATED USAGE: Use LocationInput in autocomplete mode */}
+                             <LocationInput
                                 value={location}
                                 onChange={setLocation}
                                 className={inputStyles}

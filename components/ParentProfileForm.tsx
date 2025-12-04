@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { User, Child, ActivityCategory, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import LocationAutocomplete from './LocationAutocomplete';
+import LocationInput from './LocationInput'; // Replaced LocationAutocomplete
 import PhoneInput from './PhoneInput';
 
 interface ParentProfileFormProps {
@@ -118,7 +118,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
 
     setIsSubmitting(true);
     try {
-        await onSubmit({ fullName, photo, location, interests, children, skillsToTeach, phone });
+        await onSubmit({ fullName, photo, location: location, interests, children, skillsToTeach, phone });
     } finally {
         setIsSubmitting(false);
     }
@@ -184,11 +184,13 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
             </div>
              <div>
                 <label className={labelStyles}>{t('profile_form_location')}<span className="text-red-500">*</span></label>
-                <LocationAutocomplete 
+                 {/* UPDATED USAGE: Use LocationInput in autocomplete mode */}
+                <LocationInput 
                     value={location}
                     onChange={setLocation}
                     placeholder="Search city (e.g. Paris, London)..."
-                    className={getInputClass(location)}
+                    hasError={showErrors && !location}
+                    onCountryChange={setSelectedCountryIso}
                 />
             </div>
             <div>

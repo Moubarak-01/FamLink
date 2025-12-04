@@ -1,3 +1,6 @@
+// This file is now obsolete and replaced by LocationInput.tsx
+// Retaining original content for reference.
+
 import React, { useState, useEffect, useRef } from 'react';
 import { locationService, GeoLocation } from '../services/locationService';
 

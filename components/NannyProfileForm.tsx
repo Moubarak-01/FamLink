@@ -1,8 +1,9 @@
+// moubarak-01/famlink/FamLink-b923137ae4aaec857ed19fa053c6966af163c9b5/components/NannyProfileForm.tsx
 import React, { useState, useMemo } from 'react';
 import { NannyProfile, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
-import LocationSelector from './LocationSelector';
+import LocationAutocomplete from './LocationAutocomplete'; // Updated Import
 import PhoneInput from './PhoneInput';
 
 interface NannyProfileFormProps {
@@ -26,7 +27,7 @@ const NannyProfileForm: React.FC<NannyProfileFormProps> = ({ user, onSubmit, onB
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.profile?.phone || '');
   const [location, setLocation] = useState(user.profile?.location || '');
-  const [selectedCountryIso, setSelectedCountryIso] = useState<string | undefined>(undefined);
+  // Removed [selectedCountryIso, setSelectedCountryIso] state as it's no longer used.
 
   const [experience, setExperience] = useState(user.profile?.experience || '');
   const [certifications, setCertifications] = useState(user.profile?.certifications?.join(', ') || '');
@@ -185,11 +186,12 @@ const NannyProfileForm: React.FC<NannyProfileFormProps> = ({ user, onSubmit, onB
         </div>
         <div>
           <label className={labelStyles}>{t('profile_form_location')}<span className="text-red-500">*</span></label>
-          <LocationSelector 
-            initialValue={location} 
-            onChange={setLocation} 
-            onCountryChange={setSelectedCountryIso}
-            hasError={showErrors && !location}
+          {/* Replaced LocationSelector with LocationAutocomplete */}
+          <LocationAutocomplete 
+            value={location}
+            onChange={setLocation}
+            placeholder="Search city (e.g., Paris, London)..."
+            className={getInputClass(location)}
           />
         </div>
          <div>
@@ -198,7 +200,7 @@ const NannyProfileForm: React.FC<NannyProfileFormProps> = ({ user, onSubmit, onB
               value={phone}
               onChange={setPhone}
               required
-              forcedIsoCode={selectedCountryIso}
+              // Removed forcedIsoCode as it's no longer sourced from a tiered selector
               hasError={showErrors && !phone}
             />
         </div>
