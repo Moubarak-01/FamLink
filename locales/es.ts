@@ -1,23 +1,43 @@
 export const es = {
+    // Header & Navigation
     header_tagline: "Aliviar a los padres, empoderar a las familias.",
     header_welcome: "Bienvenida",
     button_logout: "Cerrar sesión",
     button_settings: "Ajustes",
     menu_edit_profile: "Editar perfil",
     menu_subscription_status: "Estado de la suscripción",
+
+    // Generic Statuses (New)
+    status_pending: "Pendiente",
+    status_accepted: "Aceptado",
+    status_declined: "Rechazado",
+    status_completed: "Completado",
+    status_cancelled: "Cancelado",
+    status_open: "Abierto",
+    status_in_progress: "En Progreso",
+
+    // Task & Auto-delete
+    text_deletes_in_days: "Se elimina en {days} días",
+    button_keep: "Mantener",
+
+    // Welcome Screen
     welcome_title: "Bienvenida a FamLink",
     welcome_subtitle: "Conectamos familias con proveedores de confianza para crear una comunidad feliz y de apoyo. Dinos quién eres para empezar.",
-    welcome_parent_button: "Soy Madre/Padre",
+    welcome_parent_button: "Soy Padre/Madre",
     welcome_parent_subtext: "Encuentra ayuda de confianza",
     welcome_nanny_button: "Soy Niñera",
     welcome_nanny_subtext: "Encuentra ofertas de trabajo",
     welcome_already_account: "¿Ya tienes una cuenta?",
     button_login: "Iniciar sesión",
     button_signup: "Registrarse",
+    
+    // Navigation Buttons
     button_back: "Atrás",
     button_next: "Siguiente",
     button_prev: "Anterior",
-    signup_title_parent: "¡Únete a FamLink como Madre/Padre!",
+
+    // Auth Screens
+    signup_title_parent: "¡Únete a FamLink como Padre/Madre!",
     signup_title_nanny: "¡Únete a FamLink como Niñera!",
     signup_subtitle: "Crea tu cuenta para empezar.",
     form_fullname_label: "Nombre completo",
@@ -35,6 +55,8 @@ export const es = {
     forgot_password_title: "¿Olvidaste tu contraseña?",
     forgot_password_subtitle: "Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.",
     forgot_password_button: "Enviar enlace de restablecimiento",
+
+    // Assessment
     questionnaire_title: "Evaluación de Niñera",
     questionnaire_question_of: "Pregunta {current} de {total}",
     button_submit_results: "Enviar y ver resultados",
@@ -54,10 +76,13 @@ export const es = {
     button_create_profile: "Completar mi perfil",
     button_edit_profile: "Editar mi perfil",
     button_retake_assessment: "Repetir evaluación",
+
+    // Profile Forms
     profile_form_title: "Crea tu perfil de Niñera",
     profile_form_subtitle: "Esta información será visible para los padres. ¡Haz que brille!",
     profile_form_progress_title: "Progreso del perfil",
     profile_form_progress_subtitle: "Completa todos los campos esenciales (*) para que tu perfil sea visible para los padres.",
+    profile_form_missing_fields_title: "Faltan campos obligatorios",
     profile_form_mandatory_prompt: "Por favor, completa tu perfil para acceder a todas las funciones.",
     parent_profile_form_title: "Editar tu perfil",
     parent_profile_form_subtitle: "Mantén tu información actualizada para obtener las mejores coincidencias.",
@@ -83,6 +108,8 @@ export const es = {
     profile_form_description: "Biografía / Descripción corta",
     profile_form_description_placeholder: "Cuéntales un poco sobre ti a los padres...",
     button_save_publish: "Guardar y publicar perfil",
+
+    // Subscription
     subscription_title: "Elige tu plan",
     subscription_subtitle: "Suscríbete para conectar con nuestras niñeras de confianza.",
     plan_parent_name: "Plan para Padres",
@@ -99,6 +126,8 @@ export const es = {
     payment_cvv: "CVV",
     button_pay_now: "Pagar {price}€ ahora",
     button_processing: "Procesando...",
+    
+    // Dashboard
     dashboard_title: "Mi panel",
     dashboard_welcome: "Bienvenida",
     dashboard_user: "Usuario",
@@ -139,7 +168,7 @@ export const es = {
     task_due_on: "Para el: {date}",
     task_overdue: "Atrasada",
     button_save_task: "Guardar tarea",
-    dashboard_community_title: "Conecta con otros padres",
+    dashboard_community_title: "Conecta con Padres",
     dashboard_community_subtitle: "Únete o crea actividades locales para conocer a otros padres en tu zona.",
     dashboard_community_button: "Explorar actividades de la comunidad",
     dashboard_child_sharing_title: "Compartir salidas de niños",
@@ -159,6 +188,8 @@ export const es = {
     dashboard_no_skill_requests: "No has publicado ninguna solicitud de habilidad.",
     dashboard_hosted_outings_title: "Salidas que organizas",
     dashboard_no_hosted_outings: "No estás organizando ninguna salida.",
+
+    // Community & Activities
     community_activities_title: "Actividades de la comunidad",
     community_activities_subtitle: "Encuentra citas de juego, paseos y otros eventos organizados por padres como tú.",
     button_create_activity: "Crear actividad",
@@ -185,6 +216,8 @@ export const es = {
     community_view_list: "Vista de lista",
     community_view_calendar: "Vista de calendario",
     community_no_activities_for_date: "No hay actividades programadas para esta fecha.",
+    
+    // Chat
     chat_modal_title: "Chat de la actividad",
     chat_placeholder: "Escribe tu mensaje...",
     chat_sort_by: "Ordenar por",
@@ -194,6 +227,8 @@ export const es = {
     button_send: "Enviar",
     button_delete: "Eliminar",
     button_delete_all: "Eliminar todo",
+
+    // Child Outings
     child_outings_title: "Salidas de niños compartidas",
     child_outings_subtitle: "Un padre lleva a varios niños a una salida, para que otros padres ahorren tiempo y dinero.",
     button_create_outing: "Crear una salida",
@@ -219,6 +254,8 @@ export const es = {
     request_outing_label_child_name: "Nombre del hijo/a",
     request_outing_label_child_age: "Edad del hijo/a",
     button_send_join_request: "Enviar solicitud",
+    
+    // Skills
     skill_marketplace_title: "Mercado de intercambio de habilidades",
     skill_marketplace_subtitle: "Obtén ayuda con tareas o aprende una nueva habilidad de otro padre de la comunidad.",
     button_post_task: "Publicar una tarea",
@@ -249,6 +286,8 @@ export const es = {
     view_offers_title: "Ofertas para '{taskTitle}'",
     no_offers_yet: "Aún no se han recibido ofertas.",
     offer_from: "Oferta de {name}",
+
+    // Nanny Listing
     nanny_listing_title: "Encontrar una Niñera",
     nanny_listing_subtitle: "Explora los perfiles de nuestras niñeras de confianza y evaluadas.",
     nanny_listing_no_nannies: "No hay niñeras disponibles en este momento. ¡Vuelve a intentarlo más tarde!",
@@ -268,6 +307,8 @@ export const es = {
     button_rated: "Calificada",
     button_accept: "Aceptar",
     button_decline: "Rechazar",
+    
+    // Profile Detail
     nanny_profile_title: "Perfil de Niñera",
     nanny_profile_experience: "Experiencia",
     nanny_profile_years: "años",
@@ -278,6 +319,8 @@ export const es = {
     nanny_profile_reviews: "reseñas",
     nanny_profile_reviews_title: "Reseñas de padres",
     nanny_profile_no_reviews: "Aún no hay reseñas.",
+
+    // Modals
     contact_modal_title: "Contactar a {name}",
     contact_modal_email: "Correo electrónico",
     contact_modal_phone: "Teléfono",
@@ -302,8 +345,12 @@ export const es = {
     booking_status_pending: "Pendiente",
     booking_status_accepted: "Aceptada",
     booking_status_declined: "Rechazada",
+    
+    // Footer
     footer_text: "© 2025 FamLink. Aliviar a los padres, empoderar a las familias por",
     footer_rights_reserved: ". Todos los derechos reservados",
+    
+    // Errors & Alerts
     account_suspended_title: "Cuenta Suspendida",
     account_suspended_message: "Has fallado la evaluación varias veces. Por motivos de seguridad, tu cuenta ha sido suspendida temporalmente.",
     account_suspended_try_again: "Por favor, inténtalo de nuevo después de:",
@@ -332,6 +379,12 @@ export const es = {
     alert_due_date_past: "La fecha de entrega no puede ser en el pasado.",
     alert_description_required: "Por favor, introduce una descripción de la tarea.",
     alert_outing_request_sent: "¡Tu solicitud para unirte a la salida ha sido enviada!",
+
+    // Calendar
+    unit_hours: "horas",
+    unit_minutes: "minutos",
+    calendar_title: "Calendario de disponibilidad",
+    calendar_instructions: "Haz clic en una fecha para marcarla como disponible o no disponible.",
     month_january: "Enero",
     month_february: "Febrero",
     month_march: "Marzo",
@@ -351,12 +404,8 @@ export const es = {
     day_thu: "Jue",
     day_fri: "Vie",
     day_sat: "Sáb",
-    unit_hours: "horas",
-    unit_minutes: "minutos",
-    calendar_title: "Calendario de disponibilidad",
-    calendar_instructions: "Haz clic en una fecha para marcarla como disponible o no disponible.",
-    
-    // ... (Assessment questions - no changes needed here)
+
+    // Assessment Questions
     q1_text: "Un niño a tu cuidado tiene una rabieta porque no quiere irse del parque. ¿Cómo lo manejas?",
     q1_op1: "Decirle firmemente que deje de llorar y que nos vamos ahora.",
     q1_op2: "Reconocer sus sentimientos, ofrecer una advertencia de 5 minutos y sugerir una actividad divertida para cuando lleguemos a casa.",
@@ -562,7 +611,7 @@ export const es = {
     q44_op3: "Pilas de botón.",
     q44_op4: "Osos de peluche suaves en su cuna.",
     q45_text: "¿Cuáles son formas efectivas de comunicarse con los padres al final del día? (Selecciona todas las que apliquen)",
-    q45_op1: "Un breve resumen verbal des puntos destacados y desafíos del día.",
+    q45_op1: "Un breve resumen verbal de los puntos destacados y desafíos del día.",
     q45_op2: "Un registro escrito o un mensaje de texto con detalles clave.",
     q45_op3: "Solo informar problemas y asuntos.",
     q45_op4: "Mencionar momentos lindos o divertidos del día.",

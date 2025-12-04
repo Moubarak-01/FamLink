@@ -1,10 +1,26 @@
 export const ja = {
-    header_tagline: "親を楽に、家族を力強く。",
+    // Header & Navigation
+    header_tagline: "親の負担を軽減し、家族に力を。", // Updated: Moms -> Parents
     header_welcome: "ようこそ",
     button_logout: "ログアウト",
     button_settings: "設定",
     menu_edit_profile: "プロフィールを編集",
     menu_subscription_status: "サブスクリプションのステータス",
+
+    // Generic Statuses (New)
+    status_pending: "保留中",
+    status_accepted: "承認済み",
+    status_declined: "拒否済み",
+    status_completed: "完了",
+    status_cancelled: "キャンセル済み",
+    status_open: "募集中",
+    status_in_progress: "進行中",
+
+    // Task & Auto-delete
+    text_deletes_in_days: "あと{days}日で削除されます",
+    button_keep: "保持する",
+
+    // Welcome Screen
     welcome_title: "FamLinkへようこそ",
     welcome_subtitle: "私たちは、信頼できるプロバイダーと家族をつなぎ、幸せで支え合えるコミュニティを創造します。まずはあなたが誰であるか教えてください。",
     welcome_parent_button: "私は親です",
@@ -14,9 +30,13 @@ export const ja = {
     welcome_already_account: "すでにアカウントをお持ちですか？",
     button_login: "ログイン",
     button_signup: "新規登録",
+    
+    // Navigation Buttons
     button_back: "戻る",
     button_next: "次へ",
     button_prev: "前へ",
+
+    // Auth Screens
     signup_title_parent: "親としてFamLinkに参加しましょう！",
     signup_title_nanny: "ナニーとしてFamLinkに参加しましょう！",
     signup_subtitle: "アカウントを作成して始めましょう。",
@@ -35,6 +55,8 @@ export const ja = {
     forgot_password_title: "パスワードをお忘れですか？",
     forgot_password_subtitle: "メールアドレスを入力してください。パスワードをリセットするためのリンクをお送りします。",
     forgot_password_button: "リセットリンクを送信",
+
+    // Assessment
     questionnaire_title: "ナニー評価",
     questionnaire_question_of: "質問 {current}/{total}",
     button_submit_results: "送信して結果を見る",
@@ -54,10 +76,13 @@ export const ja = {
     button_create_profile: "プロフィールを完成させる",
     button_edit_profile: "プロフィールを編集",
     button_retake_assessment: "再評価を受ける",
+
+    // Profile Forms
     profile_form_title: "ナニープロフィールを作成",
     profile_form_subtitle: "この情報は親御さんに表示されます。魅力的に作りましょう！",
     profile_form_progress_title: "プロフィールの完成度",
     profile_form_progress_subtitle: "親にプロフィールを表示するには、すべての必須項目（*）を完了してください。",
+    profile_form_missing_fields_title: "必須項目が不足しています",
     profile_form_mandatory_prompt: "すべての機能にアクセスするには、プロフィールを完成させてください。",
     parent_profile_form_title: "プロフィールを編集",
     parent_profile_form_subtitle: "最適なマッチングのために情報を最新に保ちましょう。",
@@ -83,6 +108,8 @@ export const ja = {
     profile_form_description: "自己紹介",
     profile_form_description_placeholder: "親御さんにあなたのことを少し教えてください...",
     button_save_publish: "保存して公開",
+
+    // Subscription
     subscription_title: "プランを選択",
     subscription_subtitle: "信頼できるナニーとつながるためにご登録ください。",
     plan_parent_name: "親プラン",
@@ -99,6 +126,8 @@ export const ja = {
     payment_cvv: "CVV",
     button_pay_now: "€{price}を今すぐ支払う",
     button_processing: "処理中...",
+    
+    // Dashboard
     dashboard_title: "私のダッシュボード",
     dashboard_welcome: "ようこそ",
     dashboard_user: "ユーザー",
@@ -159,6 +188,8 @@ export const ja = {
     dashboard_no_skill_requests: "スキルリクエストを投稿していません。",
     dashboard_hosted_outings_title: "あなたが主催するお出かけ",
     dashboard_no_hosted_outings: "あなたはどのお出かけも主催していません。",
+    
+    // Community & Activities
     community_activities_title: "コミュニティ活動",
     community_activities_subtitle: "あなたのような親たちが主催するプレイデート、散歩、その他のイベントを見つけましょう。",
     button_create_activity: "活動を作成",
@@ -185,6 +216,8 @@ export const ja = {
     community_view_list: "リスト表示",
     community_view_calendar: "カレンダー表示",
     community_no_activities_for_date: "この日に予定されている活動はありません。",
+    
+    // Chat
     chat_modal_title: "活動チャット",
     chat_placeholder: "メッセージを入力...",
     chat_sort_by: "並べ替え",
@@ -194,6 +227,8 @@ export const ja = {
     button_send: "送信",
     button_delete: "削除",
     button_delete_all: "すべて削除",
+
+    // Child Outings
     child_outings_title: "子供の共有お出かけ",
     child_outings_subtitle: "一人の親が複数の子供を連れて外出することで、他の親は時間とお金を節約できます。",
     button_create_outing: "お出かけを作成",
@@ -219,6 +254,8 @@ export const ja = {
     request_outing_label_child_name: "子供の名前",
     request_outing_label_child_age: "子供の年齢",
     button_send_join_request: "参加リクエストを送信",
+
+    // Skills
     skill_marketplace_title: "スキル共有マーケットプレイス",
     skill_marketplace_subtitle: "コミュニティの他の親からタスクの助けを得たり、新しいスキルを学んだりしましょう。",
     button_post_task: "タスクを投稿",
@@ -249,6 +286,8 @@ export const ja = {
     view_offers_title: "'{taskTitle}'へのオファー",
     no_offers_yet: "まだオファーはありません。",
     offer_from: "{name}からのオファー",
+
+    // Nanny Listing
     nanny_listing_title: "ナニーを探す",
     nanny_listing_subtitle: "信頼できる評価済みのナニーのプロフィールを閲覧できます。",
     nanny_listing_no_nannies: "現在、利用可能なナニーがいません。後でもう一度確認してください！",
@@ -268,6 +307,8 @@ export const ja = {
     button_rated: "評価済み",
     button_accept: "承認",
     button_decline: "拒否",
+    
+    // Profile Detail
     nanny_profile_title: "ナニープロフィール",
     nanny_profile_experience: "経験",
     nanny_profile_years: "年",
@@ -278,6 +319,8 @@ export const ja = {
     nanny_profile_reviews: "レビュー",
     nanny_profile_reviews_title: "親からのレビュー",
     nanny_profile_no_reviews: "まだレビューはありません。",
+
+    // Modals
     contact_modal_title: "{name}に連絡",
     contact_modal_email: "メール",
     contact_modal_phone: "電話",
@@ -302,8 +345,12 @@ export const ja = {
     booking_status_pending: "保留中",
     booking_status_accepted: "承認済み",
     booking_status_declined: "拒否済み",
+    
+    // Footer
     footer_text: "© 2025 FamLink. 親を楽に、家族を力強く。",
     footer_rights_reserved: ". 全著作権所有",
+    
+    // Errors & Alerts
     account_suspended_title: "アカウントが一時停止されました",
     account_suspended_message: "評価に複数回不合格となりました。セキュリティ上の理由から、アカウントは一時的に停止されています。",
     account_suspended_try_again: "以下の日時以降に再試行してください：",
@@ -332,6 +379,8 @@ export const ja = {
     alert_due_date_past: "期日を過去に設定することはできません。",
     alert_description_required: "タスクの説明を入力してください。",
     alert_outing_request_sent: "お出かけへの参加リクエストが送信されました！",
+
+    // Calendar
     unit_hours: "時間",
     unit_minutes: "分",
     calendar_title: "対応可能カレンダー",
@@ -356,7 +405,7 @@ export const ja = {
     day_fri: "金",
     day_sat: "土",
 
-    // ... (Assessment questions - no changes needed here)
+    // Assessment Questions
     q1_text: "担当している子供が公園から帰りたくないと駄々をこねています。どう対処しますか？",
     q1_op1: "泣くのをやめて今すぐ帰ると断固として伝える。",
     q1_op2: "子供の気持ちを認め、5分前だと伝え、家に帰ったら楽しいことが待っていると提案する。",

@@ -1,10 +1,26 @@
 export const fr = {
+    // Header & Navigation
     header_tagline: "Soulager les parents, autonomiser les familles.",
     header_welcome: "Bienvenue",
     button_logout: "Se déconnecter",
     button_settings: "Paramètres",
     menu_edit_profile: "Modifier le profil",
     menu_subscription_status: "Statut de l'abonnement",
+
+    // Generic Statuses (New)
+    status_pending: "En attente",
+    status_accepted: "Accepté",
+    status_declined: "Refusé",
+    status_completed: "Terminé",
+    status_cancelled: "Annulé",
+    status_open: "Ouvert",
+    status_in_progress: "En cours",
+
+    // Task & Auto-delete (New)
+    text_deletes_in_days: "Suppression dans {days} jours",
+    button_keep: "Garder",
+
+    // Welcome Screen
     welcome_title: "Bienvenue sur FamLink",
     welcome_subtitle: "Nous connectons les familles avec des prestataires de confiance pour créer une communauté heureuse et solidaire. Dites-nous qui vous êtes pour commencer.",
     welcome_parent_button: "Je suis un Parent",
@@ -14,9 +30,13 @@ export const fr = {
     welcome_already_account: "Vous avez déjà un compte ?",
     button_login: "Se connecter",
     button_signup: "S'inscrire",
+    
+    // Navigation Buttons
     button_back: "Retour",
     button_next: "Suivant",
     button_prev: "Précédent",
+
+    // Auth Screens
     signup_title_parent: "Rejoignez FamLink en tant que Parent !",
     signup_title_nanny: "Rejoignez FamLink en tant que Nounou !",
     signup_subtitle: "Créez votre compte pour commencer.",
@@ -35,6 +55,8 @@ export const fr = {
     forgot_password_title: "Mot de passe oublié ?",
     forgot_password_subtitle: "Entrez votre e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
     forgot_password_button: "Envoyer le lien de réinitialisation",
+
+    // Assessment
     questionnaire_title: "Évaluation de Nounou",
     questionnaire_question_of: "Question {current} sur {total}",
     button_submit_results: "Soumettre & Voir les résultats",
@@ -54,6 +76,8 @@ export const fr = {
     button_create_profile: "Compléter mon profil",
     button_edit_profile: "Modifier mon profil",
     button_retake_assessment: "Repasser l'évaluation",
+
+    // Profile Forms
     profile_form_title: "Créez votre profil de Nounou",
     profile_form_subtitle: "Ces informations seront visibles par les parents. Faites-les briller !",
     profile_form_progress_title: "Complétion du profil",
@@ -84,6 +108,8 @@ export const fr = {
     profile_form_description: "Biographie / Description courte",
     profile_form_description_placeholder: "Parlez un peu de vous aux parents...",
     button_save_publish: "Enregistrer et Publier le profil",
+
+    // Subscription
     subscription_title: "Choisissez votre forfait",
     subscription_subtitle: "Abonnez-vous pour vous connecter avec nos nounous de confiance.",
     plan_parent_name: "Forfait Parent",
@@ -100,6 +126,8 @@ export const fr = {
     payment_cvv: "CVV",
     button_pay_now: "Payer {price}€ maintenant",
     button_processing: "Traitement...",
+    
+    // Dashboard
     dashboard_title: "Mon tableau de bord",
     dashboard_welcome: "Bienvenue",
     dashboard_user: "Utilisateur",
@@ -160,6 +188,8 @@ export const fr = {
     dashboard_no_skill_requests: "Vous n'avez publié aucune demande de compétence.",
     dashboard_hosted_outings_title: "Sorties que vous organisez",
     dashboard_no_hosted_outings: "Vous n'organisez aucune sortie.",
+
+    // Community & Activities
     community_activities_title: "Activités communautaires",
     community_activities_subtitle: "Trouvez des dates de jeu, des promenades et d'autres événements organisés par des parents comme vous.",
     button_create_activity: "Créer une activité",
@@ -186,6 +216,8 @@ export const fr = {
     community_view_list: "Vue liste",
     community_view_calendar: "Vue calendrier",
     community_no_activities_for_date: "Aucune activité prévue à cette date.",
+    
+    // Chat
     chat_modal_title: "Discussion de l'activité",
     chat_placeholder: "Écrivez votre message...",
     chat_sort_by: "Trier par",
@@ -195,6 +227,8 @@ export const fr = {
     button_send: "Envoyer",
     button_delete: "Supprimer",
     button_delete_all: "Tout supprimer",
+
+    // Child Outings
     child_outings_title: "Sorties d'enfants partagées",
     child_outings_subtitle: "Un parent emmène plusieurs enfants en sortie, pour que les autres parents économisent du temps et de l'argent.",
     button_create_outing: "Créer une sortie",
@@ -220,6 +254,8 @@ export const fr = {
     request_outing_label_child_name: "Nom de l'enfant",
     request_outing_label_child_age: "Âge de l'enfant",
     button_send_join_request: "Envoyer la demande",
+
+    // Skills
     skill_marketplace_title: "Marché de partage de compétences",
     skill_marketplace_subtitle: "Obtenez de l'aide pour des tâches ou apprenez une nouvelle compétence d'un autre parent de la communauté.",
     button_post_task: "Publier une tâche",
@@ -250,6 +286,8 @@ export const fr = {
     view_offers_title: "Offres pour '{taskTitle}'",
     no_offers_yet: "Aucune offre reçue pour le moment.",
     offer_from: "Offre de {name}",
+
+    // Nanny Listing
     nanny_listing_title: "Trouver une Nounou",
     nanny_listing_subtitle: "Parcourez les profils de nos nounous de confiance et évaluées.",
     nanny_listing_no_nannies: "Aucune nounou disponible pour le moment. Veuillez revenir plus tard !",
@@ -269,6 +307,8 @@ export const fr = {
     button_rated: "Évaluée",
     button_accept: "Accepter",
     button_decline: "Refuser",
+    
+    // Profile Detail
     nanny_profile_title: "Profil de Nounou",
     nanny_profile_experience: "Expérience",
     nanny_profile_years: "ans",
@@ -279,6 +319,8 @@ export const fr = {
     nanny_profile_reviews: "avis",
     nanny_profile_reviews_title: "Avis des parents",
     nanny_profile_no_reviews: "Aucun avis pour le moment.",
+
+    // Modals
     contact_modal_title: "Contacter {name}",
     contact_modal_email: "E-mail",
     contact_modal_phone: "Téléphone",
@@ -303,8 +345,12 @@ export const fr = {
     booking_status_pending: "En attente",
     booking_status_accepted: "Acceptée",
     booking_status_declined: "Refusée",
+    
+    // Footer
     footer_text: "© 2025 FamLink. Soulager les parents, autonomiser les familles par",
     footer_rights_reserved: ". Tous droits réservés",
+    
+    // Errors & Alerts
     account_suspended_title: "Compte Suspendu",
     account_suspended_message: "Vous avez échoué à l'évaluation plusieurs fois. Pour des raisons de sécurité, votre compte a été temporairement suspendu.",
     account_suspended_try_again: "Veuillez réessayer après :",
@@ -333,6 +379,8 @@ export const fr = {
     alert_due_date_past: "La date d'échéance ne peut pas être dans le passé.",
     alert_description_required: "Veuillez entrer une description de la tâche.",
     alert_outing_request_sent: "Votre demande de participation à la sortie a été envoyée !",
+
+    // Calendar
     unit_hours: "heures",
     unit_minutes: "minutes",
     calendar_title: "Calendrier des disponibilités",
@@ -357,7 +405,7 @@ export const fr = {
     day_fri: "Ven",
     day_sat: "Sam",
 
-    // Assessment Questions
+    // Assessment Questions (Keep original text if no specific translation provided for new questions)
     q1_text: "Un enfant dont vous avez la garde fait une colère car il ne veut pas quitter l'aire de jeux. Comment gérez-vous cela ?",
     q1_op1: "Lui dire fermement d'arrêter de pleurer et que vous partez maintenant.",
     q1_op2: "Reconnaître ses sentiments, donner un avertissement de 5 minutes et suggérer une activité amusante pour le retour à la maison.",

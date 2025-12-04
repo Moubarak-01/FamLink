@@ -1,10 +1,26 @@
 export const ar = {
-    header_tagline: "تخفيف العبء عن الآباء، تمكين العائلات.", // Updated: Moms -> Parents
+    // Header & Navigation
+    header_tagline: "تخفيف العبء عن الآباء، تمكين العائلات.",
     header_welcome: "مرحبًا",
     button_logout: "تسجيل الخروج",
     button_settings: "الإعدادات",
     menu_edit_profile: "تعديل الملف الشخصي",
     menu_subscription_status: "حالة الاشتراك",
+
+    // Generic Statuses (New)
+    status_pending: "قيد الانتظار",
+    status_accepted: "مقبول",
+    status_declined: "مرفوض",
+    status_completed: "مكتمل",
+    status_cancelled: "ملغى",
+    status_open: "مفتوح",
+    status_in_progress: "قيد التنفيذ",
+
+    // Task & Auto-delete (New)
+    text_deletes_in_days: "يُحذف خلال {days} أيام",
+    button_keep: "إبقاء",
+
+    // Welcome Screen
     welcome_title: "مرحبًا بكم في FamLink",
     welcome_subtitle: "نحن نربط العائلات بمقدمي خدمات موثوقين لبناء مجتمع سعيد وداعم. أخبرنا من أنت للبدء.",
     welcome_parent_button: "أنا والد/والدة",
@@ -14,9 +30,13 @@ export const ar = {
     welcome_already_account: "هل لديك حساب بالفعل؟",
     button_login: "تسجيل الدخول",
     button_signup: "إنشاء حساب",
+    
+    // Navigation Buttons
     button_back: "رجوع",
     button_next: "التالي",
     button_prev: "السابق",
+
+    // Auth Screens
     signup_title_parent: "انضم إلى FamLink كوالد!",
     signup_title_nanny: "انضمي إلى FamLink كمربية!",
     signup_subtitle: "أنشئ حسابك للبدء.",
@@ -35,6 +55,8 @@ export const ar = {
     forgot_password_title: "نسيت كلمة المرور؟",
     forgot_password_subtitle: "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.",
     forgot_password_button: "إرسال رابط إعادة التعيين",
+
+    // Assessment
     questionnaire_title: "تقييم المربية",
     questionnaire_question_of: "سؤال {current} من {total}",
     button_submit_results: "إرسال ورؤية النتائج",
@@ -54,10 +76,13 @@ export const ar = {
     button_create_profile: "إكمال ملفي الشخصي",
     button_edit_profile: "تعديل ملفي الشخصي",
     button_retake_assessment: "إعادة التقييم",
+
+    // Profile Forms
     profile_form_title: "إنشاء ملف المربية",
     profile_form_subtitle: "ستكون هذه المعلومات مرئية للآباء. اجعليها مميزة!",
     profile_form_progress_title: "اكتمال الملف الشخصي",
     profile_form_progress_subtitle: "أكمل جميع الحقول الأساسية (*) لجعل ملفك الشخصي مرئيًا للآباء.",
+    profile_form_missing_fields_title: "الحقول المطلوبة مفقودة",
     profile_form_mandatory_prompt: "يرجى إكمال ملفك الشخصي للوصول إلى جميع الميزات.",
     parent_profile_form_title: "تعديل الملف الشخصي",
     parent_profile_form_subtitle: "حافظ على تحديث معلوماتك للحصول على أفضل التطابقات.",
@@ -68,7 +93,7 @@ export const ar = {
     parent_profile_interests_title: "اهتماماتي",
     parent_profile_interests_subtitle: "يساعدنا في التوصية بالأنشطة التي ستحبينها.",
     parent_profile_skills_title: "مهارات يمكنني مشاركتها",
-    parent_profile_skills_subtitle: "اختاري المهارات التي يمكنك تعليمها أو تقديمها لأمهات أخريات.",
+    parent_profile_skills_subtitle: "اختاري المهارات التي يمكنك تعليمها أو تقديمها لآباء آخرين.",
     button_save_profile: "حفظ الملف الشخصي",
     profile_form_congrats: "عمل رائع!",
     profile_form_complete_prompt: "يرجى إكمال ملفك الشخصي حتى يتمكن الآباء من العثور عليك.",
@@ -83,6 +108,8 @@ export const ar = {
     profile_form_description: "سيرة ذاتية / وصف قصير",
     profile_form_description_placeholder: "أخبري الآباء قليلاً عن نفسك...",
     button_save_publish: "حفظ ونشر الملف",
+
+    // Subscription
     subscription_title: "اختر خطتك",
     subscription_subtitle: "اشترك للتواصل مع مربياتنا الموثوقات.",
     plan_parent_name: "خطة الآباء",
@@ -99,6 +126,8 @@ export const ar = {
     payment_cvv: "CVV",
     button_pay_now: "ادفع €{price} الآن",
     button_processing: "جارٍ المعالجة...",
+    
+    // Dashboard
     dashboard_title: "لوحة التحكم",
     dashboard_welcome: "مرحبًا",
     dashboard_user: "مستخدم",
@@ -139,14 +168,14 @@ export const ar = {
     task_due_on: "مستحق في: {date}",
     task_overdue: "متأخر",
     button_save_task: "حفظ المهمة",
-    dashboard_community_title: "تواصل مع الأمهات",
-    dashboard_community_subtitle: "انضم أو أنشئ أنشطة محلية لمقابلة أمهات أخريات في منطقتك.",
+    dashboard_community_title: "تواصل مع الآباء",
+    dashboard_community_subtitle: "انضم أو أنشئ أنشطة محلية لمقابلة آباء آخرين في منطقتك.",
     dashboard_community_button: "تصفح أنشطة المجتمع",
     dashboard_child_sharing_title: "مشاركة نزهات الأطفال",
     dashboard_child_sharing_subtitle: "وفر الوقت والمال من خلال مشاركة النزهات مع أولياء الأمور الآخرين.",
     dashboard_child_sharing_button: "تصفح النزهات المشتركة",
     dashboard_skill_sharing_title: "مشاركة المهارات والمساعدة",
-    dashboard_skill_sharing_subtitle: "انشر مهمة أو اعرض مهاراتك لمساعدة أم أخرى.",
+    dashboard_skill_sharing_subtitle: "انشر مهمة أو اعرض مهاراتك لمساعدة والد آخر.",
     dashboard_skill_sharing_button: "تصفح سوق المهارات",
     dashboard_dads_title: "تواصل مع الآباء",
     dashboard_dads_subtitle: "انضم إلى الأنشطة التي تستضيفها خصيصًا للآباء وأطفالهم.",
@@ -159,8 +188,10 @@ export const ar = {
     dashboard_no_skill_requests: "لم تقم بنشر أي طلبات مهارات.",
     dashboard_hosted_outings_title: "النزهات التي تستضيفها",
     dashboard_no_hosted_outings: "أنت لا تستضيف أي نزهات.",
+    
+    // Community & Activities
     community_activities_title: "أنشطة المجتمع",
-    community_activities_subtitle: "اعثر على مواعيد اللعب والمشي وغيرها من الأحداث التي تستضيفها أمهات مثلك.",
+    community_activities_subtitle: "اعثر على مواعيد اللعب والمشي وغيرها من الأحداث التي يستضيفها آباء مثلك.",
     button_create_activity: "إنشاء نشاط",
     create_activity_modal_title: "إنشاء نشاط جديد",
     activity_label_category: "الفئة",
@@ -185,6 +216,8 @@ export const ar = {
     community_view_list: "عرض القائمة",
     community_view_calendar: "عرض التقويم",
     community_no_activities_for_date: "لا توجد أنشطة مجدولة لهذا التاريخ.",
+    
+    // Chat
     chat_modal_title: "دردشة النشاط",
     chat_placeholder: "اكتب رسالتك...",
     chat_sort_by: "ترتيب حسب",
@@ -194,6 +227,8 @@ export const ar = {
     button_send: "إرسال",
     button_delete: "حذف",
     button_delete_all: "حذف الكل",
+
+    // Child Outings
     child_outings_title: "نزهات مشاركة الأطفال",
     child_outings_subtitle: "يأخذ أحد الوالدين العديد من الأطفال في نزهة، حتى يوفر الآباء الآخرون الوقت والمال.",
     button_create_outing: "إنشاء نزهة",
@@ -219,8 +254,10 @@ export const ar = {
     request_outing_label_child_name: "اسم الطفل",
     request_outing_label_child_age: "عمر الطفل",
     button_send_join_request: "إرسال طلب الانضمام",
+    
+    // Skills
     skill_marketplace_title: "سوق مشاركة المهارات",
-    skill_marketplace_subtitle: "احصل على مساعدة في المهام أو تعلم مهارة جديدة من أم أخرى في المجتمع.",
+    skill_marketplace_subtitle: "احصل على مساعدة في المهام أو تعلم مهارة جديدة من والد آخر في المجتمع.",
     button_post_task: "نشر مهمة",
     create_skill_request_title: "نشر مهمة أو طلب مهارة",
     skill_request_label_category: "الفئة",
@@ -249,6 +286,8 @@ export const ar = {
     view_offers_title: "العروض لـ '{taskTitle}'",
     no_offers_yet: "لم يتم استلام عروض بعد.",
     offer_from: "عرض من {name}",
+
+    // Nanny Listing
     nanny_listing_title: "البحث عن مربية",
     nanny_listing_subtitle: "تصفح ملفات مربياتنا الموثوقات والمقيمات.",
     nanny_listing_no_nannies: "لا توجد مربيات متاحين في الوقت الحالي. يرجى التحقق لاحقًا!",
@@ -268,6 +307,8 @@ export const ar = {
     button_rated: "تم التقييم",
     button_accept: "قبول",
     button_decline: "رفض",
+    
+    // Profile Detail
     nanny_profile_title: "ملف المربية",
     nanny_profile_experience: "الخبرة",
     nanny_profile_years: "سنوات",
@@ -278,6 +319,8 @@ export const ar = {
     nanny_profile_reviews: "مراجعات",
     nanny_profile_reviews_title: "مراجعات من الآباء",
     nanny_profile_no_reviews: "لا توجد مراجعات بعد.",
+
+    // Modals
     contact_modal_title: "اتصل بـ {name}",
     contact_modal_email: "البريد الإلكتروني",
     contact_modal_phone: "الهاتف",
@@ -302,8 +345,12 @@ export const ar = {
     booking_status_pending: "قيد الانتظار",
     booking_status_accepted: "مقبول",
     booking_status_declined: "مرفوض",
+    
+    // Footer
     footer_text: "© 2025 FamLink. تخفيف العبء عن الآباء، تمكين العائلات بواسطة",
     footer_rights_reserved: ". جميع الحقوق محفوظة",
+
+    // Errors & Alerts
     account_suspended_title: "تم تعليق الحساب",
     account_suspended_message: "لقد فشلت في التقييم عدة مرات. لأغراض أمنية، تم تعليق حسابك مؤقتًا.",
     account_suspended_try_again: "يرجى المحاولة مرة أخرى بعد:",
@@ -332,6 +379,8 @@ export const ar = {
     alert_due_date_past: "تاريخ الاستحقاق لا يمكن أن يكون في الماضي.",
     alert_description_required: "يرجى إدخال وصف المهمة.",
     alert_outing_request_sent: "تم إرسال طلبك للانضمام إلى النزهة!",
+
+    // Calendar
     unit_hours: "ساعات",
     unit_minutes: "دقيقة",
     calendar_title: "تقويم التوافر",
@@ -356,6 +405,7 @@ export const ar = {
     day_fri: "جمعة",
     day_sat: "سبت",
 
+    // Assessment Questions
     q1_text: "طفل تحت رعايتك يصاب بنوبة غضب لأنه لا يريد مغادرة الملعب. كيف تتعاملين مع ذلك؟",
     q1_op1: "إخباره بحزم أن يتوقف عن البكاء وأنكم ستغادرون الآن.",
     q1_op2: "الاعتراف بمشاعره، وتقديم تحذير لمدة 5 دقائق، واقتراح نشاط ممتع عند العودة إلى المنزل.",

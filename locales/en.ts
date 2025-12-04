@@ -1,10 +1,26 @@
 export const en = {
+    // Header & Navigation
     header_tagline: "Relieve parents, empower families.",
     header_welcome: "Welcome",
     button_logout: "Log Out",
     button_settings: "Settings",
     menu_edit_profile: "Edit Profile",
     menu_subscription_status: "Subscription Status",
+
+    // Generic Statuses (New)
+    status_pending: "Pending",
+    status_accepted: "Accepted",
+    status_declined: "Declined",
+    status_completed: "Completed",
+    status_cancelled: "Canceled",
+    status_open: "Open",
+    status_in_progress: "In Progress",
+
+    // Task & Auto-delete
+    text_deletes_in_days: "Deletes in {days} days",
+    button_keep: "Keep",
+
+    // Welcome Screen
     welcome_title: "Welcome to FamLink",
     welcome_subtitle: "We connect families with trusted providers to create a happy, supportive community. Tell us who you are to get started.",
     welcome_parent_button: "I'm a Parent",
@@ -14,9 +30,13 @@ export const en = {
     welcome_already_account: "Already have an account?",
     button_login: "Log In",
     button_signup: "Sign Up",
+    
+    // Navigation Buttons
     button_back: "Back",
     button_next: "Next",
     button_prev: "Prev",
+
+    // Auth Screens
     signup_title_parent: "Join FamLink as a Parent!",
     signup_title_nanny: "Join FamLink as a Nanny!",
     signup_subtitle: "Create your account to get started.",
@@ -35,6 +55,8 @@ export const en = {
     forgot_password_title: "Forgot Password?",
     forgot_password_subtitle: "Enter your email and we'll send you a link to reset your password.",
     forgot_password_button: "Send Reset Link",
+
+    // Assessment
     questionnaire_title: "Nanny Assessment",
     questionnaire_question_of: "Question {current} of {total}",
     button_submit_results: "Submit & See Results",
@@ -54,6 +76,8 @@ export const en = {
     button_create_profile: "Complete Your Profile",
     button_edit_profile: "Edit My Profile",
     button_retake_assessment: "Retake Assessment",
+
+    // Profile Forms
     profile_form_title: "Create Your Nanny Profile",
     profile_form_subtitle: "This information will be visible to parents. Make it shine!",
     profile_form_progress_title: "Profile Completion",
@@ -84,6 +108,8 @@ export const en = {
     profile_form_description: "Short Bio / Description",
     profile_form_description_placeholder: "Tell parents a little about yourself...",
     button_save_publish: "Save and Publish Profile",
+
+    // Subscription
     subscription_title: "Choose Your Plan",
     subscription_subtitle: "Subscribe to connect with our trusted nannies.",
     plan_parent_name: "Parent Plan",
@@ -100,6 +126,8 @@ export const en = {
     payment_cvv: "CVV",
     button_pay_now: "Pay €{price} Now",
     button_processing: "Processing...",
+    
+    // Dashboard
     dashboard_title: "My Dashboard",
     dashboard_welcome: "Welcome",
     dashboard_user: "User",
@@ -160,6 +188,8 @@ export const en = {
     dashboard_no_skill_requests: "You haven't posted any skill requests.",
     dashboard_hosted_outings_title: "Outings You're Hosting",
     dashboard_no_hosted_outings: "You are not hosting any outings.",
+
+    // Community & Activities
     community_activities_title: "Community Activities",
     community_activities_subtitle: "Find playdates, walks, and other events hosted by parents like you.",
     button_create_activity: "Create Activity",
@@ -186,6 +216,8 @@ export const en = {
     community_view_list: "List View",
     community_view_calendar: "Calendar View",
     community_no_activities_for_date: "No activities scheduled for this date.",
+    
+    // Chat
     chat_modal_title: "Activity Chat",
     chat_placeholder: "Type your message...",
     chat_sort_by: "Sort by",
@@ -195,6 +227,8 @@ export const en = {
     button_send: "Send",
     button_delete: "Delete",
     button_delete_all: "Delete All",
+
+    // Child Outings
     child_outings_title: "Child Sharing Outings",
     child_outings_subtitle: "One parent takes multiple children on an outing, so other parents save time and money.",
     button_create_outing: "Create an Outing",
@@ -220,6 +254,8 @@ export const en = {
     request_outing_label_child_name: "Child's Name",
     request_outing_label_child_age: "Child's Age",
     button_send_join_request: "Send Join Request",
+
+    // Skills
     skill_marketplace_title: "Skill Sharing Marketplace",
     skill_marketplace_subtitle: "Get help with tasks or learn a new skill from another parent in the community.",
     button_post_task: "Post a Task",
@@ -250,6 +286,8 @@ export const en = {
     view_offers_title: "Offers for '{taskTitle}'",
     no_offers_yet: "No offers received yet.",
     offer_from: "Offer from {name}",
+
+    // Nanny Listing
     nanny_listing_title: "Find a Nanny",
     nanny_listing_subtitle: "Browse profiles of our trusted and assessed nannies.",
     nanny_listing_no_nannies: "No nannies available at the moment. Please check back later!",
@@ -269,6 +307,8 @@ export const en = {
     button_rated: "Rated",
     button_accept: "Accept",
     button_decline: "Decline",
+    
+    // Profile Detail
     nanny_profile_title: "Nanny Profile",
     nanny_profile_experience: "Experience",
     nanny_profile_years: "years",
@@ -279,6 +319,8 @@ export const en = {
     nanny_profile_reviews: "reviews",
     nanny_profile_reviews_title: "Reviews from Parents",
     nanny_profile_no_reviews: "No reviews yet.",
+
+    // Modals
     contact_modal_title: "Contact {name}",
     contact_modal_email: "Email",
     contact_modal_phone: "Phone",
@@ -303,8 +345,12 @@ export const en = {
     booking_status_pending: "Pending",
     booking_status_accepted: "Accepted",
     booking_status_declined: "Declined",
+    
+    // Footer
     footer_text: "© 2025 FamLink. Relieve parents, empower families by",
     footer_rights_reserved: ". All Rights Reserved",
+    
+    // Errors & Alerts
     account_suspended_title: "Account Suspended",
     account_suspended_message: "You have failed the assessment multiple times. For security purposes, your account has been temporarily suspended.",
     account_suspended_try_again: "Please try again after:",
@@ -333,6 +379,8 @@ export const en = {
     alert_due_date_past: "Due date cannot be in the past.",
     alert_description_required: "Please enter a task description.",
     alert_outing_request_sent: "Your request to join the outing has been sent!",
+
+    // Calendar
     unit_hours: "hours",
     unit_minutes: "minutes",
     calendar_title: "Availability Calendar",
@@ -357,7 +405,7 @@ export const en = {
     day_fri: "Fri",
     day_sat: "Sat",
 
-    // ... assessment questions remain unchanged
+    // Assessment Questions
     q1_text: "A child in your care is having a tantrum because they don't want to leave the playground. How do you handle it?",
     q1_op1: "Firmly tell them to stop crying and that you're leaving now.",
     q1_op2: "Acknowledge their feelings, offer a 5-minute warning, and suggest a fun activity for when you get home.",

@@ -1,10 +1,26 @@
 export const zh = {
-    header_tagline: "减轻父母负担，赋能家庭。",
+    // Header & Navigation
+    header_tagline: "为家长减负，为家庭赋能。", // Updated: Moms -> Parents
     header_welcome: "欢迎",
     button_logout: "登出",
     button_settings: "设置",
     menu_edit_profile: "编辑个人资料",
     menu_subscription_status: "订阅状态",
+
+    // Generic Statuses (New)
+    status_pending: "待处理",
+    status_accepted: "已接受",
+    status_declined: "已拒绝",
+    status_completed: "已完成",
+    status_cancelled: "已取消",
+    status_open: "开放",
+    status_in_progress: "进行中",
+
+    // Task & Auto-delete
+    text_deletes_in_days: "{days} 天后删除",
+    button_keep: "保留",
+
+    // Welcome Screen
     welcome_title: "欢迎来到 FamLink",
     welcome_subtitle: "我们将家庭与值得信赖的服务提供者联系起来，共同建立一个幸福、互助的社区。请告诉我们您的身份以开始。",
     welcome_parent_button: "我是家长",
@@ -14,9 +30,13 @@ export const zh = {
     welcome_already_account: "已经有账户了？",
     button_login: "登录",
     button_signup: "注册",
+    
+    // Navigation Buttons
     button_back: "返回",
     button_next: "下一步",
     button_prev: "上一步",
+
+    // Auth Screens
     signup_title_parent: "作为家长加入 FamLink！",
     signup_title_nanny: "作为保姆加入 FamLink！",
     signup_subtitle: "创建您的账户以开始。",
@@ -35,6 +55,8 @@ export const zh = {
     forgot_password_title: "忘记密码？",
     forgot_password_subtitle: "输入您的电子邮件，我们将向您发送重置密码的链接。",
     forgot_password_button: "发送重置链接",
+
+    // Assessment
     questionnaire_title: "保姆评估",
     questionnaire_question_of: "问题 {current} / {total}",
     button_submit_results: "提交并查看结果",
@@ -54,10 +76,13 @@ export const zh = {
     button_create_profile: "完善个人资料",
     button_edit_profile: "编辑个人资料",
     button_retake_assessment: "重新评估",
+
+    // Profile Forms
     profile_form_title: "创建您的保姆资料",
     profile_form_subtitle: "此信息将对家长可见。让它脱颖而出！",
     profile_form_progress_title: "资料完整度",
     profile_form_progress_subtitle: "完成所有必填字段 (*) 以使您的资料对家长可见。",
+    profile_form_missing_fields_title: "缺少必填字段",
     profile_form_mandatory_prompt: "请完善您的个人资料以访问所有功能。",
     parent_profile_form_title: "编辑个人资料",
     parent_profile_form_subtitle: "保持您的信息更新以获得最佳匹配。",
@@ -68,7 +93,7 @@ export const zh = {
     parent_profile_interests_title: "我的兴趣",
     parent_profile_interests_subtitle: "帮助我们推荐您喜欢的活动。",
     parent_profile_skills_title: "我可以分享的技能",
-    parent_profile_skills_subtitle: "选择您可以教给或提供给其他妈妈的技能。",
+    parent_profile_skills_subtitle: "选择您可以教给或提供给其他家长的技能。",
     button_save_profile: "保存资料",
     profile_form_congrats: "干得好！",
     profile_form_complete_prompt: "请完善您的个人资料，以便家长可以找到您。",
@@ -83,6 +108,8 @@ export const zh = {
     profile_form_description: "简介 / 简短描述",
     profile_form_description_placeholder: "向家长介绍一下您自己...",
     button_save_publish: "保存并发布资料",
+
+    // Subscription
     subscription_title: "选择您的计划",
     subscription_subtitle: "订阅以联系我们值得信赖的保姆。",
     plan_parent_name: "家长计划",
@@ -99,6 +126,8 @@ export const zh = {
     payment_cvv: "CVV",
     button_pay_now: "立即支付 €{price}",
     button_processing: "处理中...",
+    
+    // Dashboard
     dashboard_title: "我的仪表板",
     dashboard_welcome: "欢迎",
     dashboard_user: "用户",
@@ -139,14 +168,14 @@ export const zh = {
     task_due_on: "截止：{date}",
     task_overdue: "逾期",
     button_save_task: "保存任务",
-    dashboard_community_title: "与父母联系",
-    dashboard_community_subtitle: "加入或创建本地活动，结识您所在地区的其他父母。",
+    dashboard_community_title: "与家长联系",
+    dashboard_community_subtitle: "加入或创建本地活动，结识您所在地区的其他家长。",
     dashboard_community_button: "浏览社区活动",
     dashboard_child_sharing_title: "儿童外出共享",
     dashboard_child_sharing_subtitle: "与其他家长共享外出活动，节省时间和金钱。",
     dashboard_child_sharing_button: "浏览共享外出",
     dashboard_skill_sharing_title: "技能共享与帮助",
-    dashboard_skill_sharing_subtitle: "发布任务或提供您的技能来帮助其他父母。",
+    dashboard_skill_sharing_subtitle: "发布任务或提供您的技能来帮助其他家长。",
     dashboard_skill_sharing_button: "浏览技能市场",
     dashboard_dads_title: "与爸爸们联系",
     dashboard_dads_subtitle: "加入专为爸爸和他们的孩子举办的活动。",
@@ -159,8 +188,10 @@ export const zh = {
     dashboard_no_skill_requests: "您还没有发布任何技能请求。",
     dashboard_hosted_outings_title: "您主持的外出",
     dashboard_no_hosted_outings: "您没有主持任何外出。",
+    
+    // Community & Activities
     community_activities_title: "社区活动",
-    community_activities_subtitle: "查找像您一样的父母们举办的聚会、散步和其他活动。",
+    community_activities_subtitle: "查找像您一样的家长们举办的聚会、散步和其他活动。",
     button_create_activity: "创建活动",
     create_activity_modal_title: "创建新活动",
     activity_label_category: "类别",
@@ -185,6 +216,8 @@ export const zh = {
     community_view_list: "列表视图",
     community_view_calendar: "日历视图",
     community_no_activities_for_date: "此日期没有安排活动。",
+    
+    // Chat
     chat_modal_title: "活动聊天",
     chat_placeholder: "输入您的消息...",
     chat_sort_by: "排序方式",
@@ -194,6 +227,8 @@ export const zh = {
     button_send: "发送",
     button_delete: "删除",
     button_delete_all: "删除所有",
+
+    // Child Outings
     child_outings_title: "儿童共享外出",
     child_outings_subtitle: "一位家长带多个孩子外出，这样其他家长可以节省时间和金钱。",
     button_create_outing: "创建外出",
@@ -219,8 +254,10 @@ export const zh = {
     request_outing_label_child_name: "孩子姓名",
     request_outing_label_child_age: "孩子年龄",
     button_send_join_request: "发送加入请求",
+    
+    // Skills
     skill_marketplace_title: "技能共享市场",
-    skill_marketplace_subtitle: "从社区中的其他父母那里获得任务帮助或学习新技能。",
+    skill_marketplace_subtitle: "从社区中的其他家长那里获得任务帮助或学习新技能。",
     button_post_task: "发布任务",
     create_skill_request_title: "发布任务或技能请求",
     skill_request_label_category: "类别",
@@ -233,7 +270,7 @@ export const zh = {
     skill_cat_cooking: "烹饪",
     skill_cat_cleaning: "清洁",
     skill_cat_tutoring: "辅导",
-    skill_cat_tech: "技术帮助",
+    skill_cat_tech: "技术支援",
     skill_cat_crafts: "工艺与缝纫",
     skill_cat_other: "其他",
     skill_card_requested_by: "请求者 {name}",
@@ -248,7 +285,9 @@ export const zh = {
     button_send_offer: "发送报价",
     view_offers_title: "'{taskTitle}' 的报价",
     no_offers_yet: "尚未收到报价。",
-    offer_from: "来自 {name} 的报价",
+    offer_from: "{name} 的报价",
+
+    // Nanny Listing
     nanny_listing_title: "寻找保姆",
     nanny_listing_subtitle: "浏览我们值得信赖和经过评估的保姆资料。",
     nanny_listing_no_nannies: "目前没有可用的保姆。请稍后再查看！",
@@ -268,6 +307,8 @@ export const zh = {
     button_rated: "已评分",
     button_accept: "接受",
     button_decline: "拒绝",
+    
+    // Profile Detail
     nanny_profile_title: "保姆资料",
     nanny_profile_experience: "经验",
     nanny_profile_years: "年",
@@ -278,7 +319,9 @@ export const zh = {
     nanny_profile_reviews: "评论",
     nanny_profile_reviews_title: "家长评论",
     nanny_profile_no_reviews: "暂无评论。",
-    contact_modal_title: "联系 {name}",
+
+    // Modals
+    contact_modal_title: "{name} 联系",
     contact_modal_email: "电子邮件",
     contact_modal_phone: "电话",
     button_close: "关闭",
@@ -302,8 +345,12 @@ export const zh = {
     booking_status_pending: "待处理",
     booking_status_accepted: "已接受",
     booking_status_declined: "已拒绝",
-    footer_text: "© 2025 FamLink。由 Moubarak 制作，旨在减轻父母负担，赋能家庭。",
+    
+    // Footer
+    footer_text: "© 2025 FamLink. 为家长减负，为家庭赋能。",
     footer_rights_reserved: "。保留所有权利",
+    
+    // Errors & Alerts
     account_suspended_title: "账户已暂停",
     account_suspended_message: "您多次未通过评估。为了安全起见，您的账户已被暂时暂停。",
     account_suspended_try_again: "请在以下时间后重试：",
@@ -332,6 +379,8 @@ export const zh = {
     alert_due_date_past: "截止日期不能是过去的时间。",
     alert_description_required: "请输入任务描述。",
     alert_outing_request_sent: "您加入外出的请求已发送！",
+
+    // Calendar
     unit_hours: "小时",
     unit_minutes: "分钟",
     calendar_title: "空闲日历",
@@ -356,7 +405,7 @@ export const zh = {
     day_fri: "周五",
     day_sat: "周六",
 
-    // ... (Assessment questions - no changes needed here)
+    // Assessment Questions
     q1_text: "您照看的孩子因为不想离开游乐场而发脾气。您怎么处理？",
     q1_op1: "坚定地告诉他们停止哭泣，我们要走了。",
     q1_op2: "承认他们的感受，提供5分钟的提醒，并建议回家后进行有趣的活动。",
@@ -542,15 +591,15 @@ export const zh = {
     q40_op3: "整天看电影。",
     q40_op4: "在监督下一起烘焙或烹饪。",
     q41_text: "在父母第一次离开之前，您应该手头有哪些信息？（选择所有适用的选项）",
-    q41_op1: "紧急联系电话（父母、医生、毒物控制）。",
-    q41_op2: "Wi-Fi 密码。",
+    q41_op1: "紧急联系电话（父母、医生、中毒管理センター）。",
+    q41_op2: "Wi-Fi的パスワード。",
     q41_op3: "关于孩子过敏和任何必要药物的信息。",
     q41_op4: "孩子的作息（用餐时间、午睡时间）。",
     q42_text: "以下哪些是可能的严重过敏反应（过敏性休克）的迹象？（选择所有适用的选项）",
     q42_op1: "流鼻涕。",
     q42_op2: "嘴唇、舌头或喉咙肿胀。",
     q42_op3: "呼吸困难或喘息。",
-    q42_op4: "荨麻疹或广泛皮疹。",
+    q42_op4: "じんましんや広範囲の発疹。",
     q43_text: "与您照顾的新孩子建立联系的积极方式有哪些？（选择所有适用的选项）",
     q43_op1: "蹲下来与他们平视，玩他们喜欢的玩具。",
     q43_op2: "对他们的故事和正在做的事情表现出真正的兴趣。",
@@ -559,7 +608,7 @@ export const zh = {
     q44_text: "哪些家居用品对幼儿构成重大安全风险？（选择所有适用的选项）",
     q44_op1: "清洁用品。",
     q44_op2: "冰箱上的小磁铁。",
-    q44_op3: "纽扣电池。",
+    q44_op3: "按钮电池。",
     q44_op4: "婴儿床里的柔软泰迪熊。",
     q45_text: "在一天结束时与父母沟通的有效方式有哪些？（选择所有适用的选项）",
     q45_op1: "简短口头总结一天的亮点和挑战。",
@@ -570,5 +619,5 @@ export const zh = {
     q47_text: "描述您关于儿童营养的理念。",
     q48_text: "作为看护者，您面临的最具挑战性的情况是什么？您是如何处理的？",
     q49_text: "您如何及时了解儿童发展和安全最佳实践？",
-    q50_text: "为什么保姆可靠和守时很重要？"
+    q50_text: "ナニーにとって信頼性が高く時間を守ることが重要なのはなぜですか？"
 };
