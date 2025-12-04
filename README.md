@@ -1,7 +1,3 @@
-Here's the updated README.md incorporating all the requested changes, including the dark mode display fixes, the new keyboard shortcuts, and the End-to-End Encryption features.
-
-Markdown
-
 # FamLink ✨
 
 FamLink is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
@@ -17,31 +13,34 @@ The application is fully architected and implemented with a **React Frontend** a
 
 ---
 
-## 🆕 Latest Implementations (v1.5 - UI & Encryption Update)
+## 🆕 Latest Implementations (v1.6 - Global Location Services)
 
-This release focuses on user experience enhancements, including better dark mode support and the introduction of End-to-End Encryption logic.
+This release integrates the **GeoDB Cities API** to provide accurate, real-time location data worldwide, replacing static lists with dynamic, searchable endpoints.
 
-### 1. UI Refinements & Dark Mode Fixes
+### 1. Global Location API Integration
+* **Dynamic Data:** Replaced static country/city lists with real-time data from GeoDB.
+* **Smart Caching:** Implemented backend caching (Redis-like in-memory) to minimize API calls and avoid rate limits.
+* **New Endpoints:**
+    * `GET /locations/countries` - Fetches all available countries.
+    * `GET /locations/states/:countryCode` - Fetches states/regions for a specific country.
+    * `GET /locations/cities/:countryCode/:regionCode` - Fetches cities within a selected region.
+    * `GET /locations/search?query=...` - Global type-ahead search for cities.
+
+### 2. UI Refinements & Dark Mode Fixes
 * **Improved Settings Display:** Fixed visibility issues in dark mode for settings modals and toggle switches.
 * **Adaptive Text:** Modals now correctly adapt their text color based on the active theme (Light/Dark).
 
-### 2. Keyboard Shortcuts
+### 3. Keyboard Shortcuts
 We have added global keyboard shortcuts to improve accessibility and navigation speed:
 * **`Shift + N`**: Open a new AI Assistant chat session instantly.
 * **`Shift + A`**: Toggle the AI Assistant visibility (hide/show) on the screen.
-*(Note: These shortcuts are now listed in the Settings menu for easy reference)*
+*(Note: These shortcuts are listed in the Settings menu)*
 
-### 3. End-to-End Encryption (E2E) Architecture
+### 4. End-to-End Encryption (E2E) Architecture
 * **Secure Messaging:** Implemented a robust cryptographic service layer (`cryptoService.ts`).
-* **Client-Side Encryption:** Messages are now encrypted on the device before being sent via WebSocket. The server only sees and stores the ciphertext.
-* **Decryption:** Incoming messages are decrypted locally on the user's device, ensuring privacy.
-* **Integrity Check:** Added Message Authentication Code (MAC) verification to prevent tampering.
-
-### 4. Persistent Message Status (WhatsApp-style)
-* **Feature:** Message status relies on database persistence and user connection state.
-    * ✓ **Sent** (Gray): Message successfully saved to the server database.
-    * ✓✓ **Delivered** (Gray): Recipient user has successfully connected to the server.
-    * ✓✓ **Seen** (Blue): Recipient user has the chat window open and focused.
+* **Client-Side Encryption:** Messages are encrypted on the device before sending. The server only stores ciphertext.
+* **Decryption:** Incoming messages are decrypted locally on the user's device.
+* **Integrity Check:** Added Message Authentication Code (MAC) verification.
 
 ---
 
@@ -53,7 +52,7 @@ We have added global keyboard shortcuts to improve accessibility and navigation 
 * **Real-time**: Socket.io (WebSockets) for Chat and Notifications.
 * **AI**: Google Gemini API (`@google/genai`) for Nanny Assessment and Assistant.
 * **Localization**: Custom i18n (English, French, Spanish, Japanese, Chinese, Arabic).
-* **Security**: Custom E2E Encryption logic (Mock/Simulated for demo).
+* **External APIs**: GeoDB Cities API (RapidAPI).
 
 ---
 
@@ -63,7 +62,6 @@ To run this project locally without errors, you must configure environment varia
 
 ### 1. Frontend Environment (`/` Root Directory)
 Create a file named `.env.local` in the project root.
-**Note:** Vite requires variables to start with `VITE_` to be exposed to the browser.
 
 ```env
 # Required for AI Assessment and Assistant
@@ -77,6 +75,8 @@ MONGO_URI=mongodb://localhost:27017/famlink
 JWT_SECRET=super_secure_secret_key_change_this
 PORT=3001
 STRIPE_SECRET_KEY=sk_test_placeholder_key
+# New GeoDB API Key (Get from RapidAPI)
+GEODB_API_KEY=your_rapidapi_key_here
 📦 Installation & Setup
 Prerequisites:
 Node.js (v16 or higher)
@@ -127,7 +127,7 @@ Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the c
 4. 💼 Management Dashboard
 Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete).
 
-Real-time Chat: Instant messaging for activities, outings, and bookings with robust persistence and E2E encryption.
+Real-time Chat: Instant messaging with robust persistence, E2E encryption, and read receipts.
 
 Notifications: Real-time alerts for all key events.
 
@@ -139,7 +139,7 @@ Bash
 /                             # Frontend Root
  ├── src/
  │   ├── components/           # React UI Components
- │   ├── services/             # API Clients (Axios, Socket.io, chatService, cryptoService)
+ │   ├── services/             # API Clients (Axios, Socket.io, chatService, cryptoService, locationService)
  │   ├── contexts/             # React Contexts (Theme, Language)
  │   ├── hooks/                # Custom Hooks (useAppLogic, useSocketListeners)
  │   ├── App.tsx               # Main Logic & Routing
@@ -148,6 +148,7 @@ Bash
  │   ├── src/
  │   │   ├── schemas/          # MongoDB Models (Updated for E2E MAC field)
  │   │   ├── chat/             # WebSocket Gateway, Chat Controller & Service
+ │   │   ├── locations/        # New GeoDB Proxy Module
  │   │   ├── notifications/    # Real-time Alert System
  │   │   └── [modules]/        # Feature Modules (Auth, Bookings, Activities, etc.)
  └── package.json            # Frontend Dependencies

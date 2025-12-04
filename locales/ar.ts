@@ -1,6 +1,5 @@
-
 export const ar = {
-    header_tagline: "تخفيف العبء عن الأمهات، تمكين العائلات.",
+    header_tagline: "تخفيف العبء عن الآباء، تمكين العائلات.", // Updated: Moms -> Parents
     header_welcome: "مرحبًا",
     button_logout: "تسجيل الخروج",
     button_settings: "الإعدادات",
