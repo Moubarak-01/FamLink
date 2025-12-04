@@ -11,14 +11,9 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
-@WebSocketGateway({
-  cors: { origin: '*' },
-})
+@WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer()
-  server: Server;
-
-  // Track connected users: Map<UserId, SocketId[]>
+  @WebSocketServer() server: Server;
   private connectedUsers = new Map<string, string[]>();
 
   constructor(
@@ -26,22 +21,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  // 1. USER COMES ONLINE ( Triggers DELIVERED status )
   async handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (userId) {
-      // Add to tracker
       const sockets = this.connectedUsers.get(userId) || [];
       sockets.push(client.id);
       this.connectedUsers.set(userId, sockets);
       
       client.join(`user_${userId}`);
-      console.log(`🟢 User ${userId} connected.`);
+      this.server.emit('user_presence', { userId, status: 'online' });
 
-      // CORE LOGIC: Bulk update pending messages to 'delivered'
       const updatedMessages = await this.chatService.markUndeliveredMessagesAsDelivered(userId);
-      
-      // Notify the SENDERS that their messages are now delivered
       updatedMessages.forEach(msg => {
           this.server.to(`user_${msg.senderId}`).emit('message_status_update', {
               messageId: msg._id.toString(),
@@ -58,31 +48,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const sockets = this.connectedUsers.get(userId).filter(id => id !== client.id);
         if (sockets.length === 0) {
             this.connectedUsers.delete(userId);
+            this.server.emit('user_presence', { userId, status: 'offline' });
         } else {
             this.connectedUsers.set(userId, sockets);
         }
     }
   }
 
-  // 2. USER OPENS CHAT ( Triggers SEEN status )
   @SubscribeMessage('join_room')
-  async handleJoinRoom(@MessageBody() data: { roomId: string, userId?: string }, @ConnectedSocket() client: Socket) {
-    const roomId = typeof data === 'string' ? data : data.roomId;
-    const userId = typeof data === 'object' ? data.userId : null;
-
-    client.join(roomId);
-
-    if (userId) {
-       // Mark messages in this room as seen
-       await this.chatService.markMessagesAsSeen(roomId, userId);
-       
-       // Broadcast 'seen' to the sender(s) in the room
-       this.server.to(roomId).emit('messages_status_update', { 
-           roomId, 
-           status: 'seen', 
-           userId // Who saw it
-       });
+  async handleJoinRoom(@MessageBody() payload: { roomId: string, userId: string }, @ConnectedSocket() client: Socket) {
+    client.join(payload.roomId);
+    const updatedIds = await this.chatService.markMessagesAsSeen(payload.roomId, payload.userId);
+    
+    if (updatedIds.length > 0) {
+         this.server.to(payload.roomId).emit('messages_status_update', { 
+            roomId: payload.roomId, 
+            status: 'seen', 
+            userId: payload.userId 
+        });
     }
+  }
+
+  @SubscribeMessage('check_online')
+  handleCheckOnline(@MessageBody() userId: string): boolean {
+      return this.connectedUsers.has(userId);
   }
 
   @SubscribeMessage('leave_room')
@@ -90,30 +79,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(roomId);
   }
 
-  // 3. SEND MESSAGE ( Triggers SENT status, checks for immediate DELIVERED )
   @SubscribeMessage('send_message')
-  async handleMessage(
-    @MessageBody() data: { roomId: string; message: { senderId: string; text: string } },
-    @ConnectedSocket() client: Socket,
-  ) {
-    const savedMessage = await this.chatService.saveMessage(
-      data.roomId,
-      data.message.senderId,
-      data.message.text,
-    );
-
-    await savedMessage.populate('senderId', 'fullName photo');
+  async handleMessage(@MessageBody() data: { roomId: string, message: any }, @ConnectedSocket() client: Socket) {
+    const savedMessage = await this.chatService.saveMessage(data.roomId, data.message.senderId, data.message.text);
     
-    // Check if receiver is currently online
     let initialStatus = 'sent';
-    if (savedMessage.receiverId && this.connectedUsers.has(savedMessage.receiverId.toString())) {
+    const receiverIdStr = savedMessage.receiverId ? savedMessage.receiverId.toString() : null;
+
+    if (receiverIdStr && this.connectedUsers.has(receiverIdStr)) {
         savedMessage.status = 'delivered';
         savedMessage.deliveredAt = new Date();
         await savedMessage.save();
         initialStatus = 'delivered';
     }
 
-    const messagePayload = {
+    await savedMessage.populate('senderId', 'fullName photo');
+
+    const payload = {
       id: savedMessage._id.toString(),
       text: savedMessage.text,
       senderId: savedMessage.senderId['_id'].toString(),
@@ -123,15 +105,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       status: initialStatus
     };
 
-    // Send to Recipient
-    client.to(data.roomId).emit('receive_message', {
-      roomId: data.roomId,
-      message: messagePayload,
-    });
+    if (receiverIdStr) {
+        this.server.to(`user_${receiverIdStr}`).emit('receive_message', { roomId: data.roomId, message: payload });
+        await this.notificationsService.create(
+            receiverIdStr,
+            `New message from ${payload.senderName}`,
+            'chat',
+            data.roomId
+        );
+    }
+    
+    client.to(data.roomId).emit('receive_message', { roomId: data.roomId, message: payload });
 
-    // Send Notification if not in room
-    this.notificationsService.create(savedMessage.receiverId, `New message`, 'chat', data.roomId);
-
-    return messagePayload; // Returns to Sender
+    return payload;
   }
 }

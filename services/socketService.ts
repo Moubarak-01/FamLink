@@ -1,74 +1,81 @@
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage, Notification } from '../types';
-import { authService } from './authService'; // Assuming we can get user ID or pass it in
+import { authService } from './authService';
 
 class SocketService {
   private socket: Socket | null = null;
-  public mockMode: boolean = true; 
+  public connected: boolean = false;
+  
   private messageHandlers: ((data: {roomId: string, message: ChatMessage}) => void)[] = [];
   private statusHandlers: ((data: {roomId: string, status: string, messageId?: string, userId?: string}) => void)[] = [];
+  private presenceHandlers: ((data: {userId: string, status: 'online' | 'offline'}) => void)[] = [];
+  private notificationHandlers: ((data: Notification) => void)[] = [];
 
-  // Called from useAppLogic or App.tsx
   async connect(userId?: string) {
     if (this.socket?.connected) return;
 
-    // 1. Get User ID if not passed (e.g., from local storage or auth service state)
     let currentUserId = userId;
     if (!currentUserId) {
-        const profile = await authService.getProfile().catch(() => null);
-        currentUserId = profile?.id;
+        try {
+            const profile = await authService.getProfile();
+            currentUserId = profile?.id;
+        } catch (e) { return; }
     }
+    if (!currentUserId) return;
 
-    if (!currentUserId) return; // Don't connect without user ID
-
-    // 2. Connect with Query Param
     this.socket = io('http://localhost:3001', {
       transports: ['websocket'],
-      query: { userId: currentUserId }, // CRITICAL: Tells backend WHO just came online
+      query: { userId: currentUserId },
       reconnectionAttempts: 5
     });
 
     this.socket.on('connect', () => {
       console.log("✅ Socket Connected");
-      this.mockMode = false;
+      this.connected = true;
     });
 
-    // Listeners
-    this.socket.on('receive_message', (data) => {
-        this.messageHandlers.forEach(h => h(data));
+    this.socket.on('disconnect', () => {
+      this.connected = false;
     });
 
-    this.socket.on('message_status_update', (data) => {
-        this.statusHandlers.forEach(h => h(data));
-    });
-    
-    this.socket.on('messages_status_update', (data) => {
-        this.statusHandlers.forEach(h => h(data));
-    });
+    this.socket.on('receive_message', (data) => this.messageHandlers.forEach(h => h(data)));
+    this.socket.on('message_status_update', (data) => this.statusHandlers.forEach(h => h(data)));
+    this.socket.on('messages_status_update', (data) => this.statusHandlers.forEach(h => h(data)));
+    this.socket.on('user_presence', (data) => this.presenceHandlers.forEach(h => h(data)));
+    this.socket.on('notification', (data) => this.notificationHandlers.forEach(h => h(data)));
   }
 
   disconnect() {
-      if(this.socket) this.socket.disconnect();
+      if(this.socket) {
+          this.socket.disconnect();
+          this.connected = false;
+      }
   }
 
   joinRoom(roomId: string, userId: string) {
-    if (this.socket && !this.mockMode) {
-      this.socket.emit('join_room', { roomId, userId });
-    }
+    const emit = () => this.socket?.emit('join_room', { roomId, userId });
+    if (this.socket && this.connected) emit();
+    else if (this.socket) this.socket.once('connect', emit);
   }
 
   leaveRoom(roomId: string) {
-     if (this.socket && !this.mockMode) {
-      this.socket.emit('leave_room', roomId);
-    }
+     if (this.socket) this.socket.emit('leave_room', roomId);
   }
 
   sendMessage(roomId: string, message: ChatMessage, callback?: (savedMessage: ChatMessage) => void) {
-    if (this.socket && !this.mockMode) {
+    if (this.socket && this.connected) {
       this.socket.emit('send_message', { roomId, message }, (response: any) => {
           if (callback && response) callback(response);
       });
     }
+  }
+
+  checkOnlineStatus(userId: string, callback: (isOnline: boolean) => void) {
+      if (this.socket && this.connected) {
+          this.socket.emit('check_online', userId, (isOnline: boolean) => {
+              callback(isOnline);
+          });
+      }
   }
 
   onMessage(handler: (data: {roomId: string, message: ChatMessage}) => void) {
@@ -79,6 +86,16 @@ class SocketService {
   onStatusUpdate(handler: (data: any) => void) {
       this.statusHandlers.push(handler);
       return () => { this.statusHandlers = this.statusHandlers.filter(h => h !== handler); };
+  }
+
+  onPresenceUpdate(handler: (data: {userId: string, status: 'online' | 'offline'}) => void) {
+      this.presenceHandlers.push(handler);
+      return () => { this.presenceHandlers = this.presenceHandlers.filter(h => h !== handler); };
+  }
+
+  onNotification(handler: (data: Notification) => void) {
+      this.notificationHandlers.push(handler);
+      return () => { this.notificationHandlers = this.notificationHandlers.filter(h => h !== handler); };
   }
 }
 
