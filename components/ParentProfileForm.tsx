@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { User, Child, ActivityCategory, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import LocationSelector from './LocationSelector';
+import LocationAutocomplete from './LocationAutocomplete';
 import PhoneInput from './PhoneInput';
 
 interface ParentProfileFormProps {
@@ -14,7 +14,7 @@ interface ParentProfileFormProps {
     children: Child[];
     skillsToTeach: SkillCategory[];
     phone: string;
-  }) => Promise<void> | void; // Ensure return type allows Promise
+  }) => Promise<void> | void;
   onBack: () => void;
 }
 
@@ -72,7 +72,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
       if (typeof value === 'string') {
         newChildren[index].name = value;
       }
-    } else { // field === 'age'
+    } else { 
       newChildren[index].age = typeof value === 'string' ? parseInt(value, 10) || 0 : value;
     }
     setChildren(newChildren);
@@ -118,7 +118,6 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
 
     setIsSubmitting(true);
     try {
-        // Await the actual submission process from parent component
         await onSubmit({ fullName, photo, location, interests, children, skillsToTeach, phone });
     } finally {
         setIsSubmitting(false);
@@ -185,11 +184,11 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
             </div>
              <div>
                 <label className={labelStyles}>{t('profile_form_location')}<span className="text-red-500">*</span></label>
-                <LocationSelector 
-                  initialValue={location} 
-                  onChange={setLocation} 
-                  onCountryChange={setSelectedCountryIso}
-                  hasError={showErrors && !location}
+                <LocationAutocomplete 
+                    value={location}
+                    onChange={setLocation}
+                    placeholder="Search city, address..."
+                    className={getInputClass(location)}
                 />
             </div>
             <div>
@@ -260,7 +259,6 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
                 ))}
             </div>
         </div>
-
 
         <div className="pt-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row gap-4">
             <button type="button" onClick={onBack} disabled={isSubmitting} className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg disabled:opacity-50">

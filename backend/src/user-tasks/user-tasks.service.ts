@@ -29,7 +29,7 @@ export class UserTasksService {
   }
 
   async findAllForUser(userId: string): Promise<UserTaskDocument[]> {
-    // Feature 5: 7-day expiration logic
+    // Feature: 7-day expiration logic
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -56,8 +56,11 @@ export class UserTasksService {
     return this.userTaskModel.findByIdAndUpdate(taskId, updateData, { new: true }).exec();
   }
 
-  // Feature 5: Endpoint to prevent deletion
   async keepTaskPermanently(taskId: string): Promise<UserTaskDocument> {
     return this.userTaskModel.findByIdAndUpdate(taskId, { keepPermanently: true }, { new: true }).exec();
+  }
+
+  async remove(id: string): Promise<any> {
+      return this.userTaskModel.findByIdAndDelete(id).exec();
   }
 }

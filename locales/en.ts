@@ -1,4 +1,3 @@
-
 export const en = {
     header_tagline: "Relieve moms, empower families.",
     header_welcome: "Welcome",
@@ -141,8 +140,8 @@ export const en = {
     task_due_on: "Due: {date}",
     task_overdue: "Overdue",
     button_save_task: "Save Task",
-    dashboard_community_title: "Connect with Moms",
-    dashboard_community_subtitle: "Join or create local activities to meet other moms in your area.",
+    dashboard_community_title: "Connect with Parents",
+    dashboard_community_subtitle: "Join or create local activities to meet other parents in your area.",
     dashboard_community_button: "Browse Community Activities",
     dashboard_child_sharing_title: "Child Outing Sharing",
     dashboard_child_sharing_subtitle: "Save time and money by sharing outings with other parents.",
@@ -358,7 +357,7 @@ export const en = {
     day_fri: "Fri",
     day_sat: "Sat",
 
-    // Assessment Questions (1-50)
+    // ... assessment questions remain unchanged
     q1_text: "A child in your care is having a tantrum because they don't want to leave the playground. How do you handle it?",
     q1_op1: "Firmly tell them to stop crying and that you're leaving now.",
     q1_op2: "Acknowledge their feelings, offer a 5-minute warning, and suggest a fun activity for when you get home.",

@@ -1,4 +1,3 @@
-
 import { api } from './api';
 import { Task } from '../types';
 
@@ -16,5 +15,15 @@ export const taskService = {
   async updateStatus(taskId: string, status: 'pending' | 'completed') {
     const response = await api.patch<Task>(`/user-tasks/${taskId}/status`, { status });
     return response.data;
+  },
+  
+  async keepTask(taskId: string) {
+      const response = await api.patch<Task>(`/user-tasks/${taskId}/keep`);
+      return response.data;
+  },
+
+  async delete(taskId: string) {
+      const response = await api.delete(`/user-tasks/${taskId}`);
+      return response.data;
   }
 };

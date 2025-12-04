@@ -1,16 +1,19 @@
-
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface CalendarProps {
-  availableDates: string[]; // YYYY-MM-DD
+  availableDates?: string[];
   onDateChange?: (date: string) => void;
   isEditable: boolean;
+  restrictToAvailable?: boolean;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ availableDates, onDateChange, isEditable }) => {
+const Calendar: React.FC<CalendarProps> = ({ availableDates = [], onDateChange, isEditable, restrictToAvailable = false }) => {
   const { t } = useLanguage();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Safe array check
+  const safeAvailableDates = Array.isArray(availableDates) ? availableDates : [];
 
   const monthNames = useMemo(() => [
     t('month_january'), t('month_february'), t('month_march'), t('month_april'),
@@ -32,12 +35,10 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates, onDateChange, isEdi
   const daysInMonth = [];
   const startDay = firstDayOfMonth.getDay();
 
-  // Add padding for days from previous month
   for (let i = 0; i < startDay; i++) {
     daysInMonth.push(null);
   }
 
-  // Add days of the current month
   for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
     daysInMonth.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
   }
@@ -52,9 +53,18 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates, onDateChange, isEdi
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
   
-  const handleDateClick = (date: Date) => {
-    if (!isEditable || date < today) return;
-    const dateString = date.toISOString().split('T')[0];
+  const handleDateClick = (day: Date) => {
+    if (!isEditable) return;
+    
+    const year = day.getFullYear();
+    const month = String(day.getMonth() + 1).padStart(2, '0');
+    const d = String(day.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${d}`;
+
+    if (day < today) return;
+
+    if (restrictToAvailable && !safeAvailableDates.includes(dateString)) return;
+
     onDateChange?.(dateString);
   };
 
@@ -72,24 +82,28 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates, onDateChange, isEdi
         {daysInMonth.map((day, index) => {
           if (!day) return <div key={`empty-${index}`} />;
 
-          const dateString = day.toISOString().split('T')[0];
+          const year = day.getFullYear();
+          const month = String(day.getMonth() + 1).padStart(2, '0');
+          const d = String(day.getDate()).padStart(2, '0');
+          const dateString = `${year}-${month}-${d}`;
+
           const isToday = day.getTime() === today.getTime();
-          const isAvailable = availableDates.includes(dateString);
+          const isAvailable = safeAvailableDates.includes(dateString);
           const isPast = day < today;
+          
+          // This logic ensures pending dates (which are removed from safeAvailableDates) appear disabled
+          const isDisabled = isPast || (restrictToAvailable && !isAvailable);
 
           let buttonClass = "w-full aspect-square flex items-center justify-center rounded-full text-sm transition-colors duration-200";
 
-          if (isPast) {
-            buttonClass += " text-gray-400 dark:text-gray-600 cursor-not-allowed";
+          if (isDisabled) {
+            buttonClass += " text-gray-300 dark:text-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800";
           } else if (isAvailable) {
-            buttonClass += " bg-[var(--accent-primary)] text-white font-bold";
-            if (isEditable) buttonClass += " hover:bg-[var(--accent-primary-hover)]";
-          } else if(isToday) {
-            buttonClass += " bg-[var(--bg-accent-light)] text-[var(--text-accent)] font-bold";
-            if (isEditable) buttonClass += " hover:bg-pink-200 dark:hover:bg-pink-900/50";
+            buttonClass += " bg-[var(--accent-primary)] text-white font-bold shadow-sm";
+            if (isEditable) buttonClass += " hover:bg-[var(--accent-primary-hover)] hover:scale-105 transform";
           } else {
-             buttonClass += " text-[var(--text-secondary)]";
-             if (isEditable) buttonClass += " hover:bg-[var(--bg-hover)]";
+            buttonClass += " text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]";
+            if (isToday) buttonClass += " border-2 border-[var(--accent-primary)] font-bold text-[var(--accent-primary)]";
           }
 
           return (
@@ -97,8 +111,9 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates, onDateChange, isEdi
               <button
                 type="button"
                 onClick={() => handleDateClick(day)}
-                disabled={isPast && !isEditable}
+                disabled={isDisabled && isEditable}
                 className={buttonClass}
+                title={isAvailable ? "Available" : "Unavailable"}
               >
                 {day.getDate()}
               </button>

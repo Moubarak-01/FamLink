@@ -20,7 +20,7 @@ export class ReviewsService {
     });
     const savedReview = await review.save();
 
-    // Update the target user's average rating immediately
+    // Feature 3: Update the target user's average rating immediately
     await this.updateUserRating(targetId);
 
     return savedReview;

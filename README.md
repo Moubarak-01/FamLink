@@ -1,6 +1,6 @@
 # FamLink ✨
 
-**FamLink** is a comprehensive, community-driven mobile web application designed to empower mothers and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
+**FamLink** is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
 
 ---
 
@@ -13,30 +13,31 @@ The application is fully architected and implemented with a **React Frontend** a
 
 ---
 
-## 🆕 Latest Implementations (v1.2 Updates)
+## 🆕 Latest Implementations (v1.3 - Community & Safety Update)
 
 We have recently added robust real-time notification systems and enhanced data persistence.
 
-### 1. Global Notification System
-* **Feature:** Users now receive instant alerts for **Chat Messages**, **Booking Requests**, **Task Assignments**, and **Status Updates**.
-* **New Files:**
-    * `backend/src/notifications/notifications.gateway.ts`: Dedicated WebSocket gateway for pushing alerts to specific users.
-* **Updates:**
-    * `notifications.service.ts`: Integrated with the gateway to broadcast events immediately upon database creation.
-    * `socketService.ts`: Added a dedicated `onNotification` listener on the frontend.
+### 1. Optimistic Nanny Removal
+* **Feature:** Instant UI feedback when removing nannies from the dashboard. The UI updates immediately before the server response, reverting only if an error occurs.
 
-### 2. Chat Persistence & Reliability
-* **Feature:** Messages are now saved to MongoDB and retrieved upon login. The "White Screen" crash on chat open has been resolved by robust data transformation.
-* **New Files:**
-    * `backend/src/chat/chat.controller.ts`: Endpoint to fetch message history.
-    * `services/chatService.ts`: Frontend service to handle history fetching and deletion.
-* **Updates:**
-    * `ChatModal.tsx`: Now loads history on open, handles missing sender data gracefully, and supports immediate message deletion.
-    * `chat.gateway.ts`: Smart routing logic ensures notifications are sent to the correct recipients based on room type (Booking vs. Activity vs. Outing).
+### 2. Advanced Booking Logic
+* **Feature:** Prevents double bookings. A parent cannot send a new request for a date if they already have an accepted booking with that nanny for the same date. Also validates against the nanny's set availability.
 
-### 3. Deep Linking & Refresh Strategy
-* **Feature:** Clicking a notification (e.g., "New Task Assigned") instantly refreshes the dashboard data and navigates the user to the specific context (e.g., opening the relevant chat or booking modal).
-* **Update:** `App.tsx` now implements a centralized `refreshData` strategy triggered by notification interactions.
+### 3. Smart Reviews System
+* **Feature:** Auto-calculates average ratings. When a new review is submitted, the backend immediately updates the nanny's average score in the database.
+
+### 4. Inclusive UI Text
+* **Feature:** Changed "Moms" to "Parents" throughout the application to foster a more inclusive community environment.
+
+### 5. Task Expiration & Persistence
+* **Feature:** Completed tasks now auto-expire after 7 days to keep the dashboard clean. Users can optionally choose to "Keep" a completed task permanently.
+
+### 6. Message Read Receipts (WhatsApp-style)
+* **Feature:** Real-time chat now supports status indicators:
+    * ✓ Sent (Gray)
+    * ✓✓ Delivered (Gray)
+    * ✓✓ Seen (Blue)
+* **Tech:** Implemented via Socket.io room events tracking when a user joins a chat room.
 
 ---
 
@@ -103,8 +104,7 @@ Navigate to the root folder (open a new terminal):
 Bash
 
 cd ..
-(Or just stay in the root if you haven't entered backend/)
-
+# (Or just stay in the root if you haven't entered backend/)
 Install Dependencies:
 
 Bash
@@ -120,7 +120,8 @@ The app will open at http://localhost:5173.
 🔧 Troubleshooting & Common Fixes
 If you encounter "Signup failed", "Network Error", or AI issues, check the following:
 
-1. "Signup failed" / Network Error
+"Signup failed" / Network Error
+
 Cause: The Frontend cannot talk to the Backend.
 
 Fix 1 (Server Status): Ensure the NestJS server is running (npm run start:dev in /backend) and listening on port 3001.
@@ -129,12 +130,14 @@ Fix 2 (Database): Ensure MongoDB is running (mongod). If the backend fails to st
 
 Fix 3 (CORS): The backend is configured to allow CORS from http://localhost:5173. If you are running on a different port, check backend/src/main.ts.
 
-2. AI Assistant / Assessment Not Working
+AI Assistant / Assessment Not Working
+
 Cause: Missing or incorrectly named API Key.
 
 Fix: In your root .env.local file, ensure the key is named VITE_GEMINI_API_KEY. Old configurations using just GEMINI_API_KEY will not work in the browser due to Vite security restrictions.
 
-3. "Cannot connect to server" Message
+"Cannot connect to server" Message
+
 The app includes an automatic fallback to "Mock Mode" for sockets if the backend is down, but API calls (Login/Signup) will fail with a specific message if the server is unreachable.
 
 🌟 Features Overview
@@ -165,12 +168,17 @@ Notifications: Real-time alerts for new bookings, tasks, chat messages, and stat
 Tasks: Assign specific to-do items to hired nannies.
 
 📂 Folder Structure
+Bash
+
 /                       # Frontend Root
   ├── src/
-  │   ├── components/   # React UI Components (ChatModal, DashboardScreen, etc.)
+  │   ├── components/   # React UI Components
+  │   │   ├── dashboard/ # Split dashboard components (ParentDashboard, NannyDashboard, Widgets)
+  │   │   └── ...       # Other components (ChatModal, etc.)
   │   ├── services/     # API Clients (Axios, Socket.io, chatService)
   │   ├── contexts/     # React Contexts (Theme, Language)
   │   ├── locales/      # Translation files
+  │   ├── hooks/        # Custom Hooks (useAppLogic for centralized logic)
   │   ├── App.tsx       # Main Logic & Routing
   │   └── types.ts      # TypeScript Interfaces
   ├── backend/          # Backend Root (NestJS)

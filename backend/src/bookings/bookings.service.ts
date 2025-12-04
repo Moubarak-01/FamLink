@@ -1,9 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Booking, BookingDocument } from '../schemas/booking.schema';
 import { NotificationsService } from '../notifications/notifications.service';
-import { User } from '../schemas/user.schema';
+import { User } from '../schemas/user.schema'; // Ensure User is imported for typing if needed
 
 @Injectable()
 export class BookingsService {
@@ -12,8 +12,29 @@ export class BookingsService {
     private notificationsService: NotificationsService
   ) {}
 
-  async create(createBookingDto: any, parentId: string): Promise<BookingDocument> {
-    // Feature 2: Validation to prevent double booking on accepted dates
+  // Helper to flatten the Mongoose object for the frontend
+  private mapBooking(booking: any) {
+      const obj = booking.toObject ? booking.toObject() : booking;
+      
+      // Handle populated fields safely
+      const nanny = (obj.nannyId && typeof obj.nannyId === 'object') ? obj.nannyId : { _id: obj.nannyId, fullName: 'Unknown', photo: '' };
+      const parent = (obj.parentId && typeof obj.parentId === 'object') ? obj.parentId : { _id: obj.parentId, fullName: 'Unknown', photo: '' };
+
+      return {
+          ...obj,
+          id: obj._id.toString(),
+          // Flattened fields expected by frontend types
+          nannyId: nanny._id.toString(),
+          nannyName: nanny.fullName,
+          nannyPhoto: nanny.photo,
+          parentId: parent._id.toString(),
+          parentName: parent.fullName,
+          parentPhoto: parent.photo,
+      };
+  }
+
+  async create(createBookingDto: any, parentId: string): Promise<any> {
+    // 1. Check for Double Booking (Status: Accepted)
     const existingBooking = await this.bookingModel.findOne({
         nannyId: createBookingDto.nannyId,
         parentId: parentId,
@@ -25,52 +46,82 @@ export class BookingsService {
         throw new BadRequestException('You already have a confirmed booking with this nanny for this date.');
     }
 
+    // 2. Check for Duplicate Pending Request
+    const duplicateRequest = await this.bookingModel.findOne({
+        nannyId: createBookingDto.nannyId,
+        parentId: parentId,
+        date: createBookingDto.date,
+        status: 'pending'
+    }).exec();
+
+    if (duplicateRequest) {
+        throw new BadRequestException('You already have a pending request for this date.');
+    }
+
+    // 3. Create Booking
     const booking = new this.bookingModel({
       ...createBookingDto,
       parentId: parentId,
     });
     const savedBooking = await booking.save();
 
-    // Format date for the notification message
-    const bookingDate = new Date(createBookingDto.date).toLocaleDateString();
+    // 4. Populate immediately for the return value
+    await savedBooking.populate([
+        { path: 'nannyId', select: 'fullName photo' },
+        { path: 'parentId', select: 'fullName photo' }
+    ]);
 
-    // Create a notification for the nanny
+    // 5. Send Notification
+    const bookingDate = new Date(createBookingDto.date).toLocaleDateString();
     await this.notificationsService.create(
       createBookingDto.nannyId,
-      `New booking request for ${bookingDate}`,
+      `New booking request from ${savedBooking['parentId']['fullName']} for ${bookingDate}`,
       'booking',
       savedBooking._id.toString()
     );
 
-    return savedBooking;
+    return this.mapBooking(savedBooking);
   }
 
-  async findAllForUser(userId: string): Promise<BookingDocument[]> {
-    return this.bookingModel.find({
+  async findAllForUser(userId: string): Promise<any[]> {
+    const bookings = await this.bookingModel.find({
         $or: [{ parentId: userId }, { nannyId: userId }]
-    }).exec();
+    })
+    .populate('nannyId', 'fullName photo')
+    .populate('parentId', 'fullName photo')
+    .sort({ createdAt: -1 })
+    .exec();
+
+    return bookings.map(b => this.mapBooking(b));
   }
 
-  async updateStatus(bookingId: string, status: string): Promise<BookingDocument> {
+  async updateStatus(bookingId: string, status: string): Promise<any> {
       const originalBooking = await this.bookingModel.findById(bookingId)
-        .populate<{nannyId: User}>('nannyId')
+        .populate('nannyId', 'fullName')
         .exec();
+      
+      if (!originalBooking) throw new NotFoundException('Booking not found');
 
-      if (originalBooking && status === 'accepted') {
-           const nannyName = originalBooking.nannyId.fullName || 'The Nanny';
+      const updatedBooking = await this.bookingModel.findByIdAndUpdate(
+          bookingId,
+          { status },
+          { new: true }
+      )
+      .populate('nannyId', 'fullName photo')
+      .populate('parentId', 'fullName photo')
+      .exec();
+
+      if (status === 'accepted' || status === 'declined') {
+           const nannyName = originalBooking['nannyId']['fullName'] || 'The Nanny';
            await this.notificationsService.create(
-               originalBooking.parentId,
-               `${nannyName} accepted your booking request!`,
+               originalBooking.parentId.toString(),
+               `${nannyName} ${status} your booking request!`,
                'booking',
                originalBooking._id.toString()
            );
       }
 
-      return this.bookingModel.findByIdAndUpdate(
-          bookingId,
-          { status },
-          { new: true }
-      ).exec();
+      return this.mapBooking(updatedBooking);
   }
 
   async remove(id: string): Promise<any> {

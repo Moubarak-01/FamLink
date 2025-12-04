@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -49,8 +48,8 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
         </div>
     );
 
-    // Create map URL
-    const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(location)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+    // Correctly formatted Google Maps Embed URL
+    const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(location || '')}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
 
     return (
         <div className="p-6 sm:p-8">
@@ -61,7 +60,7 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
                     <p className="text-[var(--text-light)]">{email}</p>
                     <div className="mt-2 flex items-center justify-center sm:justify-start gap-1 text-yellow-500 font-bold">
                         <span>⭐</span>
-                        <span>{rating > 0 ? `${rating.toFixed(1)} / 5.0 (${nanny.ratings?.length || 0} ${t('nanny_profile_reviews')})` : t('nanny_card_new')}</span>
+                        <span>{rating > 0 ? `${rating.toFixed(1)} / 5.0` : t('nanny_card_new')}</span>
                     </div>
                 </div>
                 {onReportUser && (
@@ -93,7 +92,6 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
                 <p className="text-[var(--text-secondary)] whitespace-pre-wrap">{description}</p>
             </div>
 
-            {/* Embedded Map */}
             <div className="mb-8">
                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Location</h3>
                 <div className="w-full h-64 rounded-lg overflow-hidden shadow-md border border-[var(--border-color)]">
@@ -116,27 +114,6 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
                 <Calendar availableDates={availableDates || []} isEditable={false} />
             </div>
 
-            <div>
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('nanny_profile_reviews_title')}</h3>
-                {nanny.ratings && nanny.ratings.length > 0 ? (
-                    <div className="space-y-4">
-                        {nanny.ratings.map((review, index) => (
-                            <div key={index} className="bg-[var(--bg-card-subtle)] p-4 rounded-lg border-l-4 border-[var(--border-accent)]">
-                                <div className="flex items-center mb-1">
-                                    {[...Array(5)].map((_, i) => (
-                                        <span key={i} className={`text-xl ${i < review.ratingValue ? 'text-yellow-400' : 'text-gray-300'}`}>&#9733;</span>
-                                    ))}
-                                </div>
-                                {review.comment && <p className="text-[var(--text-secondary)] italic">"{review.comment}"</p>}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-[var(--text-light)]">{t('nanny_profile_no_reviews')}</p>
-                )}
-            </div>
-
-
             <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row gap-4 justify-between items-center">
                 <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full w-full sm:w-auto">
                     {t('button_back')}
@@ -151,9 +128,9 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
                     <button 
                         onClick={() => onRequestBooking(nanny)} 
                         disabled={hasPendingRequest}
-                        className={`text-white font-bold py-3 px-6 rounded-lg shadow-md w-full sm:w-auto ${hasPendingRequest ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)]'}`}
+                        className={`text-white font-bold py-3 px-6 rounded-lg shadow-md w-full sm:w-auto ${hasPendingRequest ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] transition-transform hover:scale-105'}`}
                     >
-                        {hasPendingRequest ? 'Request Sent' : t('button_request_booking')}
+                        {hasPendingRequest ? 'Request Pending' : t('button_request_booking')}
                     </button>
                 </div>
             </div>

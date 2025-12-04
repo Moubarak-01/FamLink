@@ -1,5 +1,4 @@
-
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
 import { UserTasksService } from './user-tasks.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -23,5 +22,17 @@ export class UserTasksController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.userTasksService.updateStatus(id, status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/keep')
+  keepPermanently(@Param('id') id: string) {
+      return this.userTasksService.keepTaskPermanently(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+      return this.userTasksService.remove(id);
   }
 }

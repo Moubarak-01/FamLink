@@ -35,17 +35,17 @@ export class ChatGateway {
 
   @SubscribeMessage('join_room')
   async handleJoinRoom(@MessageBody() data: { roomId: string, userId?: string }, @ConnectedSocket() client: Socket) {
-    // Support both string and object payload for backward compatibility
     const roomId = typeof data === 'string' ? data : data.roomId;
     const userId = typeof data === 'object' ? data.userId : null;
 
     client.join(roomId);
+    console.log(`Client ${client.id} joined room ${roomId}`);
 
-    // Feature 6: Mark messages as seen when user joins
+    // Feature 2: Mark messages as seen when user joins
     if (userId) {
        await this.chatService.markMessagesAsSeen(roomId, userId);
        // Broadcast to everyone in room that messages are seen
-       this.server.to(roomId).emit('messages_seen', { roomId, seenBy: userId });
+       this.server.to(roomId).emit('messages_status_update', { roomId, status: 'seen', userId });
     }
   }
 
@@ -54,11 +54,36 @@ export class ChatGateway {
     client.leave(roomId);
   }
 
+  // Feature 2: Handle "Delivered" receipt
+  @SubscribeMessage('mark_delivered')
+  async handleMarkDelivered(@MessageBody() data: { roomId: string, messageId: string, userId: string }) {
+      // In a real app, update specific message in DB. For simplicity, we rely on frontend logic mostly.
+      // This tells the sender "The other person's device received it"
+      this.server.to(data.roomId).emit('message_status_update', { 
+          messageId: data.messageId, 
+          status: 'delivered' 
+      });
+  }
+
   @SubscribeMessage('send_message')
   async handleMessage(
     @MessageBody() data: { roomId: string; message: { senderId: string; text: string } },
     @ConnectedSocket() client: Socket,
   ) {
+    // Feature 3: Chat Permission Check (Booking Required)
+    // If this is a booking room, ensure booking is accepted
+    if (data.roomId) {
+        // Check if roomId corresponds to a Booking
+        const booking = await this.bookingModel.findById(data.roomId).exec();
+        if (booking) {
+            if (booking.status !== 'accepted') {
+                // Reject message
+                client.emit('error', { message: 'Chat disabled. Booking must be accepted first.' });
+                return;
+            }
+        }
+    }
+
     const savedMessage = await this.chatService.saveMessage(
       data.roomId,
       data.message.senderId,
@@ -75,9 +100,10 @@ export class ChatGateway {
       senderName: sender.fullName,
       senderPhoto: sender.photo,
       timestamp: savedMessage['createdAt'],
-      status: 'sent' // Initial status
+      status: 'sent'
     };
 
+    // Broadcast to room (excluding sender)
     client.to(data.roomId).emit('receive_message', {
       roomId: data.roomId,
       message: messagePayload,

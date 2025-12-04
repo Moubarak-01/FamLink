@@ -7,7 +7,7 @@ export interface Question {
 
 export interface Answer {
   questionId: number;
-  answer: string | string[]; // string for single/open, string[] for multiple
+  answer: string | string[];
 }
 
 export type Decision = 'Approved' | 'Rejected';
@@ -18,21 +18,39 @@ export interface AssessmentResult {
   decision: Decision;
 }
 
+export interface LocationData {
+  address: string;
+  coordinates?: [number, number]; // [longitude, latitude]
+}
+
 export interface NannyProfile {
   phone: string;
   rating: number;
-  location: string;
+  location: LocationData | string; 
   description: string;
-  experience: string; // Should be a number as a string, e.g., "5"
+  experience: string;
   certifications: string[];
   availability: string;
-  availableDates?: string[]; // Array of dates in 'YYYY-MM-DD' format
+  availableDates?: string[]; // Feature 1: Availability
 }
 
 export interface Rating {
   parentId: string;
   ratingValue: number;
   comment?: string;
+}
+
+// Feature 2: Message Status
+export type MessageStatus = 'sent' | 'delivered' | 'seen';
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderPhoto: string;
+  text: string;
+  timestamp: number;
+  status: MessageStatus;
 }
 
 export interface BookingRequest {
@@ -46,7 +64,7 @@ export interface BookingRequest {
   startTime: string;
   endTime: string;
   message?: string;
-  status: 'pending' | 'accepted' | 'declined';
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
   messages?: ChatMessage[];
 }
 
@@ -55,8 +73,10 @@ export interface Task {
   parentId: string;
   nannyId: string;
   description: string;
-  dueDate: string; // YYYY-MM-DD
+  dueDate: string;
   status: 'pending' | 'completed';
+  completedAt?: string; // Feature 5: Expiration
+  keepPermanently?: boolean;
 }
 
 export interface Child {
@@ -72,44 +92,33 @@ export interface Notification {
   message: string;
   type: NotificationType;
   read: boolean;
-  timestamp?: number; // Keep for backward compatibility if needed
-  createdAt?: string; // Add field from MongoDB schema
-  relatedId?: string; // ID of the booking, task, etc.
+  createdAt?: string;
+  relatedId?: string;
 }
 
 export interface User {
   id: string;
   fullName: string;
   email: string;
-  password: string; // In a real app, this would be a hash
+  password: string;
   userType: UserType;
-  isVerified?: boolean; // New verification badge status
-  photo?: string; // URL or base64
-  phone?: string; // Added phone number field
+  isVerified?: boolean;
+  photo?: string;
+  phone?: string;
   assessmentResult?: AssessmentResult;
-  assessmentAttempts?: number;
-  suspendedUntil?: string; // ISO string
+  suspendedUntil?: string;
   profile?: Partial<NannyProfile>;
   subscription?: Subscription;
   addedNannyIds?: string[];
   ratings?: Rating[];
-  // Fields for parent profile & matching
-  location?: string;
+  location?: LocationData | string;
   interests?: ActivityCategory[];
   children?: Child[];
   skillsToTeach?: SkillCategory[];
 }
 
 export type ActivityCategory = 'walks' | 'playdates' | 'workout' | 'shopping' | 'studying' | 'dads' | 'other';
-
-export interface ChatMessage {
-    id: string;
-    senderId: string;
-    senderName: string;
-    senderPhoto: string;
-    text: string;
-    timestamp: number;
-}
+export type SkillCategory = 'cooking' | 'cleaning' | 'tutoring' | 'tech' | 'crafts' | 'other';
 
 export interface Activity {
   id: string;
@@ -119,9 +128,9 @@ export interface Activity {
   category: ActivityCategory;
   description: string;
   location: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:MM
-  participants: string[]; // array of user IDs
+  date: string;
+  time: string;
+  participants: string[];
   messages?: ChatMessage[];
 }
 
@@ -130,8 +139,8 @@ export interface OutingRequest {
     parentName: string;
     childName: string;
     childAge: number;
-    emergencyContactName: string; // New
-    emergencyContactPhone: string; // New
+    emergencyContactName: string;
+    emergencyContactPhone: string;
     status: 'pending' | 'accepted' | 'declined';
 }
 
@@ -143,16 +152,14 @@ export interface SharedOuting {
     title: string;
     description: string;
     location: string;
-    liveLocationEnabled?: boolean; // New
-    date: string; // YYYY-MM-DD
-    time: string; // HH:MM
+    liveLocationEnabled?: boolean;
+    date: string;
+    time: string;
     maxChildren: number;
     costDetails: string;
     requests: OutingRequest[];
     messages?: ChatMessage[];
 }
-
-export type SkillCategory = 'cooking' | 'cleaning' | 'tutoring' | 'tech' | 'crafts' | 'other';
 
 export interface SkillOffer {
     helperId: string;
@@ -178,12 +185,8 @@ export interface SkillRequest {
     messages?: ChatMessage[];
 }
 
-
 export type UserType = 'parent' | 'nanny';
-
-export type Plan =
-  | 'parent_monthly'
-  | 'parent_yearly';
+export type Plan = 'parent_monthly' | 'parent_yearly';
 
 export interface Subscription {
   plan: Plan;
@@ -192,21 +195,8 @@ export interface Subscription {
 }
 
 export enum Screen {
-  Welcome,
-  SignUp,
-  Login,
-  ForgotPassword,
-  Questionnaire,
-  Loading,
-  Result,
-  NannyProfileForm,
-  ParentProfileForm,
-  Subscription,
-  SubscriptionStatus,
-  Dashboard,
-  NannyListing,
-  NannyProfileDetail,
-  CommunityActivities,
-  ChildOutings,
-  SkillMarketplace,
+  Welcome, SignUp, Login, ForgotPassword, Questionnaire, Loading, Result,
+  NannyProfileForm, ParentProfileForm, Subscription, SubscriptionStatus,
+  Dashboard, NannyListing, NannyProfileDetail, CommunityActivities,
+  ChildOutings, SkillMarketplace,
 }

@@ -3,12 +3,29 @@ import { Answer, AssessmentResult, Decision } from '../types';
 import { ASSESSMENT_QUESTIONS } from '../constants';
 import { translations } from "../locales/index";
 
-// Support both standard process.env (cloud/node) and Vite (local)
-// Vite requires env vars to start with VITE_ to be exposed to the client
-// @ts-ignore
-const apiKey = (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || (import.meta.env && import.meta.env.GEMINI_API_KEY) || process.env.API_KEY || '';
+// Safer API Key retrieval that won't crash the browser
+const getApiKey = () => {
+  // 1. Try Vite env var (standard)
+  if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+    return import.meta.env.VITE_GEMINI_API_KEY;
+  }
+  // 2. Try process.env safely (ignores error if process is undefined)
+  try {
+    // @ts-ignore
+    if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+        // @ts-ignore
+        return process.env.GEMINI_API_KEY;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return '';
+};
 
-const ai = new GoogleGenAI({ apiKey: apiKey });
+const apiKey = getApiKey();
+
+// Initialize AI only if key exists to prevent immediate crash
+const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -30,16 +47,16 @@ const responseSchema = {
 };
 
 export const evaluateAnswers = async (answers: Answer[], language: string): Promise<AssessmentResult> => {
-  if (!apiKey) {
+  if (!ai || !apiKey) {
       console.error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in .env.local");
       return {
         score: 0,
-        feedback: "System Error: AI Configuration missing. Please contact support.",
+        feedback: "System Error: AI Configuration missing. Please check your API key settings.",
         decision: 'Rejected'
       };
   }
 
-  const model = 'gemini-2.5-flash';
+  const model = 'gemini-2.0-flash'; 
   
   const tEn = (key: string, options?: { [key: string]: string | number }) => {
     let translation = translations.en[key as keyof typeof translations.en] || key;
@@ -68,8 +85,7 @@ export const evaluateAnswers = async (answers: Answer[], language: string): Prom
   };
   const responseLanguage = languageMap[language] || 'English';
 
-
-  const systemInstruction = `You are an expert HR evaluator for 'FamLink', a platform connecting families with trusted nannies. Your task is to assess a nanny candidate's suitability based on their answers to a 15-question assessment, randomly selected from a larger pool of 50.
+  const systemInstruction = `You are an expert HR evaluator for 'FamLink', a platform connecting families with trusted nannies. Your task is to assess a nanny candidate's suitability based on their answers to a 15-question assessment.
 
 Analyze the provided answers to evaluate the candidate on these key criteria:
 1.  **Empathy and Patience:** Ability to understand and manage a child's emotions.
@@ -78,26 +94,22 @@ Analyze the provided answers to evaluate the candidate on these key criteria:
 4.  **Problem-Solving & Safety Awareness:** Adaptability and prioritizing child safety.
 5.  **Motivation & Core Values:** Genuine interest in child welfare.
 
-The questionnaire includes single-choice, multiple-choice, and open-ended questions. Evaluate the substance of the open-ended answers carefully.
-
 Scoring Rubric:
--   Assign points for each answer based on how well it aligns with our values. Positive, child-centric, and professional answers score high. Negative, dismissive, or unprofessional answers score low.
 -   Calculate a final weighted score from 0 to 100 based on the 15 answers provided.
+-   Positive, child-centric answers score high. Negative or dismissive answers score low.
 
 Decision Logic:
 -   Score >= 70: 'Approved'
 -   Score < 70: 'Rejected'
 
-Your final output must be a JSON object that adheres strictly to the provided schema. The feedback must be encouraging but honest.
-
-CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response must be written exclusively in ${responseLanguage}. Do not use any other language for the feedback. For example, if the requested language is French, the feedback must be entirely in French.`;
+CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response must be written exclusively in ${responseLanguage}.`;
 
   const prompt = `Please evaluate the following candidate's answers:\n\n${formattedAnswers}`;
 
   try {
     const response = await ai.models.generateContent({
       model: model,
-      contents: prompt,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         systemInstruction: systemInstruction,
         responseMimeType: "application/json",
@@ -106,7 +118,7 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
       },
     });
 
-    const jsonString = response.text.trim();
+    const jsonString = response.response.text().trim();
     const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
     
     if (!['Approved', 'Rejected'].includes(result.decision)) {

@@ -24,9 +24,10 @@ export class ChatService {
       .exec();
   }
 
-  // Feature 6: Mark messages as seen
+  // Feature 2: Mark messages as seen
   async markMessagesAsSeen(roomId: string, userId: string): Promise<void> {
     // Update messages in this room that were NOT sent by the current user
+    // and aren't already seen.
     await this.messageModel.updateMany(
         { roomId, senderId: { $ne: userId }, status: { $ne: 'seen' } },
         { status: 'seen' }
