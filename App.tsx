@@ -519,7 +519,6 @@ const App: React.FC = () => {
           onDeleteActivities={handleDeleteAllActivities}
           onDeleteOutings={handleDeleteAllOutings}
           onDeleteSkillRequests={handleDeleteAllSkillRequests}
-          onOpenBookingChat={(booking) => setActiveChat({ type: 'booking', item: booking })}
         /> : null;
       case Screen.NannyListing: return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
       case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen 

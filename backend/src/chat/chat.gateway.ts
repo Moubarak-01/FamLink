@@ -84,10 +84,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const receiverIdStr = savedMessage.receiverId ? savedMessage.receiverId.toString() : null;
 
     if (receiverIdStr && this.connectedUsers.has(receiverIdStr)) {
-        savedMessage.status = 'delivered';
-        savedMessage.deliveredAt = new Date();
-        await savedMessage.save();
+        // Default to delivered since they are connected
         initialStatus = 'delivered';
+        savedMessage.deliveredAt = new Date();
+
+        // FIX: Check if the recipient is actually INSIDE the room right now
+        const roomSockets = this.server.sockets.adapter.rooms.get(data.roomId);
+        const recipientSockets = this.connectedUsers.get(receiverIdStr) || [];
+        
+        // If any of the recipient's sockets are in the room, mark as seen immediately
+        const isRecipientInRoom = recipientSockets.some(socketId => roomSockets?.has(socketId));
+        
+        if (isRecipientInRoom) {
+            initialStatus = 'seen';
+            savedMessage.seenAt = new Date();
+        }
+
+        savedMessage.status = initialStatus;
+        await savedMessage.save();
     }
 
     await savedMessage.populate('senderId', 'fullName photo');
@@ -109,7 +123,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.to(data.roomId).emit('receive_message', { roomId: data.roomId, message: payload });
 
     // UPDATE: Always create notification for the receiver, regardless of connection status
-    // (The user requested "you should still get the notifications too")
     if (receiverIdStr) {
         await this.notificationsService.create(
             receiverIdStr,
