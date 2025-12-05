@@ -46,6 +46,13 @@ export interface Rating {
 // Feature 2: Message Status
 export type MessageStatus = 'sent' | 'delivered' | 'seen';
 
+// NEW: Reaction Interface
+export interface Reaction {
+  userId: string;
+  emoji: string;
+}
+
+// UPDATED: ChatMessage with new features
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -56,6 +63,10 @@ export interface ChatMessage {
   mac?: string; // Message Authentication Code
   timestamp: number;
   status: MessageStatus;
+  // New Fields for Reactions, Replies, and Deletion
+  reactions?: Reaction[];
+  replyTo?: string; // ID of referenced message
+  deleted?: boolean;
 }
 
 export interface BookingRequest {

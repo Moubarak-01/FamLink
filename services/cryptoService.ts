@@ -6,67 +6,74 @@ export interface EncryptedContent {
 }
 
 const E2E_CIPHER_PREFIX = 'E2E_CIPHER:';
-const MOCK_MAC = 'MOCK_MAC_A1B2C3D4E5F6'; // Mock Message Authentication Code
-
-// Polyfill Buffer for client-side environments (Vite/Browser)
-if (typeof window !== 'undefined' && typeof Buffer === 'undefined') {
-  (window as any).Buffer = {
-    from: (data: string, encoding?: string) => {
-      if (encoding === 'base64') return atob(data);
-      // Mocked UTF-8 to Base64 conversion
-      return btoa(unescape(encodeURIComponent(data))); 
-    },
-    toString: (data: string, encoding?: string) => {
-      if (encoding === 'base64') return atob(data);
-      // Mocked Base64 to UTF-8 conversion
-      return decodeURIComponent(escape(atob(data)));
-    }
-  };
-}
+const MOCK_MAC = 'MOCK_MAC_A1B2C3D4E5F6';
 
 export const cryptoService = {
     /**
-     * Mock function to simulate E2E encryption.
-     * Takes plaintext and returns a ciphertext blob and a Message Authentication Code (MAC).
+     * Encrypts plaintext to a Base64 blob with a prefix.
+     * Handles UTF-8 characters (Emojis) correctly.
      */
     encryptMessage(plaintext: string): EncryptedContent {
-        // 1. Simulate encryption by Base64 encoding the plaintext
-        // @ts-ignore - Buffer is polyfilled/mocked
-        const ciphertextBase64 = Buffer.from(plaintext).toString('base64');
-        const ciphertext = E2E_CIPHER_PREFIX + ciphertextBase64;
-        
-        // 2. Return ciphertext and a mock MAC
-        return {
-            ciphertext,
-            mac: MOCK_MAC
-        };
+        try {
+            let base64 = '';
+            
+            // Browser Environment (React)
+            if (typeof window !== 'undefined' && window.btoa) {
+                // Encode UTF-8 string to bytes, then to binary string, then Base64
+                const encoder = new TextEncoder();
+                const bytes = encoder.encode(plaintext);
+                const binary = String.fromCharCode(...Array.from(bytes));
+                base64 = window.btoa(binary);
+            } 
+            // Node.js Environment (Backend)
+            else if (typeof Buffer !== 'undefined') {
+                base64 = Buffer.from(plaintext, 'utf8').toString('base64');
+            }
+
+            return {
+                ciphertext: E2E_CIPHER_PREFIX + base64,
+                mac: MOCK_MAC
+            };
+        } catch (e) {
+            console.error("Encryption error:", e);
+            return { ciphertext: plaintext, mac: 'ERROR' };
+        }
     },
 
     /**
-     * Mock function to simulate E2E decryption.
-     * Takes an encrypted message (with optional MAC) and returns the decrypted plaintext.
+     * Decrypts the message.
+     * Handles UTF-8 characters (Emojis) correctly.
      */
     decryptMessage(message: { text: string, mac?: string }): string {
         const encryptedText = message.text;
 
-        // Skip decryption if it doesn't look like an encrypted message (e.g., old data or failed encryption)
+        // Return as-is if not encrypted
         if (!encryptedText || !encryptedText.startsWith(E2E_CIPHER_PREFIX)) {
             return encryptedText;
         }
 
         try {
-            const ciphertextBase64 = encryptedText.substring(E2E_CIPHER_PREFIX.length);
+            const base64 = encryptedText.substring(E2E_CIPHER_PREFIX.length);
             
-            // In a real implementation, you would:
-            // 1. Verify MAC (message.mac)
-            // 2. Decrypt ciphertextBase64 using the correct key
+            // Browser Environment (React)
+            if (typeof window !== 'undefined' && window.atob) {
+                const binaryString = window.atob(base64);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const decoder = new TextDecoder('utf-8');
+                return decoder.decode(bytes);
+            } 
+            // Node.js Environment (Backend)
+            else if (typeof Buffer !== 'undefined') {
+                return Buffer.from(base64, 'base64').toString('utf8');
+            }
             
-            // Simulate decryption by decoding Base64
-            // @ts-ignore
-            return Buffer.from(ciphertextBase64, 'base64').toString('utf8');
+            return base64; // Fallback
         } catch (e) {
             console.error('Decryption failed:', e);
-            return 'Failed to decrypt message.';
+            return '🚫 Decryption Error';
         }
     }
 };

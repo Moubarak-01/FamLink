@@ -69,23 +69,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('check_online')
-  handleCheckOnline(@MessageBody() userId: string): boolean {
-      return this.connectedUsers.has(userId);
-  }
-
   @SubscribeMessage('leave_room')
   handleLeaveRoom(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
     client.leave(roomId);
   }
 
   @SubscribeMessage('send_message')
-  async handleMessage(@MessageBody() data: { roomId: string, message: { senderId: string, text: string, mac: string } }, @ConnectedSocket() client: Socket) {
-    // UPDATE 1: Pulled text (ciphertext) and mac from data.message
-    const { senderId, text, mac } = data.message;
+  async handleMessage(@MessageBody() data: { roomId: string, message: { senderId: string, text: string, mac: string, replyTo?: string } }, @ConnectedSocket() client: Socket) {
+    const { senderId, text, mac, replyTo } = data.message;
     
-    // UPDATE 2: Passed mac to saveMessage
-    const savedMessage = await this.chatService.saveMessage(data.roomId, senderId, text, mac);
+    const savedMessage = await this.chatService.saveMessage(data.roomId, senderId, text, mac, replyTo);
     
     let initialStatus = 'sent';
     const receiverIdStr = savedMessage.receiverId ? savedMessage.receiverId.toString() : null;
@@ -102,16 +95,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const payload = {
       id: savedMessage._id.toString(),
       text: savedMessage.text,
-      mac: savedMessage.mac, // UPDATE 3: Included mac in the outgoing payload
+      mac: savedMessage.mac,
       senderId: savedMessage.senderId['_id'].toString(),
       senderName: savedMessage.senderId['fullName'],
       senderPhoto: savedMessage.senderId['photo'],
       timestamp: savedMessage['createdAt'],
-      status: initialStatus
+      status: initialStatus,
+      reactions: [],
+      replyTo: savedMessage.replyTo,
+      deleted: false
     };
 
+    client.to(data.roomId).emit('receive_message', { roomId: data.roomId, message: payload });
+
+    // UPDATE: Always create notification for the receiver, regardless of connection status
+    // (The user requested "you should still get the notifications too")
     if (receiverIdStr) {
-        this.server.to(`user_${receiverIdStr}`).emit('receive_message', { roomId: data.roomId, message: payload });
         await this.notificationsService.create(
             receiverIdStr,
             `New message from ${payload.senderName}`,
@@ -119,9 +118,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             data.roomId
         );
     }
-    
-    client.to(data.roomId).emit('receive_message', { roomId: data.roomId, message: payload });
 
     return payload;
+  }
+
+  @SubscribeMessage('add_reaction')
+  async handleAddReaction(@MessageBody() data: { roomId: string, messageId: string, userId: string, emoji: string }) {
+      await this.chatService.addReaction(data.messageId, data.userId, data.emoji);
+      this.server.to(data.roomId).emit('reaction_added', data);
+  }
+
+  @SubscribeMessage('remove_reaction')
+  async handleRemoveReaction(@MessageBody() data: { roomId: string, messageId: string, userId: string, emoji: string }) {
+      await this.chatService.removeReaction(data.messageId, data.userId, data.emoji);
+      this.server.to(data.roomId).emit('reaction_removed', data);
+  }
+
+  @SubscribeMessage('delete_message')
+  async handleDeleteMessage(@MessageBody() data: { roomId: string, messageId: string }) {
+      await this.chatService.deleteMessage(data.messageId);
+      this.server.to(data.roomId).emit('message_deleted', { roomId: data.roomId, messageId: data.messageId });
+  }
+
+  @SubscribeMessage('clear_chat')
+  async handleClearChat(@MessageBody() data: { roomId: string }) {
+      await this.chatService.deleteAllMessages(data.roomId);
+      this.server.to(data.roomId).emit('chat_cleared', { roomId: data.roomId });
+  }
+
+  @SubscribeMessage('check_online')
+  handleCheckOnline(@MessageBody() userId: string): boolean {
+      return this.connectedUsers.has(userId);
   }
 }

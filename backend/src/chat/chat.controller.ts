@@ -15,6 +15,7 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Delete('message/:id')
   async deleteMessage(@Param('id') id: string) {
+      // Now correctly calls the soft delete method in service
       return this.chatService.deleteMessage(id);
   }
 

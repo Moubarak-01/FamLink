@@ -3,26 +3,49 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export type MessageDocument = Message & Document;
 
+@Schema()
+export class Reaction {
+  @Prop({ required: true })
+  userId: string;
+
+  @Prop({ required: true })
+  emoji: string;
+}
+
+const ReactionSchema = SchemaFactory.createForClass(Reaction);
+
 @Schema({ timestamps: true })
 export class Message {
   @Prop({ required: true })
-  roomId: string; 
+  roomId: string; // Acts as threadId
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   senderId: string;
 
-  // Crucial for tracking delivery status to a specific person
+  // receiverId is optional for group chats
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
   receiverId: string;
 
   @Prop({ required: true })
-  text: string; // Stores Ciphertext
-  
-  @Prop({ required: true }) // NEW: Message Authentication Code
+  text: string; // Ciphertext
+
+  @Prop({ required: true })
   mac: string;
 
   @Prop({ enum: ['sent', 'delivered', 'seen'], default: 'sent' })
   status: string;
+
+  @Prop({ type: [ReactionSchema], default: [] })
+  reactions: Reaction[];
+
+  @Prop({ type: String, default: null })
+  replyTo: string | null;
+
+  @Prop({ default: false })
+  deleted: boolean;
+
+  @Prop()
+  deletedAt: Date;
 
   @Prop()
   deliveredAt: Date;
@@ -32,5 +55,4 @@ export class Message {
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
-// Index for fast lookups of undelivered messages
-MessageSchema.index({ receiverId: 1, status: 1 });
+MessageSchema.index({ roomId: 1, createdAt: 1 });

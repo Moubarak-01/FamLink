@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, BookingRequest, Task, SharedOuting, SkillRequest } from '../../types';
-import { AddedNannyCard, ParentBookingCard, StatusTag, formatDateSafe } from './DashboardWidgets';
+import { AddedNannyCard, ParentBookingCard, StatusTag, formatDateSafe, InteractiveTaskItem } from './DashboardWidgets';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ParentDashboardProps {
@@ -21,47 +21,38 @@ interface ParentDashboardProps {
     onViewOutings: () => void;
     onViewSkillMarketplace: () => void;
     onClearAllBookings: () => void;
+    onUpdateTaskStatus: (id: string, status: 'pending' | 'completed') => void;
+    onDeleteTask: (id: string) => void;
+    onOpenBookingChat: (request: BookingRequest) => void; // Add this
 }
 
-const ParentDashboard: React.FC<ParentDashboardProps> = ({ user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onKeepTask, onSearchNannies, onViewActivities, onViewOutings, onViewSkillMarketplace, onClearAllBookings }) => {
-    const { t } = useLanguage();
+const ParentDashboard: React.FC<ParentDashboardProps> = ({ 
+    user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, 
+    onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onKeepTask, 
+    onSearchNannies, onViewActivities, onViewOutings, onViewSkillMarketplace, onClearAllBookings, 
+    onUpdateTaskStatus, onDeleteTask, onOpenBookingChat
+}) => {
+    const { t, language } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
     const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
+    const myTasks = allTasks.filter(t => t.parentId === user.id);
 
     return (
         <>
-            {/* Expanded 4-Card Grid */}
+            {/* Navigation Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {/* ... (Keep navigation cards as is) ... */}
                 <div className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
-                    <div>
-                        <h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4>
-                        <p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p>
-                    </div>
-                    <button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
+                    <div><h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4><p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
                 </div>
-
                 <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between">
-                    <div>
-                        <h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4>
-                        <p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p>
-                    </div>
-                    <button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
+                    <div><h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4><p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
                 </div>
-
                 <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between">
-                    <div>
-                        <h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4>
-                        <p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p>
-                    </div>
-                    <button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
+                    <div><h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4><p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
                 </div>
-
                 <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between">
-                    <div>
-                        <h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4>
-                        <p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p>
-                    </div>
-                    <button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
+                    <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
                 </div>
             </div>
 
@@ -71,15 +62,17 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ user, addedNannies, b
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
                         {bookingRequests.length > 0 && (
-                            <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">
-                                Clear All History
-                            </button>
+                            <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">Clear All History</button>
                         )}
                     </div>
                     {bookingRequests.length > 0 ? (
                         <div className="space-y-4">
                             {bookingRequests.map(req => (
-                                <ParentBookingCard key={req.id} request={req} />
+                                <ParentBookingCard 
+                                    key={req.id} 
+                                    request={req} 
+                                    onChat={onOpenBookingChat} // WIRED UP HERE
+                                />
                             ))}
                         </div>
                     ) : (
@@ -117,7 +110,29 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ user, addedNannies, b
                 </div>
             </div>
 
-            {/* Secondary Sections */}
+            {/* Task Management */}
+            <div className="mt-8">
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_tasks')}</h3>
+                {myTasks.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                        {myTasks.map(task => (
+                             <InteractiveTaskItem 
+                                key={task.id} 
+                                task={task} 
+                                onUpdateStatus={onUpdateTaskStatus} 
+                                onKeep={onKeepTask} 
+                                onDelete={onDeleteTask}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <p className="text-[var(--text-light)]">You haven't assigned any tasks yet.</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Requests */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                  <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
@@ -127,7 +142,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ user, addedNannies, b
                                 <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
                                     <div>
                                         <h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4>
-                                        <p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p>
+                                        <p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date, language)} • {req.childName}</p>
                                     </div>
                                     <StatusTag status={req.status} />
                                 </div>

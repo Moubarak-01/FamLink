@@ -12,9 +12,10 @@ interface NannyProfileDetailScreenProps {
   isAdded: boolean;
   hasPendingRequest?: boolean;
   onReportUser?: (nannyId: string) => void;
+  onOpenChat?: (nanny: User) => void; // Add this prop
 }
 
-const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nanny, onBack, onContact, onAdd, onRequestBooking, isAdded, hasPendingRequest, onReportUser }) => {
+const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nanny, onBack, onContact, onAdd, onRequestBooking, isAdded, hasPendingRequest, onReportUser, onOpenChat }) => {
     const { t } = useLanguage();
 
     if (!nanny.profile) {
@@ -31,7 +32,6 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
     }
     
     const { id, fullName, email, profile, photo } = nanny;
-    // FIX: Destructure ratingCount
     const { phone, location, experience, availability, certifications, description, rating, ratingCount, availableDates } = profile;
 
     const DetailItem: React.FC<{label: string, value: string | string[], icon: string}> = ({ label, value, icon }) => (
@@ -55,13 +55,27 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
     return (
         <div className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 pb-8 border-b border-[var(--border-color)] relative">
-                <img src={photo} alt={fullName} className="w-32 h-32 rounded-full object-cover border-4 border-[var(--bg-card)] shadow-lg transition-transform duration-300 ease-in-out hover:scale-105" />
+                <div className="relative">
+                    <img src={photo} alt={fullName} className="w-32 h-32 rounded-full object-cover border-4 border-[var(--bg-card)] shadow-lg transition-transform duration-300 ease-in-out hover:scale-105" />
+                    {/* NEW: Chat Button "to the side like in the corner" */}
+                    {onOpenChat && (
+                        <button 
+                            onClick={() => onOpenChat(nanny)}
+                            className="absolute bottom-0 right-0 bg-[var(--accent-primary)] text-white p-2 rounded-full shadow-md hover:scale-110 transition-transform border-2 border-white dark:border-gray-800"
+                            title="Chat with Nanny"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
+                
                 <div className="text-center sm:text-left flex-grow">
                     <h2 className="text-3xl font-bold text-[var(--text-primary)]">{fullName}</h2>
                     <p className="text-[var(--text-light)]">{email}</p>
                     <div className="mt-2 flex items-center justify-center sm:justify-start gap-1 text-yellow-500 font-bold">
                         <span>⭐</span>
-                        {/* UPDATE HERE: Use ratingCount */}
                         <span>{rating > 0 ? `${rating.toFixed(1)} (${ratingCount || 0} reviews)` : t('nanny_card_new')}</span>
                     </div>
                 </div>

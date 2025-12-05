@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from '../schemas/message.schema';
@@ -13,9 +13,9 @@ export class ChatService {
     @InjectModel('SkillTask') private skillTaskModel: Model<SkillTaskDocument>,
   ) {}
 
-  // UPDATE: Added 'mac' to function signature and model instantiation
-  async saveMessage(roomId: string, senderId: string, text: string, mac: string): Promise<MessageDocument> {
+  async saveMessage(roomId: string, senderId: string, text: string, mac: string, replyTo?: string): Promise<MessageDocument> {
     let receiverId = null;
+    // Logic to determine receiver for 1-on-1 (Bookings/Skills)
     const booking = await this.bookingModel.findById(roomId).exec();
     if (booking) {
         const parentIdStr = booking.parentId.toString();
@@ -29,8 +29,15 @@ export class ChatService {
          }
     }
 
-    // UPDATE: Passed 'mac' to the new Message model
-    const message = new this.messageModel({ roomId, senderId, receiverId, text, mac, status: 'sent' });
+    const message = new this.messageModel({ 
+        roomId, 
+        senderId, 
+        receiverId, 
+        text, 
+        mac, 
+        replyTo: replyTo || null,
+        status: 'sent' 
+    });
     return message.save();
   }
 
@@ -39,6 +46,47 @@ export class ChatService {
       .populate('senderId', 'fullName photo')
       .sort({ createdAt: 1 })
       .exec();
+  }
+
+  async addReaction(messageId: string, userId: string, emoji: string): Promise<MessageDocument> {
+    const message = await this.messageModel.findById(messageId);
+    if (!message) throw new NotFoundException('Message not found');
+    
+    // Check if reaction already exists
+    const exists = message.reactions.find(r => r.userId === userId && r.emoji === emoji);
+    if (!exists) {
+        message.reactions.push({ userId, emoji });
+        return message.save();
+    }
+    return message;
+  }
+
+  async removeReaction(messageId: string, userId: string, emoji: string): Promise<MessageDocument> {
+    return this.messageModel.findByIdAndUpdate(
+        messageId,
+        { $pull: { reactions: { userId, emoji } } },
+        { new: true }
+    ).exec();
+  }
+
+  // FIX: Added this method which was missing and causing the error
+  // Performs a "Soft Delete" (clears content, sets deleted flag)
+  async deleteMessage(messageId: string): Promise<MessageDocument> {
+    return this.messageModel.findByIdAndUpdate(
+        messageId,
+        { 
+            deleted: true, 
+            deletedAt: new Date(),
+            text: '', // Clear content for security
+            mac: ''
+        },
+        { new: true }
+    ).exec();
+  }
+
+  // Alias method if Gateway calls it by this name
+  async markMessageAsDeleted(messageId: string): Promise<MessageDocument> {
+      return this.deleteMessage(messageId);
   }
 
   async markUndeliveredMessagesAsDelivered(userId: string): Promise<MessageDocument[]> {
@@ -69,6 +117,5 @@ export class ChatService {
     return messagesToUpdate.map(m => m._id.toString());
   }
 
-  async deleteMessage(id: string) { return this.messageModel.findByIdAndDelete(id).exec(); }
   async deleteAllMessages(roomId: string) { return this.messageModel.deleteMany({ roomId }).exec(); }
 }
