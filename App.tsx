@@ -135,9 +135,15 @@ const App: React.FC = () => {
     socketService.connect();
     const unsubscribe = socketService.onMessage(({ roomId, message }) => { processIncomingMessage(roomId, message); });
     
-    // Listen for real-time notifications
+    // FIX: Strict de-duplication for notifications
     const unsubNotif = socketService.onNotification((notif) => {
-        setNotifications(prev => [notif, ...prev]);
+        setNotifications(prev => {
+            // Check if notification ID already exists to prevent doubles
+            if (prev.some(n => n.id === notif.id)) {
+                return prev;
+            }
+            return [notif, ...prev];
+        });
     });
     
     return () => { 
@@ -238,7 +244,11 @@ const App: React.FC = () => {
         setSharedOutings(outingsRes);
         setSkillRequests(skillsRes);
         setBookingRequests(bookingsRes);
+        
+        // When refreshing all data, simply set notifications. 
+        // The de-duplication happens on the real-time listener side.
         setNotifications(notificationsRes);
+
         setTasks(tasksRes);
     } catch (e) {}
   }, [currentUser]);

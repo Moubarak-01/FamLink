@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from '../schemas/message.schema';
 import { BookingDocument } from '../schemas/booking.schema';
 import { SkillTaskDocument } from '../schemas/task.schema';
+import { User, UserDocument } from '../schemas/user.schema'; // Import User
 
 @Injectable()
 export class ChatService {
@@ -11,11 +12,11 @@ export class ChatService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
     @InjectModel('Booking') private bookingModel: Model<BookingDocument>,
     @InjectModel('SkillTask') private skillTaskModel: Model<SkillTaskDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>, // Inject User Model
   ) {}
 
   async saveMessage(roomId: string, senderId: string, text: string, mac: string, replyTo?: string): Promise<MessageDocument> {
     let receiverId = null;
-    // Logic to determine receiver for 1-on-1 (Bookings/Skills)
     const booking = await this.bookingModel.findById(roomId).exec();
     if (booking) {
         const parentIdStr = booking.parentId.toString();
@@ -36,7 +37,8 @@ export class ChatService {
         text, 
         mac, 
         replyTo: replyTo || null,
-        status: 'sent' 
+        status: 'sent',
+        deletedFor: [] // Initialize array
     });
     return message.save();
   }
@@ -52,7 +54,6 @@ export class ChatService {
     const message = await this.messageModel.findById(messageId);
     if (!message) throw new NotFoundException('Message not found');
     
-    // Check if reaction already exists
     const exists = message.reactions.find(r => r.userId === userId && r.emoji === emoji);
     if (!exists) {
         message.reactions.push({ userId, emoji });
@@ -69,24 +70,26 @@ export class ChatService {
     ).exec();
   }
 
-  // FIX: Added this method which was missing and causing the error
-  // Performs a "Soft Delete" (clears content, sets deleted flag)
-  async deleteMessage(messageId: string): Promise<MessageDocument> {
-    return this.messageModel.findByIdAndUpdate(
-        messageId,
-        { 
-            deleted: true, 
-            deletedAt: new Date(),
-            text: '', // Clear content for security
-            mac: ''
-        },
-        { new: true }
-    ).exec();
-  }
-
-  // Alias method if Gateway calls it by this name
-  async markMessageAsDeleted(messageId: string): Promise<MessageDocument> {
-      return this.deleteMessage(messageId);
+  // UPDATED: Handle "Delete for Me" vs "Delete for Everyone"
+  async deleteMessage(messageId: string, userId: string, forEveryone: boolean): Promise<MessageDocument> {
+    if (forEveryone) {
+        return this.messageModel.findByIdAndUpdate(
+            messageId,
+            { 
+                deleted: true, 
+                deletedAt: new Date(),
+                text: '', 
+                mac: ''
+            },
+            { new: true }
+        ).exec();
+    } else {
+        return this.messageModel.findByIdAndUpdate(
+            messageId,
+            { $addToSet: { deletedFor: userId } },
+            { new: true }
+        ).exec();
+    }
   }
 
   async markUndeliveredMessagesAsDelivered(userId: string): Promise<MessageDocument[]> {
@@ -118,4 +121,19 @@ export class ChatService {
   }
 
   async deleteAllMessages(roomId: string) { return this.messageModel.deleteMany({ roomId }).exec(); }
+
+  // NEW: Update User Status
+  async updateUserStatus(userId: string, status: 'online' | 'offline'): Promise<UserDocument> {
+      const updateData: any = { status };
+      if (status === 'offline') {
+          updateData.lastSeen = new Date();
+      }
+      return this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
+  }
+
+  // NEW: Get User Status for initial load
+  async getUserStatus(userId: string): Promise<{ status: string, lastSeen: Date }> {
+      const user = await this.userModel.findById(userId, 'status lastSeen').exec();
+      return user ? { status: user.status, lastSeen: user.lastSeen } : { status: 'offline', lastSeen: null };
+  }
 }

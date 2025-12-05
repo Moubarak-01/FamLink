@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Delete, Request } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -14,9 +14,9 @@ export class ChatController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('message/:id')
-  async deleteMessage(@Param('id') id: string) {
-      // Now correctly calls the soft delete method in service
-      return this.chatService.deleteMessage(id);
+  async deleteMessage(@Param('id') id: string, @Request() req) {
+      // Fix: Pass userId and default 'forEveryone' to true for REST API calls
+      return this.chatService.deleteMessage(id, req.user.userId, true);
   }
 
   @UseGuards(JwtAuthGuard)

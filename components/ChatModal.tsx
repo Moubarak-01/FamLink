@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Activity, User, SharedOuting, SkillRequest, BookingRequest, ChatMessage } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { socketService } from '../services/socketService';
@@ -20,8 +20,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   const [messageText, setMessageText] = useState('');
   const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
   const [replyToId, setReplyToId] = useState<string | null>(null);
+  
+  // New States
   const [isRecipientOnline, setIsRecipientOnline] = useState(false);
+  const [recipientLastSeen, setRecipientLastSeen] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const contextItem = activity || outing || skillRequest || bookingRequest;
   const contextId = contextItem?.id || '';
@@ -35,7 +41,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       const isParent = currentUser.id === bookingRequest.parentId;
       otherUserId = isParent ? bookingRequest.nannyId : bookingRequest.parentId;
       title = isParent ? (bookingRequest.nannyName || 'Nanny') : (bookingRequest.parentName || 'Parent');
-      // Extract photo from booking request (ensure backend mapping puts it there)
       otherUserPhoto = isParent ? (bookingRequest.nannyPhoto || '') : (bookingRequest['parentPhoto'] || '');
   } else if (skillRequest) {
       title = skillRequest.title;
@@ -49,15 +54,24 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   }
 
   const allMessages = useMemo(() => {
-      return historyMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-  }, [historyMessages]);
+      // Filter out messages deleted "for me" locally
+      return historyMessages
+        .filter(m => !m.deletedFor?.includes(currentUser.id))
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  }, [historyMessages, currentUser.id]);
 
   useEffect(() => {
       if (contextId) {
           chatService.getHistory(contextId).then(setHistoryMessages).catch(console.error);
           socketService.joinRoom(contextId, currentUser.id);
+          
           if (bookingRequest && otherUserId) {
-              socketService.checkOnlineStatus(otherUserId, (isOnline) => setIsRecipientOnline(isOnline));
+              socketService.checkOnlineStatus(otherUserId, (data) => {
+                  if (data) {
+                    setIsRecipientOnline(data.status === 'online');
+                    setRecipientLastSeen(data.lastSeen || null);
+                  }
+              });
           }
       }
 
@@ -89,9 +103,18 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
       const unsubDelete = socketService.onMessageDeleted((data) => {
           if (data.roomId !== contextId) return;
-          setHistoryMessages(prev => prev.map(m => 
-              m.id === data.messageId ? { ...m, deleted: true, plaintext: "🚫 This message was deleted" } : m
-          ));
+          
+          if (data.isLocalDelete) {
+               setHistoryMessages(prev => prev.map(m => 
+                   m.id === data.messageId 
+                   ? { ...m, deletedFor: [...(m.deletedFor || []), currentUser.id] } 
+                   : m
+               ));
+          } else {
+               setHistoryMessages(prev => prev.map(m => 
+                   m.id === data.messageId ? { ...m, deleted: true, plaintext: "🚫 This message was deleted" } : m
+               ));
+          }
       });
 
       const unsubClear = socketService.onChatCleared((data) => {
@@ -101,7 +124,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       });
 
       const unsubPresence = socketService.onPresenceUpdate((data) => {
-           if (data.userId === otherUserId) setIsRecipientOnline(data.status === 'online');
+           if (data.userId === otherUserId) {
+               setIsRecipientOnline(data.status === 'online');
+               if (data.lastSeen) setRecipientLastSeen(data.lastSeen);
+           }
       });
 
       const unsubStatus = socketService.onStatusUpdate((data) => {
@@ -115,10 +141,26 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                }));
           }
       });
+      
+      // NEW: Typing Listener with immediate update
+      const unsubTyping = socketService.onTyping((data) => {
+          if(data.roomId !== contextId || data.userId === currentUser.id) return;
+          
+          if (data.isTyping) {
+              // Add user if not already there
+              setTypingUsers(prev => prev.includes(data.userName) ? prev : [...prev, data.userName]);
+          } else {
+              // Remove user immediately
+              setTypingUsers(prev => prev.filter(name => name !== data.userName));
+          }
+      });
 
       return () => {
-          unsubMsg(); unsubReaction(); unsubDelete(); unsubClear(); unsubPresence(); unsubStatus();
-          if (contextId) socketService.leaveRoom(contextId);
+          unsubMsg(); unsubReaction(); unsubDelete(); unsubClear(); unsubPresence(); unsubStatus(); unsubTyping();
+          if (contextId) {
+              socketService.sendStopTyping(contextId, currentUser.id); // Ensure we stop typing when leaving modal
+              socketService.leaveRoom(contextId);
+          }
       };
   }, [contextId, currentUser.id, bookingRequest, otherUserId]);
 
@@ -128,9 +170,44 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     }
   }, [contextId]);
 
+  // --- Typing Indicator Logic ---
+
+  const startTyping = () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      socketService.sendTyping(contextId, currentUser.id, currentUser.fullName);
+      
+      // Auto-stop after 3 seconds if no keys are pressed (fallback)
+      typingTimeoutRef.current = setTimeout(() => {
+          socketService.sendStopTyping(contextId, currentUser.id);
+      }, 3000);
+  };
+
+  const stopTyping = () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      socketService.sendStopTyping(contextId, currentUser.id);
+  };
+
+  // 1. On Focus: Start typing immediately
+  const handleFocus = () => {
+      startTyping();
+  };
+
+  // 2. On Blur: Stop typing immediately
+  const handleBlur = () => {
+      stopTyping();
+  };
+
+  // 3. On KeyDown: Refresh typing status
+  const handleKeyDown = () => {
+      startTyping();
+  };
+
+  // 4. Send Message: Clear typing immediately
   const handleSendMessage = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (messageText.trim()) {
+      stopTyping(); // Stop typing immediately on send
+
       const tempId = `temp-${Date.now()}`;
       const newMessage: ChatMessage = {
           id: tempId,
@@ -143,7 +220,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
           status: 'sent',
           reactions: [],
           replyTo: replyToId || undefined,
-          deleted: false
+          deleted: false,
+          deletedFor: []
       };
       
       setHistoryMessages(prev => [...prev, newMessage]);
@@ -158,6 +236,20 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     }
   };
 
+  const handleDeleteClick = (msgId: string, isSender: boolean) => {
+      const options = [];
+      options.push("Delete for me");
+      if (isSender) options.push("Delete for everyone");
+      
+      const choice = window.prompt(`Delete message? Type:\n1 for "Delete for me"\n${isSender ? '2 for "Delete for everyone"' : ''}`);
+      
+      if (choice === '1') {
+          socketService.deleteMessage(contextId, msgId, currentUser.id, true);
+      } else if (choice === '2' && isSender) {
+          socketService.deleteMessage(contextId, msgId, currentUser.id, false);
+      }
+  };
+
   const scrollToMessage = (msgId: string) => {
       const element = document.getElementById(`msg-${msgId}`);
       if (element) {
@@ -167,6 +259,17 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       }
   };
 
+  const formatLastSeen = (dateStr: string) => {
+      try {
+          return new Date(dateStr).toLocaleString(undefined, {
+              month: 'short', 
+              day: 'numeric', 
+              hour: 'numeric', 
+              minute: 'numeric'
+          });
+      } catch { return ''; }
+  };
+
   return (
     <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4" onClick={onClose}>
       <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -174,7 +277,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         {/* Header */}
         <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex justify-between items-center z-10 shrink-0">
             <div className="flex items-center gap-3 overflow-hidden">
-                {/* FIX: Use otherUserPhoto if available, otherwise fallback */}
                 {otherUserId && (
                     <img 
                         src={otherUserPhoto || `https://i.pravatar.cc/150?u=${otherUserId}`} 
@@ -185,19 +287,21 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <div className="min-w-0">
                     <h2 className="text-lg font-bold text-[var(--text-primary)] truncate flex items-center gap-2">
                         {title}
-                        {bookingRequest && (
-                            <span className={`w-2 h-2 rounded-full ${isRecipientOnline ? 'bg-green-500' : 'bg-gray-400'}`} title={isRecipientOnline ? "Online" : "Offline"}></span>
-                        )}
                     </h2>
+                    {bookingRequest && (
+                        <p className="text-xs text-[var(--text-secondary)]">
+                            {isRecipientOnline ? (
+                                <span className="text-green-500 font-medium">● Online</span>
+                            ) : recipientLastSeen ? (
+                                <span>Last seen {formatLastSeen(recipientLastSeen)}</span>
+                            ) : (
+                                <span>Offline</span>
+                            )}
+                        </p>
+                    )}
                 </div>
             </div>
             <div className="flex gap-3 items-center">
-                <button 
-                    onClick={() => { if(window.confirm("Clear entire chat history for everyone?")) socketService.clearChat(contextId); }} 
-                    className="text-xs text-red-500 hover:text-red-700 hover:underline font-medium"
-                >
-                    Clear Chat
-                </button>
                 <button onClick={onClose} className="text-2xl leading-none text-[var(--text-secondary)] hover:text-[var(--text-primary)]">&times;</button>
             </div>
         </div>
@@ -213,11 +317,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                         onReaction={(id, emoji) => socketService.sendReaction(contextId, id, currentUser.id, emoji)}
                         onRemoveReaction={(id, emoji) => socketService.removeReaction(contextId, id, currentUser.id, emoji)}
                         onReply={(id) => setReplyToId(id)}
-                        onDelete={(id) => { if(window.confirm("Delete message for everyone?")) socketService.deleteMessage(contextId, id); }}
+                        onDelete={(id) => handleDeleteClick(id, msg.senderId === currentUser.id)}
                         onScrollToMessage={scrollToMessage}
                     />
                 </div>
             ))}
+            
+            {/* Typing Indicator */}
+            {typingUsers.length > 0 && (
+                <div className="text-xs text-gray-500 italic ml-2 mb-2 transition-opacity duration-200 opacity-100">
+                    {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+                </div>
+            )}
+            
             <div ref={messagesEndRef} />
         </div>
 
@@ -228,7 +340,12 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <textarea 
                     value={messageText} 
                     onChange={e => setMessageText(e.target.value)} 
-                    onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }}}
+                    onFocus={handleFocus} // Start typing when focused
+                    onBlur={handleBlur}   // Stop typing IMMEDIATELY when blurred
+                    onKeyDown={(e) => {
+                        handleKeyDown(); // Reset timeout on key press
+                        if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
+                    }}
                     placeholder={t('chat_placeholder')} 
                     rows={1} 
                     className="flex-1 px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] text-[var(--text-primary)] resize-none min-h-[45px] max-h-[100px]" 

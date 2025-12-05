@@ -9,6 +9,7 @@ import { Booking, BookingSchema } from '../schemas/booking.schema';
 import { Activity, ActivitySchema } from '../schemas/activity.schema';
 import { Outing, OutingSchema } from '../schemas/outing.schema';
 import { SkillTask, SkillTaskSchema } from '../schemas/task.schema';
+import { User, UserSchema } from '../schemas/user.schema'; // 1. Import User
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SkillTask, SkillTaskSchema } from '../schemas/task.schema';
         { name: Activity.name, schema: ActivitySchema },
         { name: Outing.name, schema: OutingSchema },
         { name: SkillTask.name, schema: SkillTaskSchema },
+        { name: User.name, schema: UserSchema }, // 2. Add User to imports
     ]),
     NotificationsModule
   ],

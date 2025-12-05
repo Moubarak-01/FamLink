@@ -52,7 +52,7 @@ export class NannyProfile {
   @Prop({ default: 0 })
   rating: number;
 
-  @Prop({ default: 0 }) // <-- ADDED THIS FIELD
+  @Prop({ default: 0 })
   ratingCount: number;
 }
 
@@ -91,6 +91,13 @@ export class User {
   @Prop()
   phone: string;
 
+  // NEW: Online Status & Last Seen
+  @Prop({ enum: ['online', 'offline'], default: 'offline' })
+  status: string;
+
+  @Prop()
+  lastSeen: Date;
+
   // Parent specific fields
   @Prop({ type: [ChildSchema], default: [] })
   children: Child[];
@@ -117,7 +124,7 @@ export class User {
   @Prop({ type: Subscription })
   subscription: Subscription;
 
-  @Prop([String]) // IDs of nannies added to dashboard
+  @Prop([String]) 
   addedNannyIds: string[];
 }
 

@@ -9,13 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@google/genai": "^1.28.0",
     "axios": "^1.13.2",
-    "socket.io-client": "^4.7.5",
+    "date-fns": "^4.1.0",
+    "libphonenumber-js": "1.10.18",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-phone-number-input": "3.4.9",
-    "libphonenumber-js": "1.10.18"
+    "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

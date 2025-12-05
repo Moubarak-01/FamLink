@@ -17,17 +17,16 @@ const ReactionSchema = SchemaFactory.createForClass(Reaction);
 @Schema({ timestamps: true })
 export class Message {
   @Prop({ required: true })
-  roomId: string; // Acts as threadId
+  roomId: string; 
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   senderId: string;
 
-  // receiverId is optional for group chats
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
   receiverId: string;
 
   @Prop({ required: true })
-  text: string; // Ciphertext
+  text: string;
 
   @Prop({ required: true })
   mac: string;
@@ -42,7 +41,10 @@ export class Message {
   replyTo: string | null;
 
   @Prop({ default: false })
-  deleted: boolean;
+  deleted: boolean; // Global delete (Delete for Everyone)
+
+  @Prop({ type: [String], default: [] })
+  deletedFor: string[]; // NEW: Array of user IDs who deleted this locally
 
   @Prop()
   deletedAt: Date;

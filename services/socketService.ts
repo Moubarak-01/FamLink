@@ -1,4 +1,3 @@
-// services/socketService.ts
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage, Notification } from '../types';
 import { authService } from './authService';
@@ -10,16 +9,21 @@ class SocketService {
   
   private messageHandlers: ((data: {roomId: string, message: ChatMessage}) => void)[] = [];
   private statusHandlers: ((data: any) => void)[] = [];
-  private presenceHandlers: ((data: {userId: string, status: 'online' | 'offline'}) => void)[] = [];
+  private presenceHandlers: ((data: {userId: string, status: 'online' | 'offline', lastSeen?: string}) => void)[] = [];
   private notificationHandlers: ((data: Notification) => void)[] = [];
-  
-  // NEW: Handlers for reactions, deletes, and clearing
   private reactionHandlers: ((data: {roomId: string, messageId: string, userId: string, emoji: string, type: 'add' | 'remove'}) => void)[] = [];
-  private deleteHandlers: ((data: {roomId: string, messageId: string}) => void)[] = [];
+  private deleteHandlers: ((data: {roomId: string, messageId: string, isLocalDelete?: boolean}) => void)[] = [];
   private clearHandlers: ((data: {roomId: string}) => void)[] = [];
+  private typingHandlers: ((data: {roomId: string, userId: string, userName: string, isTyping: boolean}) => void)[] = [];
 
   async connect(userId?: string) {
-    if (this.socket?.connected) return;
+    // FIX: stricter check to prevent duplicate connections (double notifications)
+    if (this.socket) {
+        if (!this.socket.connected) {
+            this.socket.connect();
+        }
+        return;
+    }
 
     let currentUserId = userId;
     if (!currentUserId) {
@@ -45,9 +49,7 @@ class SocketService {
       this.connected = false;
     });
 
-    // DECRYPTION STEP for incoming message
     this.socket.on('receive_message', (data) => {
-      // Only decrypt if not deleted
       if (!data.message.deleted) {
           data.message.plaintext = cryptoService.decryptMessage(data.message);
       } else {
@@ -60,12 +62,13 @@ class SocketService {
     this.socket.on('messages_status_update', (data) => this.statusHandlers.forEach(h => h(data)));
     this.socket.on('user_presence', (data) => this.presenceHandlers.forEach(h => h(data)));
     this.socket.on('notification', (data) => this.notificationHandlers.forEach(h => h(data)));
-
-    // NEW: Event Listeners
     this.socket.on('reaction_added', (data) => this.reactionHandlers.forEach(h => h({ ...data, type: 'add' })));
     this.socket.on('reaction_removed', (data) => this.reactionHandlers.forEach(h => h({ ...data, type: 'remove' })));
     this.socket.on('message_deleted', (data) => this.deleteHandlers.forEach(h => h(data)));
+    this.socket.on('message_deleted_for_me', (data) => this.deleteHandlers.forEach(h => h({ ...data, isLocalDelete: true })));
     this.socket.on('chat_cleared', (data) => this.clearHandlers.forEach(h => h(data)));
+    this.socket.on('user_typing', (data) => this.typingHandlers.forEach(h => h({...data, isTyping: true})));
+    this.socket.on('user_stop_typing', (data) => this.typingHandlers.forEach(h => h({...data, isTyping: false})));
   }
 
   disconnect() {
@@ -87,19 +90,16 @@ class SocketService {
 
   sendMessage(roomId: string, message: ChatMessage, callback?: (savedMessage: ChatMessage) => void) {
     if (this.socket && this.connected) {
-      // ENCRYPTION STEP
       const { ciphertext, mac } = cryptoService.encryptMessage(message.text);
-      
       const encryptedPayload = {
         roomId, 
         message: { 
             ...message, 
             text: ciphertext,
             mac: mac,
-            replyTo: message.replyTo // Send reply ID unencrypted
+            replyTo: message.replyTo
         } 
       };
-
       this.socket.emit('send_message', encryptedPayload, (response: any) => {
           if (callback && response) {
               response.plaintext = cryptoService.decryptMessage(response);
@@ -109,7 +109,14 @@ class SocketService {
     }
   }
 
-  // NEW: Emit Methods
+  sendTyping(roomId: string, userId: string, userName: string) {
+      this.socket?.emit('typing', { roomId, userId, userName });
+  }
+
+  sendStopTyping(roomId: string, userId: string) {
+      this.socket?.emit('stop_typing', { roomId, userId });
+  }
+
   sendReaction(roomId: string, messageId: string, userId: string, emoji: string) {
       this.socket?.emit('add_reaction', { roomId, messageId, userId, emoji });
   }
@@ -118,18 +125,18 @@ class SocketService {
       this.socket?.emit('remove_reaction', { roomId, messageId, userId, emoji });
   }
 
-  deleteMessage(roomId: string, messageId: string) {
-      this.socket?.emit('delete_message', { roomId, messageId });
+  deleteMessage(roomId: string, messageId: string, userId: string, deleteForMe: boolean = false) {
+      this.socket?.emit('delete_message', { roomId, messageId, userId, deleteForMe });
   }
 
   clearChat(roomId: string) {
       this.socket?.emit('clear_chat', { roomId });
   }
 
-  checkOnlineStatus(userId: string, callback: (isOnline: boolean) => void) {
+  checkOnlineStatus(userId: string, callback: (data: {status: string, lastSeen: string | null}) => void) {
       if (this.socket && this.connected) {
-          this.socket.emit('check_online', userId, (isOnline: boolean) => {
-              callback(isOnline);
+          this.socket.emit('check_online', userId, (data: any) => {
+              callback(data);
           });
       }
   }
@@ -144,7 +151,7 @@ class SocketService {
       return () => { this.statusHandlers = this.statusHandlers.filter(h => h !== handler); };
   }
 
-  onPresenceUpdate(handler: (data: {userId: string, status: 'online' | 'offline'}) => void) {
+  onPresenceUpdate(handler: (data: {userId: string, status: 'online' | 'offline', lastSeen?: string}) => void) {
       this.presenceHandlers.push(handler);
       return () => { this.presenceHandlers = this.presenceHandlers.filter(h => h !== handler); };
   }
@@ -154,7 +161,6 @@ class SocketService {
       return () => { this.notificationHandlers = this.notificationHandlers.filter(h => h !== handler); };
   }
 
-  // NEW: Listener Registrations
   onReaction(handler: (data: any) => void) {
       this.reactionHandlers.push(handler);
       return () => { this.reactionHandlers = this.reactionHandlers.filter(h => h !== handler); };
@@ -168,6 +174,11 @@ class SocketService {
   onChatCleared(handler: (data: any) => void) {
       this.clearHandlers.push(handler);
       return () => { this.clearHandlers = this.clearHandlers.filter(h => h !== handler); };
+  }
+
+  onTyping(handler: (data: {userId: string, userName: string, isTyping: boolean}) => void) {
+      this.typingHandlers.push(handler);
+      return () => { this.typingHandlers = this.typingHandlers.filter(h => h !== handler); };
   }
 }
 
