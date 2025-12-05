@@ -30,7 +30,6 @@ import CreateSkillRequestModal from './components/CreateSkillRequestModal';
 import MakeSkillOfferModal from './components/MakeSkillOfferModal';
 import ChatModal from './components/ChatModal';
 import SubscriptionStatusScreen from './components/SubscriptionStatusScreen';
-// Import Ref type
 import AiAssistant, { AiAssistantRef } from './components/AiAssistant';
 import SettingsModal from './components/SettingsModal';
 import { socketService } from './services/socketService';
@@ -46,7 +45,7 @@ import { taskService } from './services/taskService';
 import { chatService } from './services/chatService';
 
 const getAvatarId = (id?: string) => {
-    if (!id || typeof id !== 'string') return 0; // FIX: Handle null/undefined/non-string ID
+    if (!id || typeof id !== 'string') return 0; 
     return id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 70;
 };
 
@@ -55,7 +54,6 @@ interface PendingAction {
   nanny: User;
 }
 
-// ... (StarRating and RatingModal remain the same) ...
 const StarRating: React.FC<{ rating: number, setRating: (rating: number) => void }> = ({ rating, setRating }) => {
   const [hover, setHover] = useState(0);
   return (
@@ -132,7 +130,6 @@ const App: React.FC = () => {
   const [noiseReductionEnabled, setNoiseReductionEnabled] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   
-  // Create a ref for the AI Assistant
   const aiAssistantRef = useRef<AiAssistantRef>(null);
 
   useEffect(() => {
@@ -177,26 +174,19 @@ const App: React.FC = () => {
       checkAuth();
   }, []);
 
-  // Global Keyboard Shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ignore shortcuts if typing in an input
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
-
-      // Shift + N: Open New AI Chat (if visible but closed)
       if (e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         aiAssistantRef.current?.openChat();
       }
-      
-      // Shift + A: Toggle AI Assistant Visibility
       if (e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         aiAssistantRef.current?.toggleVisibility();
       }
     };
-
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
@@ -256,99 +246,140 @@ const App: React.FC = () => {
   const handleSubmitRating = async (targetUserId: string, ratingValue: number, comment: string) => { if (!currentUser) return; try { await reviewService.create(targetUserId, ratingValue, comment); setRatingTargetUser(null); alert(t('alert_rating_success')); const nanniesRes = await userService.getNannies(); setApprovedNannies(nanniesRes.filter(n => n.profile)); } catch(e) { alert("Error submitting rating"); } };
   const handleOpenBookingModal = (nanny: User) => { if (!currentUser) { setPendingAction({ type: 'book', nanny }); navigateTo(Screen.Login); return; } if (currentUser.subscription?.status !== 'active') { setPendingAction({ type: 'book', nanny }); alert(t('alert_subscribe_to_book')); navigateTo(Screen.Subscription); return; } setBookingNannyInfo(nanny); };
   const handleSubmitBookingRequest = async (nannyId: string, date: string, startTime: string, endTime: string, message: string) => { if (!currentUser) return; try { const newBooking = await bookingService.create({ nannyId, date, startTime, endTime, message }); setBookingRequests(prev => [...prev, newBooking]); setBookingNannyInfo(null); alert(t('alert_booking_request_sent')); refreshData(); } catch(e) { alert("Error creating booking"); } };
-  
   const handleUpdateBookingStatus = async (requestId: string, status: 'accepted' | 'declined') => { try { await bookingService.updateStatus(requestId, status); refreshData(); } catch(e) { alert("Error updating booking"); } };
   const handleNannyHideBooking = (id: string) => { if (window.confirm("Remove this from your history?")) { setHiddenBookingIds(prev => [...prev, id]); } };
   const handleCancelBooking = async (id: string) => { if (window.confirm("Cancel this request?")) { try { await bookingService.delete(id); setBookingRequests(prev => prev.filter(b => b.id !== id)); } catch(e) { alert("Failed to cancel"); } } };
   const handleClearAllBookings = async () => { if (window.confirm("Clear all history?")) { try { await bookingService.deleteAll(); setBookingRequests([]); } catch(e) { alert("Failed to clear history"); } } };
   const handleOpenTaskModal = (nanny: User) => setTaskModalNanny(nanny);
   const handleAddTask = async (nannyId: string, description: string, dueDate: string) => { if (!currentUser) return; try { const newTask = await taskService.create({ nannyId, description, dueDate }); setTasks(prev => [...prev, newTask]); setTaskModalNanny(null); alert(t('alert_task_added')); } catch(e) { alert("Error adding task"); } };
+  
+  // OPTIMISTIC TASK DELETE
+  const handleDeleteTask = async (id: string) => {
+      setTasks(prev => prev.filter(t => t.id !== id)); // Update immediately
+      try {
+          await taskService.delete(id);
+      } catch(e) {
+          refreshData(); // Revert on error
+          alert("Failed to delete task");
+      }
+  };
+
   const handleUpdateTaskStatus = async (taskId: string, status: 'pending' | 'completed') => { try { const updatedTask = await taskService.updateStatus(taskId, status); setTasks(prev => prev.map(task => task.id === taskId ? updatedTask : task)); } catch(e) { alert("Error updating task status"); } };
+  const handleKeepTask = async (id: string) => { try { await taskService.keepTask(id); setTasks(prev => prev.map(t => t.id === id ? { ...t, keepPermanently: true } : t)); } catch(e) { alert("Failed to update task"); } };
+
   const handleOpenCreateActivityModal = () => setIsCreateActivityModalOpen(true);
   const handleCloseCreateActivityModal = () => setIsCreateActivityModalOpen(false);
-  const handleCreateActivity = async (activityData: any) => { if (!currentUser) return; try { const newActivity = await activityService.create(activityData); setActivities(prev => [newActivity, ...prev]); handleCloseCreateActivityModal(); } catch(e) { alert("Error creating activity"); } };
+  
+  // OPTIMISTIC ACTIVITY CREATE
+  const handleCreateActivity = async (activityData: any) => {
+      if (!currentUser) return;
+      try {
+          const newActivity = await activityService.create(activityData);
+          const populatedActivity = {
+              ...newActivity,
+              hostId: currentUser,
+              hostName: currentUser.fullName,
+              hostPhoto: currentUser.photo,
+              participants: [currentUser.id],
+              messages: []
+          };
+          setActivities(prev => [populatedActivity, ...prev]);
+          handleCloseCreateActivityModal();
+      } catch(e) { alert("Error creating activity"); }
+  };
+
+  // OPTIMISTIC ACTIVITY DELETE
+  const handleDeleteActivity = async (id: string) => {
+      if (!window.confirm("Delete this activity?")) return;
+      setActivities(prev => prev.filter(a => a.id !== id));
+      try { await activityService.delete(id); } catch(e) { refreshData(); alert("Delete failed"); }
+  };
+
+  // OPTIMISTIC ACTIVITY DELETE ALL
+  const handleDeleteAllActivities = async () => {
+      if (!window.confirm("Delete all activities?")) return;
+      setActivities([]);
+      try { await activityService.deleteAll(); } catch(e) { refreshData(); alert("Delete all failed"); }
+  };
+
   const handleJoinActivity = async (activityId: string) => { if (!currentUser) return; try { const updatedActivity = await activityService.join(activityId); setActivities(prev => prev.map(act => act.id === activityId ? updatedActivity : act)); } catch(e) { alert("Error joining activity"); } };
   const handleSendMessage = (id: string, messageText: string) => { if (!currentUser) return; const tempId = `msg-${Date.now()}`; const newMessage: ChatMessage = { id: tempId, senderId: currentUser.id, senderName: currentUser.fullName, senderPhoto: currentUser.photo || `https://i.pravatar.cc/150?img=${getAvatarId(currentUser.id)}`, text: messageText, timestamp: Date.now(), status: 'sent' }; setActiveChat(prev => { if (prev && prev.item.id === id) { return { ...prev, item: { ...prev.item, messages: [...(prev.item.messages || []), newMessage] } }; } return prev; }); socketService.sendMessage(id, newMessage, (savedMessage) => { setActiveChat(prev => { if (prev && prev.item.id === id) { const updatedMessages = (prev.item.messages || []).map(msg => msg.id === tempId ? savedMessage : msg); return { ...prev, item: { ...prev.item, messages: updatedMessages } }; } return prev; }); }); };
   const handleDeleteMessage = async (contextId: string, messageId: string) => { const filterMsgs = (item: any) => ({ ...item, messages: (item.messages || []).filter((m: ChatMessage) => m.id !== messageId) }); if (activities.some(a => a.id === contextId)) setActivities(prev => prev.map(a => a.id === contextId ? filterMsgs(a) : a)); else if (sharedOutings.some(o => o.id === contextId)) setSharedOutings(prev => prev.map(o => o.id === contextId ? filterMsgs(o) : o)); else if (skillRequests.some(s => s.id === contextId)) setSkillRequests(prev => prev.map(s => s.id === contextId ? filterMsgs(s) : s)); else if (bookingRequests.some(b => b.id === contextId)) setBookingRequests(prev => prev.map(b => b.id === contextId ? filterMsgs(b) : b)); setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: filterMsgs(prev.item) }; return prev; }); try { await chatService.deleteMessage(messageId); } catch (e) { alert("Failed to delete message"); } };
   const handleDeleteAllMessages = async (contextId: string) => { const clearMsgs = (item: any) => ({ ...item, messages: [] }); if (activities.some(a => a.id === contextId)) setActivities(prev => prev.map(a => a.id === contextId ? clearMsgs(a) : a)); else if (sharedOutings.some(o => o.id === contextId)) setSharedOutings(prev => prev.map(o => o.id === contextId ? clearMsgs(o) : o)); else if (skillRequests.some(s => s.id === contextId)) setSkillRequests(prev => prev.map(s => s.id === contextId ? clearMsgs(s) : s)); else if (bookingRequests.some(b => b.id === contextId)) setBookingRequests(prev => prev.map(b => b.id === contextId ? clearMsgs(b) : b)); setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: clearMsgs(prev.item) }; return prev; }); try { await chatService.deleteAllMessages(contextId); } catch (e) { alert("Failed to delete messages"); } };
+  
   const handleOpenCreateOutingModal = () => setIsCreateOutingModalOpen(true);
   const handleCloseCreateOutingModal = () => setIsCreateOutingModalOpen(false);
-  const handleCreateOuting = async (outingData: any) => { if (!currentUser) return; try { const newOuting = await outingService.create(outingData); setSharedOutings(prev => [newOuting, ...prev]); handleCloseCreateOutingModal(); } catch(e) { alert("Error creating outing"); } };
+  
+  // OPTIMISTIC OUTING CREATE
+  const handleCreateOuting = async (outingData: any) => {
+      if (!currentUser) return;
+      try {
+          const newOuting = await outingService.create(outingData);
+          const populatedOuting = {
+              ...newOuting,
+              hostId: currentUser,
+              hostName: currentUser.fullName,
+              hostPhoto: currentUser.photo,
+              requests: []
+          };
+          setSharedOutings(prev => [populatedOuting, ...prev]);
+          handleCloseCreateOutingModal();
+      } catch(e) { alert("Error creating outing"); }
+  };
+
+  // OPTIMISTIC OUTING DELETE
+  const handleDeleteOuting = async (id: string) => {
+      if (!window.confirm("Delete this outing?")) return;
+      setSharedOutings(prev => prev.filter(o => o.id !== id));
+      try { await outingService.delete(id); } catch(e) { refreshData(); alert("Delete failed"); }
+  };
+
+  // OPTIMISTIC OUTING DELETE ALL
+  const handleDeleteAllOutings = async () => {
+      if (!window.confirm("Delete ALL outings?")) return;
+      setSharedOutings([]);
+      try { await outingService.deleteAll(); } catch(e) { refreshData(); alert("Delete all failed"); }
+  };
+
   const handleRequestOutingJoin = async (outing: SharedOuting, childName: string, childAge: number, emergencyContactName: string, emergencyContactPhone: string) => { if (!currentUser) return; try { const updatedOuting = await outingService.requestJoin(outing.id, { childName, childAge, emergencyContactName, emergencyContactPhone }); setSharedOutings(prev => prev.map(o => o.id === outing.id ? updatedOuting : o)); setRequestOutingInfo(null); alert(t('alert_outing_request_sent')); } catch(e) { alert("Error requesting join"); } };
   const handleUpdateOutingRequestStatus = async (outingId: string, parentId: string, status: 'accepted' | 'declined') => { try { const updatedOuting = await outingService.updateRequestStatus(outingId, parentId, status); setSharedOutings(prev => prev.map(o => o.id === outingId ? updatedOuting : o)); } catch(e) { alert("Error updating status"); } };
-  const handleCreateSkillRequest = async (requestData: any) => { if (!currentUser) return; try { const newSkill = await marketplaceService.create(requestData); setSkillRequests(prev => [newSkill, ...prev]); setIsCreateSkillRequestModalOpen(false); } catch(e) { alert("Error creating skill request"); } };
+  
+  // OPTIMISTIC SKILL REQUEST CREATE
+  const handleCreateSkillRequest = async (requestData: any) => {
+      if (!currentUser) return;
+      try {
+          const newSkill = await marketplaceService.create(requestData);
+          const populatedSkill = {
+              ...newSkill,
+              requesterId: currentUser,
+              requesterName: currentUser.fullName,
+              requesterPhoto: currentUser.photo,
+              offers: []
+          };
+          setSkillRequests(prev => [populatedSkill, ...prev]);
+          setIsCreateSkillRequestModalOpen(false);
+      } catch(e) { alert("Error creating skill request"); }
+  };
+
+  // OPTIMISTIC SKILL REQUEST DELETE
+  const handleDeleteSkillRequest = async (id: string) => {
+      if (!window.confirm("Delete this skill request?")) return;
+      setSkillRequests(prev => prev.filter(r => r.id !== id));
+      try { await marketplaceService.delete(id); } catch(e) { refreshData(); alert("Delete failed"); }
+  };
+
+  // OPTIMISTIC SKILL REQUEST DELETE ALL
+  const handleDeleteAllSkillRequests = async () => {
+      if (!window.confirm("Delete ALL skill requests?")) return;
+      setSkillRequests([]);
+      try { await marketplaceService.deleteAll(); } catch(e) { refreshData(); alert("Delete all failed"); }
+  };
+
   const handleMakeSkillOffer = async (request: SkillRequest, offerAmount: number, message: string) => { if (!currentUser) return; try { const updatedSkill = await marketplaceService.makeOffer(request.id, { offerAmount, message }); setSkillRequests(prev => prev.map(r => r.id === request.id ? updatedSkill : r)); setMakeOfferSkillRequestInfo(null); } catch(e) { alert("Error making offer"); } };
   const handleUpdateSkillOfferStatus = async (requestId: string, helperId: string, status: 'accepted' | 'declined') => { try { const updatedSkill = await marketplaceService.updateOfferStatus(requestId, helperId, status); setSkillRequests(prev => prev.map(r => r.id === requestId ? updatedSkill : r)); } catch(e) { alert("Error updating offer"); } };
   const handleReportUser = (userId: string) => alert("User reported. Our team will review the case.");
   const handleNotificationClick = async (notification: Notification) => { try { await notificationService.markRead(notification.id); } catch (e) {} setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n).filter(n => !n.read)); await refreshData(); if (notification.type === 'chat' && notification.relatedId) { const act = activities.find(a => a.id === notification.relatedId); if(act) { setActiveChat({type: 'activity', item: act}); return; } const out = sharedOutings.find(o => o.id === notification.relatedId); if(out) { setActiveChat({type: 'outing', item: out}); return; } const skill = skillRequests.find(s => s.id === notification.relatedId); if(skill) { setActiveChat({type: 'skill', item: skill}); return; } const booking = bookingRequests.find(b => b.id === notification.relatedId); if(booking) { setActiveChat({type: 'booking', item: booking}); return; } } else if (notification.type === 'booking') { navigateTo(Screen.Dashboard); if (notification.relatedId) { const booking = bookingRequests.find(b => b.id === notification.relatedId); if (booking && booking.status === 'accepted') setActiveChat({type: 'booking', item: booking}); } } else if (notification.type === 'outing') navigateTo(Screen.ChildOutings); else if (notification.type === 'skill') navigateTo(Screen.SkillMarketplace); else if (notification.type === 'task') navigateTo(Screen.Dashboard); };
   const handleClearNotifications = async () => { if (currentUser) { try { await notificationService.markAllRead(); setNotifications([]); } catch(e) {} } };
-
-  const handleKeepTask = async (id: string) => { try { await taskService.keepTask(id); setTasks(prev => prev.map(t => t.id === id ? { ...t, keepPermanently: true } : t)); } catch(e) { alert("Failed to update task"); } };
-
-  // Delete task handler
-  const handleDeleteTask = async (id: string) => {
-      try {
-          await taskService.delete(id);
-          setTasks(prev => prev.filter(t => t.id !== id));
-      } catch(e) {
-          alert("Failed to delete task");
-      }
-  };
-  
-  // Bulk delete handlers
-  const handleDeleteActivities = async () => {
-    if (!currentUser || !window.confirm("Are you sure you want to delete ALL of your created activities?")) return;
-    try {
-        await activityService.deleteAllHosted();
-        setActivities(prev => prev.filter(a => a.hostId !== currentUser.id));
-        alert("All hosted activities have been deleted.");
-    } catch(e) {
-        alert("Failed to delete activities.");
-    }
-  };
-
-  const handleDeleteOutings = async () => {
-      if (!currentUser || !window.confirm("Are you sure you want to delete ALL of your created shared outings?")) return;
-      try {
-          await outingService.deleteAllHosted();
-          setSharedOutings(prev => prev.filter(o => o.hostId !== currentUser.id));
-          alert("All hosted shared outings have been deleted.");
-      } catch(e) {
-          alert("Failed to delete shared outings.");
-      }
-  };
-
-  const handleDeleteSkillRequests = async () => {
-      if (!currentUser || !window.confirm("Are you sure you want to delete ALL of your created skill requests?")) return;
-      try {
-          await marketplaceService.deleteAllCreated();
-          setSkillRequests(prev => prev.filter(r => r.requesterId !== currentUser.id));
-          alert("All created skill requests have been deleted.");
-      } catch(e) {
-          alert("Failed to delete skill requests.");
-      }
-  };
-
-  // NEW: Individual delete handlers for lists
-  const handleDeleteOuting = async (id: string) => {
-      if (!window.confirm("Are you sure you want to delete this outing?")) return;
-      try {
-          await outingService.deleteOuting(id); 
-          setSharedOutings(prev => prev.filter(o => o.id !== id));
-      } catch(e) {
-          alert("Failed to delete outing.");
-      }
-  };
-
-  const handleDeleteSkillRequest = async (id: string) => {
-      if (!window.confirm("Are you sure you want to delete this skill request?")) return;
-      try {
-          await marketplaceService.deleteSkillRequest(id); 
-          setSkillRequests(prev => prev.filter(r => r.id !== id));
-      } catch(e) {
-          alert("Failed to delete skill request.");
-      }
-  };
 
 
   const currentUserAddedNannies = useMemo(() => {
@@ -393,7 +424,6 @@ const App: React.FC = () => {
     if (viewingNannyId && currentScreen === Screen.NannyProfileDetail) {
       const nanny = approvedNannies.find(n => n.id === viewingNannyId);
       const isAdded = currentUserAddedNannies.some(n => n.id === viewingNannyId);
-      // IMPORTANT: Calculate pending request state for the button
       const hasPendingRequest = currentUser ? bookingRequests.some(req => req.parentId === currentUser.id && req.nannyId === viewingNannyId && req.status === 'pending') : false;
 
       return nanny ? <NannyProfileDetailScreen nanny={nanny} onBack={goBack} onContact={handleContactAttempt} onAdd={handleAddNanny} isAdded={!!isAdded} onRequestBooking={handleOpenBookingModal} hasPendingRequest={hasPendingRequest} onReportUser={handleReportUser}/> : null;
@@ -439,13 +469,21 @@ const App: React.FC = () => {
           onClearAllBookings={handleClearAllBookings} 
           onKeepTask={handleKeepTask} 
           onDeleteTask={handleDeleteTask}
-          // Bulk Delete Handlers
-          onDeleteActivities={handleDeleteActivities}
-          onDeleteOutings={handleDeleteOutings}
-          onDeleteSkillRequests={handleDeleteSkillRequests}
+          onDeleteActivities={handleDeleteAllActivities}
+          onDeleteOutings={handleDeleteAllOutings}
+          onDeleteSkillRequests={handleDeleteAllSkillRequests}
         /> : null;
       case Screen.NannyListing: return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
-      case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen user={currentUser} activities={activities} onBack={goBack} onCreateActivity={() => setIsCreateActivityModalOpen(true)} onJoinActivity={handleJoinActivity} onOpenChat={(activity) => setActiveChat({ type: 'activity', item: activity })} /> : null;
+      case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen 
+          user={currentUser} 
+          activities={activities} 
+          onBack={goBack} 
+          onCreateActivity={() => setIsCreateActivityModalOpen(true)} 
+          onJoinActivity={handleJoinActivity} 
+          onOpenChat={(activity) => setActiveChat({ type: 'activity', item: activity })}
+          onDeleteActivity={handleDeleteActivity}
+          onDeleteAllActivities={handleDeleteAllActivities}
+        /> : null;
       case Screen.ChildOutings: 
         const enrichedOutings = sharedOutings.map(o => ({ ...o, isHostVerified: false, isHost: o.hostId === currentUser?.id })); 
         return currentUser ? <ChildOutingScreen 
@@ -456,7 +494,8 @@ const App: React.FC = () => {
           onRequestJoin={setRequestOutingInfo} 
           onOpenChat={(outing) => setActiveChat({ type: 'outing', item: outing })} 
           onRateHost={(hostId) => { const host = approvedNannies.find(n => n.id === hostId) || { id: hostId, fullName: 'Host', photo: '' } as User; setRatingTargetUser(host); }} 
-          onDeleteOuting={handleDeleteOuting} 
+          onDeleteOuting={handleDeleteOuting}
+          onDeleteAllOutings={handleDeleteAllOutings}
         /> : null;
       case Screen.SkillMarketplace: return currentUser ? <SkillMarketplaceScreen 
           user={currentUser} 
@@ -467,6 +506,7 @@ const App: React.FC = () => {
           onUpdateOffer={handleUpdateSkillOfferStatus} 
           onOpenChat={(skill) => setActiveChat({ type: 'skill', item: skill })}
           onDeleteSkillRequest={handleDeleteSkillRequest}
+          onDeleteAllSkillRequests={handleDeleteAllSkillRequests}
         /> : null;
       default: return <WelcomeScreen onSelectUserType={handleSelectUserType} onLogin={() => navigateTo(Screen.Login)} />;
     }

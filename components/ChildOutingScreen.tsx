@@ -1,10 +1,7 @@
-// components/ChildOutingScreen.tsx
-
 import React, { useState, useMemo } from 'react';
 import { SharedOuting, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
-import { outingService } from '../services/outingService'; // Ensure this service is imported
 
 interface ChildOutingScreenProps {
   user: User;
@@ -13,9 +10,9 @@ interface ChildOutingScreenProps {
   onCreateOuting: () => void;
   onRequestJoin: (outing: SharedOuting) => void;
   onOpenChat: (outing: SharedOuting) => void;
-  onDeleteOuting: (id: string) => void; // New prop for delete
+  onDeleteOuting: (id: string) => void;
+  onDeleteAllOutings: () => void;
   onRateHost?: (hostId: string) => void;
-  refreshData?: () => void;
 }
 
 // Helper to safely get host name
@@ -41,28 +38,20 @@ const OutingCard: React.FC<{
 }> = ({ outing, currentUserId, onRequestJoin, onChat, onDelete }) => {
     const { t } = useLanguage();
     
-    // 1. CRITICAL FIX: Safety check for requests array
+    // CRITICAL FIX: Safety check for requests array to prevent crash
     const requests = outing.requests || [];
     
-    // Check if current user is the host
     const hostIdStr = typeof outing.hostId === 'object' ? outing.hostId._id : outing.hostId;
     const isHost = hostIdStr === currentUserId;
 
-    // Check if current user has already requested/joined
-    // Using the safe 'requests' array defined above
     const myRequest = requests.find(r => r.parentId === currentUserId);
     const hasRequested = !!myRequest;
     const isAccepted = myRequest?.status === 'accepted';
-    
-    // Enable chat if you are the host OR if you have an accepted request
     const canChat = isHost || isAccepted;
 
     const displayHostName = getHostName(outing.hostId, outing.hostName);
     const displayHostPhoto = getHostPhoto(outing.hostId, outing.hostPhoto);
 
-    // Calculate slots
-    // Assuming accepted requests consume slots. 
-    // (Logic can be adjusted if 'requests' count vs 'children' count matters)
     const acceptedCount = requests.filter(r => r.status === 'accepted').length;
     const slotsLeft = Math.max(0, outing.maxChildren - acceptedCount);
 
@@ -81,7 +70,6 @@ const OutingCard: React.FC<{
                 </button>
             )}
 
-            {/* Image Display */}
             {outing.image && (
                 <div className="w-full h-48 bg-gray-100">
                     <img src={outing.image} alt={outing.title} className="w-full h-full object-cover" />
@@ -134,7 +122,6 @@ const OutingCard: React.FC<{
                             </div>
                             
                             <div className="flex items-center gap-2 self-end sm:self-auto">
-                                {/* Chat Button */}
                                 <button 
                                     onClick={() => onChat(outing)}
                                     disabled={!canChat}
@@ -144,7 +131,6 @@ const OutingCard: React.FC<{
                                     <span>💬</span> {t('activity_card_chat')}
                                 </button>
 
-                                {/* Join / Status Button */}
                                 {!isHost && (
                                     <button 
                                         onClick={() => onRequestJoin(outing)} 
@@ -168,7 +154,7 @@ const OutingCard: React.FC<{
 };
 
 const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({ 
-    user, outings, onBack, onCreateOuting, onRequestJoin, onOpenChat, onDeleteOuting, refreshData 
+    user, outings, onBack, onCreateOuting, onRequestJoin, onOpenChat, onDeleteOuting, onDeleteAllOutings
 }) => {
     const { t } = useLanguage();
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -176,12 +162,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
 
     const handleClearAll = async () => {
         if(window.confirm("Delete ALL outings? This cannot be undone.")) {
-            try {
-                await outingService.deleteAll();
-                if (refreshData) refreshData();
-            } catch (e) { 
-                alert("Failed to clear outings."); 
-            }
+            onDeleteAllOutings();
         }
     };
 
@@ -201,7 +182,6 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                     <span>←</span> {t('button_back')}
                 </button>
                 
-                {/* Dev Only: Clear All Button */}
                 <button 
                     onClick={handleClearAll} 
                     className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1.5 rounded-md hover:bg-red-100 transition-colors"

@@ -1,7 +1,6 @@
 import React from 'react';
 import { SkillRequest, User, SkillOffer } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import { marketplaceService } from '../services/marketplaceService';
 
 interface SkillMarketplaceScreenProps {
     user: User;
@@ -11,18 +10,17 @@ interface SkillMarketplaceScreenProps {
     onMakeOffer: (request: SkillRequest) => void;
     onUpdateOffer: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void;
     onOpenChat: (request: SkillRequest) => void;
-    onDeleteSkillRequest: (id: string) => void; // Added missing prop type
-    refreshData?: () => void;
+    onDeleteSkillRequest: (id: string) => void;
+    onDeleteAllSkillRequests: () => void;
 }
 
 const OfferStatus: React.FC<{ status: SkillOffer['status'] }> = ({ status }) => {
     const { t } = useLanguage();
     const statusStyles = {
-        pending: { text: t('booking_status_pending'), bg: 'bg-[var(--bg-status-yellow)]', text_color: 'text-[var(--text-status-yellow)]' },
-        accepted: { text: t('booking_status_accepted'), bg: 'bg-[var(--bg-status-green)]', text_color: 'text-[var(--text-status-green)]' },
-        declined: { text: t('booking_status_declined'), bg: 'bg-[var(--bg-status-red)]', text_color: 'text-[var(--text-status-red)]' }
+        pending: { text: t('status_pending'), bg: 'bg-[var(--bg-status-yellow)]', text_color: 'text-[var(--text-status-yellow)]' },
+        accepted: { text: t('status_accepted'), bg: 'bg-[var(--bg-status-green)]', text_color: 'text-[var(--text-status-green)]' },
+        declined: { text: t('status_declined'), bg: 'bg-[var(--bg-status-red)]', text_color: 'text-[var(--text-status-red)]' }
     };
-    // Safe fallback
     const currentStatus = statusStyles[status] || statusStyles.pending;
     return <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${currentStatus.bg} ${currentStatus.text_color}`}>{currentStatus.text}</span>;
 };
@@ -44,7 +42,7 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
     const reqIdStr = typeof request.requesterId === 'object' ? request.requesterId._id : request.requesterId;
     const isOwner = reqIdStr === currentUserId;
     
-    // FIX: Safely access offers array with (request.offers || [])
+    // CRITICAL FIX: Safe access to offers
     const offers = request.offers || [];
     const hasAcceptedOffer = offers.some(o => o.helperId === currentUserId && o.status === 'accepted');
     const canChat = isOwner || hasAcceptedOffer;
@@ -54,7 +52,6 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
 
     return (
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
-            {/* Delete Button - Only show if user is owner */}
             {isOwner && (
                  <button 
                     onClick={(e) => { e.stopPropagation(); onDelete(request.id); }}
@@ -65,7 +62,6 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
                 </button>
             )}
 
-            {/* Image Display */}
             {request.image && (
                 <div className="w-full h-48 bg-gray-100">
                     <img src={request.image} alt={request.title} className="w-full h-full object-cover" />
@@ -112,7 +108,6 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
 
                         {isOwner && (
                             <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
-                                {/* FIX: Safe access to offers.length */}
                                 <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">{t('skill_card_view_offers', { count: offers.length })}</h4>
                                 {offers.length > 0 ? (
                                     <ul className="space-y-3">
@@ -145,19 +140,12 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
     );
 };
 
-const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, requests, onBack, onCreateRequest, onMakeOffer, onUpdateOffer, onOpenChat, onDeleteSkillRequest, refreshData }) => {
+const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, requests, onBack, onCreateRequest, onMakeOffer, onUpdateOffer, onOpenChat, onDeleteSkillRequest, onDeleteAllSkillRequests }) => {
     const { t } = useLanguage();
     
-    const handleDelete = (id: string) => {
-        onDeleteSkillRequest(id);
-    };
-
-    const handleClearAll = async () => {
+    const handleClearAll = () => {
         if(window.confirm("Delete ALL requests? This cannot be undone.")) {
-            try {
-                await marketplaceService.deleteAll();
-                if (refreshData) refreshData();
-            } catch (e) { alert("Clear all failed"); }
+            onDeleteAllSkillRequests();
         }
     };
 
@@ -192,7 +180,7 @@ const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, r
                             onMakeOffer={onMakeOffer} 
                             onUpdateOffer={onUpdateOffer} 
                             onOpenChat={onOpenChat} 
-                            onDelete={handleDelete}
+                            onDelete={onDeleteSkillRequest}
                         />
                     ))
                 ) : (

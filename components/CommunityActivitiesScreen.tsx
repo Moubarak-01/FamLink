@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { Activity, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
-import { activityService } from '../services/activityService';
 
 interface CommunityActivitiesScreenProps {
     user: User;
@@ -11,10 +10,10 @@ interface CommunityActivitiesScreenProps {
     onCreateActivity: () => void;
     onJoinActivity: (activityId: string) => void;
     onOpenChat: (activity: Activity) => void;
-    refreshData?: () => void;
+    onDeleteActivity: (id: string) => void;
+    onDeleteAllActivities: () => void;
 }
 
-// Helper to get host name safely from populated object or flat string
 const getHostName = (hostId: any, hostName?: string) => {
     if (typeof hostId === 'object' && hostId?.fullName) return hostId.fullName;
     if (hostName) return hostName;
@@ -38,13 +37,15 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
 
     return (
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
-            <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
-                className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-100 transition-opacity"
-                title="Delete Activity"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
+            {isHost && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
+                    className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete Activity"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+            )}
 
             {activity.image && (
                 <div className="w-full h-48 bg-gray-100">
@@ -59,7 +60,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                         <div className="flex justify-between items-start">
                             <div>
                                 <span className="text-xs font-semibold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full capitalize">
-                                    {t(`activity_cat_${activity.category}`)}
+                                    {t(`activity_cat_${activity.category}`) || activity.category}
                                 </span>
                                 <p className="text-[var(--text-secondary)] mt-2 text-sm">{activity.description}</p>
                             </div>
@@ -95,26 +96,14 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
     );
 };
 
-const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ user, activities, onBack, onCreateActivity, onJoinActivity, onOpenChat, refreshData }) => {
+const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ user, activities, onBack, onCreateActivity, onJoinActivity, onOpenChat, onDeleteActivity, onDeleteAllActivities }) => {
     const { t } = useLanguage();
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     
-    const handleDelete = async (id: string) => {
-        if(window.confirm("Are you sure you want to delete this activity?")) {
-            try {
-                await activityService.delete(id);
-                if (refreshData) refreshData(); 
-            } catch (e) { alert("Delete failed"); }
-        }
-    };
-
-    const handleClearAll = async () => {
+    const handleClearAll = () => {
         if(window.confirm("Delete ALL activities? This cannot be undone.")) {
-            try {
-                await activityService.deleteAll();
-                if (refreshData) refreshData();
-            } catch (e) { alert("Clear all failed"); }
+            onDeleteAllActivities();
         }
     };
 
@@ -171,7 +160,7 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
                             currentUserId={user.id} 
                             onJoin={onJoinActivity} 
                             onChat={onOpenChat} 
-                            onDelete={handleDelete}
+                            onDelete={onDeleteActivity}
                         />
                     ))
                 ) : (
