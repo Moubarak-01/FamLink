@@ -2,11 +2,10 @@ import { GoogleGenAI, Type, Model } from "@google/genai";
 import { Answer, AssessmentResult, Decision } from '../types';
 import { ASSESSMENT_QUESTIONS, GEMINI_FALLBACK_MODELS, PPLX_API_KEY_ENV, PPLX_FALLBACK_MODELS } from '../constants'; 
 import { translations } from "../locales/index";
-import { cleanAIText } from '../utils/LLMHelper'; // NEW: Import the cleaner
+import { cleanAIText } from '../utils/LLMHelper'; 
 
 // --- API INITIALIZATION ---
 
-// Safe API Key retrieval for both services
 const getApiKey = (envVar: string): string => {
   if (import.meta.env && (import.meta.env as any)[envVar]) {
     return (import.meta.env as any)[envVar];
@@ -24,7 +23,6 @@ const getApiKey = (envVar: string): string => {
 const geminiApiKey = getApiKey('VITE_GEMINI_API_KEY');
 const pplxApiKey = getApiKey(PPLX_API_KEY_ENV);
 
-// Initialize Gemini only if key exists
 const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 // --- RESPONSE SCHEMA ---
@@ -40,49 +38,55 @@ const responseSchema = {
 };
 
 /**
- * Executes a raw text generation request with multi-model failover (Gemini -> Perplexity).
+ * Executes a raw text generation request with multi-model failover (Gemini -> Perplexity), 
+ * returning an asynchronous generator (stream) of text chunks.
  */
-const executeTextGenerationWithFailover = async (prompt: string, systemInstruction: string): Promise<string> => {
-    // --- 1. GEMINI API FALLBACK CHAIN ---
+async function* executeTextGenerationWithFailover(prompt: string, systemInstruction: string): AsyncGenerator<string> {
+    // --- 1. GEMINI API FALLBACK CHAIN (STREAMING) ---
     if (ai) {
-        const modelsToTry = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0 
-            ? GEMINI_FALLBACK_MODELS 
-            : ['gemini-2.5-flash'];
+        const modelsToTry = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0 ? GEMINI_FALLBACK_MODELS : ['gemini-2.5-flash'];
 
         for (const currentModel of modelsToTry) {
             try {
-                console.log(`Attempting API call with Gemini model: ${currentModel}`);
+                console.log(`Attempting STREAM with Gemini model: ${currentModel}`);
                 
-                const response = await ai.models.generateContent({
+                const responseStream = await ai.models.generateContentStream({
                     model: currentModel as Model,
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                     config: { 
                         temperature: 0.7,
-                        // NEW: Pass system instruction for grounding
                         systemInstruction: systemInstruction 
                     }
                 });
 
-                // FIX: Check for response existence to avoid TypeError
-                if (response?.response?.text) {
-                    const responseText = response.response.text.trim();
-                    // NEW IMPLEMENTATION: Clean the response before returning
-                    return cleanAIText(responseText); 
+                let fullResponse = '';
+                for await (const chunk of responseStream) {
+                    const chunkText = chunk.text;
+                    if (chunkText) {
+                        // Yield clean text token immediately
+                        const cleanedChunk = cleanAIText(chunkText);
+                        yield cleanedChunk; 
+                        fullResponse += chunkText;
+                    }
                 }
+                
+                if (fullResponse.length > 0) return; // Success: generator completes
+
             } catch (error) {
-                console.warn(`Gemini Model ${currentModel} failed. Error:`, (error as any)?.error?.message || error);
+                console.warn(`Gemini STREAM Model ${currentModel} failed. Error:`, (error as any)?.error?.message || error);
+                // Continue to the next model in the list
             }
         }
     } else {
         console.warn("Gemini API key is missing. Skipping Gemini fallback chain.");
     }
     
-    // --- 2. PERPLEXITY AI FALLBACK CHAIN (FINAL ATTEMPT) ---
+    // --- 2. PERPLEXITY AI FALLBACK CHAIN (STREAMING) ---
     if (pplxApiKey) {
         
         for (const pplxModel of PPLX_FALLBACK_MODELS) {
             try {
-                console.log(`Attempting fallback with Perplexity AI model: ${pplxModel}`);
+                console.log(`Attempting STREAM fallback with Perplexity AI model: ${pplxModel}`);
                 
                 const pplxResponse = await fetch('https://api.perplexity.ai/chat/completions', {
                     method: 'POST',
@@ -93,26 +97,50 @@ const executeTextGenerationWithFailover = async (prompt: string, systemInstructi
                     body: JSON.stringify({
                         model: pplxModel,
                         messages: [
-                            // NEW: Pass system instruction for grounding
                             { role: 'system', content: systemInstruction },
                             { role: 'user', content: prompt }
                         ],
-                        temperature: 0.7
+                        temperature: 0.7,
+                        stream: true // Enable streaming for Perplexity
                     })
                 });
 
-                const pplxData = await pplxResponse.json();
-                
-                if (pplxResponse.ok && pplxData.choices && pplxData.choices.length > 0) {
-                    const responseText = pplxData.choices[0].message.content.trim();
-                    // NEW IMPLEMENTATION: Clean the response before returning
-                    return cleanAIText(responseText); 
+                if (pplxResponse.ok && pplxResponse.body) {
+                    const reader = pplxResponse.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+                        for (const line of lines) {
+                            if (line.startsWith('data:')) {
+                                try {
+                                    const json = JSON.parse(line.substring(5).trim());
+                                    const content = json.choices?.[0]?.delta?.content;
+                                    if (content) {
+                                        // Yield clean text token immediately
+                                        yield cleanAIText(content); 
+                                    }
+                                } catch (e) {
+                                    // Handle parsing errors for non-JSON lines or malformed chunks
+                                }
+                            }
+                        }
+                    }
+                    return; // Success: generator completes
                 } else {
-                    console.warn(`Perplexity Model ${pplxModel} failed. API Error:`, pplxData);
+                    console.warn(`Perplexity STREAM Model ${pplxModel} failed. Status: ${pplxResponse.status}`);
                 }
 
             } catch (error) {
-                console.warn(`Perplexity Model ${pplxModel} failed. Network/Parsing Error:`, error);
+                console.warn(`Perplexity STREAM Model ${pplxModel} failed. Network/Parsing Error:`, error);
+                // Continue to the next model
             }
         }
     } else {
@@ -120,20 +148,22 @@ const executeTextGenerationWithFailover = async (prompt: string, systemInstructi
     }
 
     // --- 3. GLOBAL FAILURE ---
-    return "Sorry, I encountered an error. All AI services failed. Please try again.";
+    yield "Sorry, I encountered a critical error. All AI streaming services failed. Please try again.";
 };
 
-// --- GEMINI SERVICE CLASS (Exports the instance) ---
+// --- GEMINI SERVICE CLASS ---
 
 class GeminiService {
   
   // Method for AI Assistant chat
-  async generateResponse(prompt: string, systemInstruction: string): Promise<string> {
+  async generateResponse(prompt: string, systemInstruction: string): Promise<AsyncGenerator<string>> {
     return executeTextGenerationWithFailover(prompt, systemInstruction);
   }
 
-  // Method for Nanny Assessment (Uses internal failover logic)
+  // Method for Nanny Assessment (Non-streaming, JSON output)
   async evaluateAnswers(answers: Answer[], responseLanguage: string): Promise<AssessmentResult> {
+    // ... (Assessment logic remains the same, using non-streaming generateContent) ...
+    // Note: Assessment logic here is simplified for file generation, relying on the previous non-streaming structure.
     
     if (!ai) {
         if (pplxApiKey) {
@@ -177,7 +207,6 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
                 },
             });
 
-            // FIX: Check for response existence to avoid errors
             if (response?.response?.text) {
                 const jsonString = response.response.text.trim();
                 const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
@@ -186,7 +215,7 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
                     result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
                 }
                 
-                return result; // Success!
+                return result; 
             }
 
         } catch (error) {
@@ -202,7 +231,7 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
     return { score: 0, feedback: "All AI models failed to complete the assessment. Please try again later.", decision: 'Rejected' };
   }
   
-  // Helper for Perplexity Assessment logic
+  // Helper for Perplexity Assessment logic (JSON response is critical)
   private async _evaluateAnswersWithPplx(answers: Answer[], responseLanguage: string): Promise<AssessmentResult> {
       
         const assessmentQuestions = ASSESSMENT_QUESTIONS(translations[responseLanguage]?.t || translations.en.t);
@@ -220,7 +249,7 @@ CRITICAL REQUIREMENT: Output must be a single JSON object matching the schema: {
 
         const prompt = `Please evaluate the following candidate's answers:\n\n${formattedAnswers}`;
 
-        for (const pplxModel of PPLX_FALLBACK_MODELS) { // Try all PPLX models for reliable JSON output
+        for (const pplxModel of PPLX_FALLBACK_MODELS) {
             try {
                 console.log(`Attempting assessment fallback with Perplexity AI model: ${pplxModel}`);
                 
@@ -250,7 +279,7 @@ CRITICAL REQUIREMENT: Output must be a single JSON object matching the schema: {
                     if (!['Approved', 'Rejected'].includes(result.decision)) {
                         result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
                     }
-                    return result; // Success!
+                    return result; 
                 } else {
                      console.warn(`Perplexity Assessment Model ${pplxModel} failed. API Error:`, pplxData);
                 }

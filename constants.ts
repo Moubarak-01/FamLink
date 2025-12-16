@@ -9,11 +9,8 @@ export const PPLX_MODEL = 'sonar-reasoning-pro';
 
 // FINALIZED: Array of all Gemini models for chat failover
 export const GEMINI_FALLBACK_MODELS: string[] = [
-  // Prioritize known stable models
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite', 
-  
-  // Include other specified models for completeness, even if they returned 404/errors previously
   'gemini-2.5-flash-native-audio-dialog',
   'gemini-2.5-flash-tts',
   'gemini-robotics-er-1.5-preview',
@@ -34,7 +31,6 @@ export const PPLX_FALLBACK_MODELS: string[] = [
 ];
 
 export const ASSESSMENT_QUESTIONS = (t: TFunction): Question[] => [
-// ... (Assessment questions remain unchanged)
   // Single-Choice (10 questions)
   {
     id: 1,
