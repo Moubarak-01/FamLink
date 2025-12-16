@@ -254,11 +254,11 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
         // Closed State (Floating Button)
         <button 
           onClick={() => setIsOpen(true)} 
-          // Set button background to pink accent color
+          // Use pink accent color for background
           className="w-16 h-16 bg-[var(--accent-primary)] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[var(--accent-primary-hover)] transition-transform active:scale-95"
           title="Open AI Assistant"
         >
-          {/* REPLACED ICON: Use a rounded Message Bubble Icon (WhatsApp message icon style) */}
+          {/* REPLACED ICON: Use a rounded Message Bubble Icon (from second picture) */}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M21 4H3C2.44772 4 2 4.44772 2 5V15C2 15.5523 2.44772 16 3 16H6V20.5724C6 20.8997 6.36531 21.0963 6.63413 20.9238L10.7297 18H21C21.5523 18 22 17.5523 22 17V5C22 4.44772 21.5523 4 21 4Z" />
           </svg>
@@ -273,12 +273,13 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
               {/* Drag Handles / Title Area */}
               <div 
                   onMouseDown={handleMouseDown} 
-                  className="flex items-center gap-2 cursor-move select-none flex-grow"
+                  className="flex items-center cursor-move select-none flex-grow"
                   style={{ touchAction: 'none' }} 
               >
-                  <h3 className="font-bold text-[var(--text-primary)]">AI Assistant</h3>
-                  {/* Rectangle of Six Drag Handles */}
-                  <div className="flex flex-col gap-0.5 ml-2 opacity-50 text-[var(--text-secondary)]">
+                  <h3 className="font-bold text-[var(--text-primary)] mr-3">AI Assistant</h3>
+                  
+                  {/* IMPLEMENTATION: Center the drag dots relative to the title */}
+                  <div className="flex flex-col gap-0.5 items-center justify-center flex-grow opacity-50 text-[var(--text-secondary)]">
                       <div className="flex gap-0.5">
                           <span className="w-1 h-1 bg-current rounded-full"></span>
                           <span className="w-1 h-1 bg-current rounded-full"></span>
@@ -347,17 +348,16 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                     rows={1}
                     className="flex-1 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none"
                 />
-                {/* RE-STYLED SEND BUTTON: Pink background, White Icon */}
+                {/* RE-STYLED SEND BUTTON: Pink background, White Icon (matching WhatsApp style) */}
                 <button 
                     type="submit" 
                     disabled={!inputValue.trim() || isThinking} 
-                    // Use pink accent color for background and white for text/icon color
+                    // Pink background, ensures icon is white via text-white
                     className="flex items-center justify-center p-2 text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] rounded-lg shadow-md disabled:opacity-50 transition-transform active:scale-95"
                     title="Send Message"
                 >
-                    {/* REPLACED ICON: WhatsApp-style Send Icon (Simple Arrow) */}
+                    {/* REPLACED ICON: Simple solid arrow pointing right/up-right for clean WhatsApp look */}
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                        {/* Simple solid arrow pointing right/up-right */}
                         <path d="M4.697 19.467l14.93-7.465a.5.5 0 000-.864L4.697 3.533a.5.5 0 00-.773.432L4.015 9.5H10a1 1 0 110 2H4.015l-.091 5.535a.5.5 0 00.773.432z" />
                     </svg>
                 </button>

@@ -76,8 +76,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
 
         {/* Main Bubble */}
         <div 
-            className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors
-            ${isMe ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-800 dark:text-gray-100 rounded-tr-none' : 'bg-white dark:bg-[#202c33] text-gray-800 dark:text-gray-100 rounded-tl-none'}
+            // UPDATED: Removed specific corner classes to allow CSS to define the tail and rounded shape universally.
+            className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors whatsapp-bubble
+            ${isMe ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-800 dark:text-gray-100' : 'bg-white dark:bg-[#202c33] text-gray-800 dark:text-gray-100'}
             ${message.deleted ? 'italic opacity-70' : ''}`}
             onClick={handleBubbleClick}
             onContextMenu={(e) => { e.preventDefault(); setShowActions(true); }}

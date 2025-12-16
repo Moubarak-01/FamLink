@@ -13,9 +13,12 @@ interface ChatModalProps {
   bookingRequest?: BookingRequest;
   currentUser: User;
   onClose: () => void;
+  onDeleteMessage: (contextId: string, messageId: string) => void;
+  onDeleteAllMessages: (contextId: string) => void;
+  onReportUser: (userId: string) => void;
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose, onDeleteMessage, onDeleteAllMessages, onReportUser }) => {
   const { t } = useLanguage();
   const [messageText, setMessageText] = useState('');
   const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
@@ -66,7 +69,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   useEffect(() => {
       if (contextId) {
           // 1. Reset typing status immediately when switching rooms
-          // This prevents "ghost" typing indicators from previous chats
           setTypingUsers([]);
           
           chatService.getHistory(contextId).then(setHistoryMessages).catch(console.error);
@@ -150,7 +152,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       });
       
       // 2. Typing Listener with immediate State Update
-      // This ensures the UI updates instantly when the socket receives the signal (no refresh needed)
       const unsubTyping = socketService.onTyping((data) => {
           if(data.roomId !== contextId || data.userId === currentUser.id) return;
           
@@ -206,7 +207,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName);
       
       // CRITICAL FIX: Reset the throttle timer. 
-      // This ensures that if you start typing again immediately, the "Start" signal goes through instantly.
       lastTypingSentRef.current = 0;
   };
 
@@ -373,12 +373,21 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                         handleKeyDown(); // Reset timeout on key press
                         if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
                     }}
-                    placeholder={t('chat_placeholder')} 
+                    // UPDATED: WhatsApp style placeholder
+                    placeholder="💬 Type a message..." 
                     rows={1} 
                     className="flex-1 px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] text-[var(--text-primary)] resize-none min-h-[45px] max-h-[100px]" 
                 />
-                <button type="submit" disabled={!messageText.trim()} className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white p-3 rounded-full shadow-md disabled:opacity-50 transition-transform active:scale-95">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                {/* UPDATED: Send Button with Pink Style and WhatsApp Arrow Icon */}
+                <button 
+                    type="submit" 
+                    disabled={!messageText.trim()} 
+                    className="flex items-center justify-center p-3 text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] rounded-full shadow-md disabled:opacity-50 transition-transform active:scale-95"
+                >
+                    {/* WhatsApp-style Send Icon (Simple Arrow) */}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current -rotate-45" viewBox="0 0 24 24">
+                        <path d="M4.697 19.467l14.93-7.465a.5.5 0 000-.864L4.697 3.533a.5.5 0 00-.773.432L4.015 9.5H10a1 1 0 110 2H4.015l-.091 5.535a.5.5 0 00.773.432z" />
+                    </svg>
                 </button>
             </form>
         </div>
