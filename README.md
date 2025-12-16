@@ -92,17 +92,20 @@ The app will open at http://localhost:5173.
 
 ⚙️ Environment Configuration (Crucial)
 To run this project locally without errors, you must configure environment variables correctly for both the Frontend and Backend. They are separate.
-```
-### 1. Frontend Environment (Root Directory)
+
+1. Frontend Environment (Root Directory)
 Create a file named .env.local in the project root and add the following content:
+
+Code snippet
 
 # Required for AI Assessment and Assistant (Gemini)
 VITE_GEMINI_API_KEY=AIzaSyC... (Your Google Gemini API Key)
 # NEW: Required for Perplexity AI Fallback
 VITE_PPLX_API_KEY=pplx-sk-... (Your Perplexity AI API Key)
-### 2. Backend Environment (/backend Directory)
+2. Backend Environment (/backend Directory)
 Create a file named .env inside the /backend/ folder and add the following content:
 
+Code snippet
 
 MONGO_URI=mongodb://localhost:27017/famlink
 JWT_SECRET=super_secure_secret_key_change_this
@@ -110,30 +113,30 @@ PORT=3001
 STRIPE_SECRET_KEY=sk_test_placeholder_key
 # New GeoDB API Key (Get from RapidAPI)
 GEODB_API_KEY=your_rapidapi_key_here
-### 🌟 Features Overview
-## 🛡️ Safety & Trust
+🌟 Features Overview
+🛡️ Safety & Trust
 
-# AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety.
+AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety.
 
-# Authentication: Secure JWT-based login and signup for Parents and Nannies.
+Authentication: Secure JWT-based login and signup for Parents and Nannies.
 
-## 🤖 AI Assistant
+🤖 AI Assistant
 
-# Context-Aware: A floating chatbot (Gemini 2.5 Flash) that helps users navigate the app and answers parenting questions.
+Context-Aware: A floating chatbot (Gemini 2.5 Flash) that helps users navigate the app and answers parenting questions.
 
-# Multilingual: Supports 6 languages natively.
+Multilingual: Supports 6 languages natively.
 
-# Shortcuts: Use Shift + N to toggle open/close; Shift + A to toggle visibility.
+Shortcuts: Use Shift + N to toggle open/close; Shift + A to toggle visibility.
 
-### 👥 Community & Marketplace
+👥 Community & Marketplace
 
-# Mom-to-Mom Activities: Schedule playdates, walks, and workouts.
+Mom-to-Mom Activities: Schedule playdates, walks, and workouts.
 
-# Child Outing Sharing: Coordinate group outings to share costs and supervision.
+Child Outing Sharing: Coordinate group outings to share costs and supervision.
 
-# Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the community.
+Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the community.
 
-### 💼 Management Dashboard
+💼 Management Dashboard
 
 Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete).
 
@@ -143,7 +146,7 @@ Notifications: Real-time alerts for all key events.
 
 Tasks: Assign specific to-do items to hired nannies.
 
-### 📂 Folder Structure
+📂 Folder Structure
 Bash
 
 /                               # Frontend Root
