@@ -9,10 +9,12 @@ interface AiAssistantProps {
   currentScreen: Screen;
 }
 
-// Define the ref interface
+// UPDATED: Define the ref interface with new methods
 export interface AiAssistantRef {
     openChat: () => void;
     toggleVisibility: () => void;
+    toggleOpenState: () => void; // NEW: To toggle open/close
+    clearHistory: () => void;    // NEW: To clear history
 }
 
 interface Message {
@@ -29,15 +31,14 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   
   // Draggability State
   const [isDragging, setIsDragging] = useState(false);
-  // Initial position set near the bottom-right corner
   const [position, setPosition] = useState({ x: window.innerWidth - 350, y: window.innerHeight - 400 }); 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const chatRef = useRef<HTMLDivElement>(null);
   
   // Smart Loader State
-  const [isThinking, setIsThinking] = useState(false); // General loading state
-  const [showSlowLoader, setShowSlowLoader] = useState(false); // Only true after 2s
-  const loadingTimerRef = useRef<number | null>(null); // Reference to the timer
+  const [isThinking, setIsThinking] = useState(false); 
+  const [showSlowLoader, setShowSlowLoader] = useState(false); 
+  const loadingTimerRef = useRef<number | null>(null); 
 
   // Define the comprehensive FamLink system prompt
   const FAM_LINK_SYSTEM_INSTRUCTION = `
@@ -113,10 +114,21 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   }, [isDragging]);
   // --- End Drag Handlers ---
 
-  // Expose methods via ref
+  // Internal Clear Chat Handler
+  const handleClearChat = () => {
+      setMessages(INITIAL_MESSAGE);
+  };
+
+  // EXPOSED METHODS: Updated useImperativeHandle
   useImperativeHandle(ref, () => ({
     openChat: () => setIsOpen(true),
     toggleVisibility: () => setIsVisible(prev => !prev),
+    toggleOpenState: () => setIsOpen(prev => !prev), // NEW: Toggles the open state
+    clearHistory: () => { // NEW: Clears history with prompt
+        if (window.confirm("Clear all AI chat history?")) {
+            handleClearChat();
+        }
+    },
   }));
 
   // Auto-scroll to bottom when messages update
@@ -129,17 +141,13 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     setAiLanguage(language);
   }, [language]);
   
-  // Focus the input when the chat opens
-  useEffect(() => {
-    if (isOpen) {
-        textareaRef.current?.focus();
-    }
-  }, [isOpen]);
+  // PREVENT AUTO-FOCUS: Removed the useEffect that called textareaRef.current?.focus();
+  // This allows the Shift+N shortcut to open the modal without stealing focus.
 
-  // Clear Chat Handler
-  const handleClearChat = () => {
+  // Clear Chat Button Handler (In-modal version)
+  const handleClearButtonClick = () => {
       if (window.confirm("Are you sure you want to clear the conversation history?")) {
-          setMessages(INITIAL_MESSAGE);
+          handleClearChat();
       }
   };
 
@@ -155,10 +163,9 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     setIsThinking(true);
     
     // 2. Smart Loader Start
-    // Show spinner ONLY if thinking takes longer than 2000ms
     loadingTimerRef.current = setTimeout(() => {
         setShowSlowLoader(true);
-    }, 2000) as unknown as number; // Type assertion for timer ID
+    }, 2000) as unknown as number;
 
     try {
         const prompt = userMessage; 
@@ -186,7 +193,6 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
             setMessages(prev => {
                 const lastMessageIndex = prev.length - 1;
                 const updatedMessages = [...prev];
-                // Ensure we are updating the AI's message
                 if (updatedMessages[lastMessageIndex].role === 'model') {
                     updatedMessages[lastMessageIndex] = { 
                         ...updatedMessages[lastMessageIndex], 
@@ -199,15 +205,14 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     } catch (error) {
         console.error("AI API Call Failed:", error);
         setMessages(prev => {
-             // Replace the empty message with the error
             const lastMessageIndex = prev.length - 1;
-             if (prev[lastMessageIndex].role === 'model') {
-                 prev[lastMessageIndex] = { 
-                     ...prev[lastMessageIndex], 
-                     text: "Sorry, a serious error occurred during the API communication. Please try again." 
-                 };
-             }
-             return [...prev];
+            if (prev[lastMessageIndex].role === 'model') {
+                prev[lastMessageIndex] = { 
+                    ...prev[lastMessageIndex], 
+                    text: "Sorry, a serious error occurred during the API communication. Please try again." 
+                };
+            }
+            return [...prev];
         });
     } finally {
         // 4. Cleanup
@@ -254,11 +259,10 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
         // Closed State (Floating Button)
         <button 
           onClick={() => setIsOpen(true)} 
-          // Use pink accent color for background
           className="w-16 h-16 bg-[var(--accent-primary)] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[var(--accent-primary-hover)] transition-transform active:scale-95"
           title="Open AI Assistant"
         >
-          {/* REPLACED ICON: Use a rounded Message Bubble Icon (from second picture) */}
+          {/* REPLACED ICON: Use a rounded Message Bubble Icon */}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M21 4H3C2.44772 4 2 4.44772 2 5V15C2 15.5523 2.44772 16 3 16H6V20.5724C6 20.8997 6.36531 21.0963 6.63413 20.9238L10.7297 18H21C21.5523 18 22 17.5523 22 17V5C22 4.44772 21.5523 4 21 4Z" />
           </svg>
@@ -295,9 +299,9 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
               
               {/* Action Buttons */}
               <div className="flex items-center gap-1">
-                  {/* Clear Chat Button */}
+                  {/* Clear Chat Button (In-modal button) */}
                   <button 
-                      onClick={handleClearChat} 
+                      onClick={handleClearButtonClick} 
                       className="text-[var(--text-secondary)] hover:text-red-500 p-1 rounded-full transition-colors"
                       title="Clear Chat History"
                   >
@@ -352,7 +356,6 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                 <button 
                     type="submit" 
                     disabled={!inputValue.trim() || isThinking} 
-                    // Pink background, ensures icon is white via text-white
                     className="flex items-center justify-center p-2 text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] rounded-lg shadow-md disabled:opacity-50 transition-transform active:scale-95"
                     title="Send Message"
                 >

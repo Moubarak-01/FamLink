@@ -4,9 +4,8 @@ import Header from './components/Header';
 import WelcomeScreen from './components/WelcomeScreen';
 import Questionnaire from './components/Questionnaire';
 import ResultScreen from './components/ResultScreen';
-// FIX: Corrected the import. We import the single exported instance 'geminiService'.
-// The method is accessed later as geminiService.evaluateAnswers
-import { geminiService } from './services/geminiService'; 
+// FIX: Corrected import to use the service instance, resolving the Uncaught SyntaxError
+import { geminiService } from './services/geminiService';
 import LoadingSpinner from './components/LoadingSpinner';
 import SubscriptionScreen from './components/SubscriptionScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -215,14 +214,24 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
+      // Prevent shortcut if user is typing in a form field
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      
+      // IMPLEMENTATION: Shift + N toggles open/close
       if (e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        aiAssistantRef.current?.openChat();
+        aiAssistantRef.current?.toggleOpenState(); 
       }
+      
       if (e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         aiAssistantRef.current?.toggleVisibility();
+      }
+
+      // NEW IMPLEMENTATION: Control + D clears history
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        aiAssistantRef.current?.clearHistory(); 
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
@@ -274,7 +283,7 @@ const App: React.FC = () => {
       setIsLoading(true); 
       navigateTo(Screen.Loading); 
       try { 
-          // CORRECT USAGE: Call the method on the service instance
+          // FIX: Corrected the usage of geminiService instance method
           const assessmentResult = await geminiService.evaluateAnswers(finalAnswers, language); 
           let updatedUser = { ...currentUser, assessmentResult }; 
           await userService.updateProfile({ assessmentResult }); 
@@ -603,7 +612,7 @@ const App: React.FC = () => {
       {requestOutingInfo && <RequestOutingJoinModal outing={requestOutingInfo} onClose={() => setRequestOutingInfo(null)} onSubmit={handleRequestOutingJoin} existingRequests={requestOutingInfo.requests} currentUserId={currentUser?.id || ''} />}
       {isCreateSkillRequestModalOpen && <CreateSkillRequestModal onClose={() => setIsCreateSkillRequestModalOpen(false)} onSubmit={handleCreateSkillRequest} />}
       {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
-      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} />}
+      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onSendMessage={handleSendMessage} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
       
       {isSettingsModalOpen && (
           <SettingsModal 

@@ -27,13 +27,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, noiseReductionEn
             <div className="border-t border-[var(--border-color)] pt-4">
                 <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Keyboard Shortcuts</h3>
                 <div className="space-y-2">
+                    {/* UPDATED: Shift + N toggles chat open/close */}
                     <div className="flex justify-between items-center text-sm">
-                        <span className="text-[var(--text-secondary)]">Open AI Chat</span>
+                        <span className="text-[var(--text-secondary)]">Toggle AI Chat Open/Close</span>
                         <kbd className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono shadow-sm">Shift + N</kbd>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-[var(--text-secondary)]">Toggle AI Visibility</span>
                         <kbd className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono shadow-sm">Shift + A</kbd>
+                    </div>
+                    {/* NEW: Control + D clears history */}
+                     <div className="flex justify-between items-center text-sm">
+                        <span className="text-[var(--text-secondary)]">Clear AI Chat History</span>
+                        <kbd className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono shadow-sm">Ctrl + D</kbd>
                     </div>
                 </div>
             </div>
