@@ -67,14 +67,37 @@ The following features were either implemented but failed QA or were stalled due
 
 ---
 
-## ⚙️ Environment Configuration (Crucial)
+### 📦 Installation & Setup
+**Prerequisites:**
+* Node.js (v16 or higher)
+* MongoDB (Running locally or a cloud Atlas URI)
 
-To run this project locally without errors, you must configure environment variables correctly for both the Frontend and Backend. **They are separate.**
+**Backend Setup (Server & Database)**
+Navigate to the backend folder:
 
-### 1. Frontend Environment (*Root Directory*)
-***Create a file named `.env.local`*** in the project root and add the following content:
+```bash
+cd backend
+npm install
+npm run start:dev
+The server will start on http://localhost:3001.
 
-```env
+Frontend Setup Navigate to the root folder (open a new terminal):
+
+Bash
+
+cd ..
+npm install
+npm run dev
+The app will open at http://localhost:5173.
+
+⚙️ Environment Configuration (Crucial)
+To run this project locally without errors, you must configure environment variables correctly for both the Frontend and Backend. They are separate.
+
+1. Frontend Environment (Root Directory)
+Create a file named .env.local in the project root and add the following content:
+
+Code snippet
+
 # Required for AI Assessment and Assistant (Gemini)
 VITE_GEMINI_API_KEY=AIzaSyC... (Your Google Gemini API Key)
 # NEW: Required for Perplexity AI Fallback
@@ -90,31 +113,6 @@ PORT=3001
 STRIPE_SECRET_KEY=sk_test_placeholder_key
 # New GeoDB API Key (Get from RapidAPI)
 GEODB_API_KEY=your_rapidapi_key_here
-📦 Installation & Setup
-Prerequisites:
-
-Node.js (v16 or higher)
-
-MongoDB (Running locally or a cloud Atlas URI)
-
-Backend Setup (Server & Database) Navigate to the backend folder:
-
-Bash
-
-cd backend
-npm install
-npm run start:dev
-The server will start on http://localhost:3001.
-
-Frontend Setup Navigate to the root folder (open a new terminal):
-
-Bash
-
-cd ..
-npm install
-npm run dev
-The app will open at http://localhost:5173.
-
 🌟 Features Overview
 🛡️ Safety & Trust
 
