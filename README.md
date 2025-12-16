@@ -1,10 +1,16 @@
+I understand. You want to update your README.md file to reflect all the recent UI/UX and functionality changes we implemented, while specifically noting two areas where implementation was unsuccessful or stalled (the chat button next to accepted bookings, and the native emoji picker).
+
+Here is the full, updated README.md content for your GitHub repository.
+
+Markdown
+
 # FamLink ✨
 
 FamLink is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
 
 ---
 
-## ✅ Project Status: 100% Completed
+## ✅ Project Status: Core Implementation Complete (v1.7)
 
 The application is fully architected and implemented with a **React Frontend** and a **NestJS Backend**.
 
@@ -13,34 +19,37 @@ The application is fully architected and implemented with a **React Frontend** a
 
 ---
 
-## 🆕 Latest Implementations (v1.6 - Global Location Services)
+## 🆕 Latest Implementations (v1.7 - AI & Chat UX Focus)
 
-This release integrates the **GeoDB Cities API** to provide accurate, real-time location data worldwide, replacing static lists with dynamic, searchable endpoints.
+This release significantly upgrades the user experience in the AI Assistant and standard Chat Modal, introducing new input methods, custom layouts, and accessibility shortcuts.
 
-### 1. Global Location API Integration
-* **Dynamic Data:** Replaced static country/city lists with real-time data from GeoDB.
-* **Smart Caching:** Implemented backend caching (Redis-like in-memory) to minimize API calls and avoid rate limits.
-* **New Endpoints:**
-    * `GET /locations/countries` - Fetches all available countries.
-    * `GET /locations/states/:countryCode` - Fetches states/regions for a specific country.
-    * `GET /locations/cities/:countryCode/:regionCode` - Fetches cities within a selected region.
-    * `GET /locations/search?query=...` - Global type-ahead search for cities.
+### 1. AI Assistant & Accessibility
+The AI Assistant component has been enhanced with new UX features and global shortcuts:
+* **Smart Thinking Loader:** Implemented a time-gated loader that only displays if the AI response takes longer than 2 seconds, preventing visual flickering during fast API responses.
+* **Draggability Fix:** Resolved visual artifacts and ensured the drag handles in the header of the AI Assistant are perfectly centered (`mx-auto` solution).
+* **Custom UI Styling:** Applied consistent pink/white branding to the floating button and the send button, and implemented the WhatsApp-style send icon.
 
-### 2. UI Refinements & Dark Mode Fixes
-* **Improved Settings Display:** Fixed visibility issues in dark mode for settings modals and toggle switches.
-* **Adaptive Text:** Modals now correctly adapt their text color based on the active theme (Light/Dark).
-
-### 3. Keyboard Shortcuts
+### 2. Global Keyboard Shortcuts (Expanded)
 We have added global keyboard shortcuts to improve accessibility and navigation speed:
-* **`Shift + N`**: Open a new AI Assistant chat session instantly.
+* **`Shift + N`**: **Toggle AI Chat Open/Close.** Opens the chat window if closed, and closes it if open.
 * **`Shift + A`**: Toggle the AI Assistant visibility (hide/show) on the screen.
-*(Note: These shortcuts are listed in the Settings menu)*
+* **`Ctrl + D`**: **Clear AI Chat History.** Triggers a confirmation prompt and clears all conversation history in the AI Assistant.
 
-### 4. End-to-End Encryption (E2E) Architecture
-* **Secure Messaging:** Implemented a robust cryptographic service layer (`cryptoService.ts`).
-* **Client-Side Encryption:** Messages are encrypted on the device before sending. The server only stores ciphertext.
-* **Decryption:** Incoming messages are decrypted locally on the user's device.
-* **Integrity Check:** Added Message Authentication Code (MAC) verification.
+### 3. Universal Chat & Messaging UX
+The core messaging system now offers advanced layout control and reaction functionality:
+* **Asymmetrical Message Layout:** Implemented flexible message widths across all chat modals: User messages are constrained to **85% width** (right-aligned), while other/AI messages are allowed up to **95% width** (left-aligned) for better display of long content or code.
+* **Advanced Reactions (Native Picker Attempt):** Enhanced the quick-reaction menu (`👍, ❤️, etc.`) with a **`+` button**. Clicking the `+` button now attempts to trigger the user's **native OS emoji picker** (e.g., Windows V / Win + .) by focusing a hidden input field, allowing access to the full emoji library.
+
+---
+
+## 🚧 Known Issues & Future Implementation Goals
+
+The following features were either implemented but failed QA or were stalled due to technical constraints.
+
+| Feature/Issue | Status & Constraint | Next Steps |
+| :--- | :--- | :--- |
+| **Chat Button on Accepted Booking** | **STALLED:** We were unable to implement the "Open Chat" button directly next to an accepted booking request on the Dashboard screen. | Implement a conditional render (`if (status === 'accepted')`) on the booking card action bar to show the chat button, utilizing the existing `onOpenBookingChat` handler. |
+| **Native System Emoji Picker** | **FAILED QA:** The workaround to access the native OS emoji picker (`Win + .` on Windows, etc.) was implemented but failed to reliably capture the selected multi-byte emoji character and apply the reaction consistently. | Requires further debugging of the `onchange` and `blur` sequence in `MessageBubble.tsx` to handle multi-byte emoji character capturing correctly, or integration of a dedicated third-party React emoji library. |
 
 ---
 
@@ -79,12 +88,12 @@ STRIPE_SECRET_KEY=sk_test_placeholder_key
 GEODB_API_KEY=your_rapidapi_key_here
 📦 Installation & Setup
 Prerequisites:
+
 Node.js (v16 or higher)
 
 MongoDB (Running locally or a cloud Atlas URI)
 
-1. Backend Setup (Server & Database)
-Navigate to the backend folder:
+Backend Setup (Server & Database) Navigate to the backend folder:
 
 Bash
 
@@ -93,38 +102,40 @@ npm install
 npm run start:dev
 The server will start on http://localhost:3001.
 
-2. Frontend Setup
-Navigate to the root folder (open a new terminal):
+Frontend Setup Navigate to the root folder (open a new terminal):
 
 Bash
 
 cd ..
-# (Or just stay in the root if you haven't entered backend/)
 npm install
 npm run dev
 The app will open at http://localhost:5173.
 
 🌟 Features Overview
-1. 🛡️ Safety & Trust
+🛡️ Safety & Trust
+
 AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety.
 
 Authentication: Secure JWT-based login and signup for Parents and Nannies.
 
-2. 🤖 AI Assistant
+🤖 AI Assistant
+
 Context-Aware: A floating chatbot (Gemini 2.5 Flash) that helps users navigate the app and answers parenting questions.
 
 Multilingual: Supports 6 languages natively.
 
-Shortcuts: Use Shift + A to toggle visibility.
+Shortcuts: Use Shift + N to toggle open/close; Shift + A to toggle visibility.
 
-3. 👥 Community & Marketplace
+👥 Community & Marketplace
+
 Mom-to-Mom Activities: Schedule playdates, walks, and workouts.
 
 Child Outing Sharing: Coordinate group outings to share costs and supervision.
 
 Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the community.
 
-4. 💼 Management Dashboard
+💼 Management Dashboard
+
 Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete).
 
 Real-time Chat: Instant messaging with robust persistence, E2E encryption, and read receipts.
@@ -136,21 +147,20 @@ Tasks: Assign specific to-do items to hired nannies.
 📂 Folder Structure
 Bash
 
-/                             # Frontend Root
+/                               # Frontend Root
  ├── src/
- │   ├── components/           # React UI Components
- │   ├── services/             # API Clients (Axios, Socket.io, chatService, cryptoService, locationService)
- │   ├── contexts/             # React Contexts (Theme, Language)
- │   ├── hooks/                # Custom Hooks (useAppLogic, useSocketListeners)
- │   ├── App.tsx               # Main Logic & Routing
- │   └── types.ts              # TypeScript Interfaces (Updated for E2E)
+ │   ├── components/             # React UI Components
+ │   │   └── chat/               # (ReactionPicker, MessageBubble, etc.)
+ │   ├── services/               # API Clients (Axios, Socket.io, chatService, cryptoService, locationService)
+ │   ├── contexts/               # React Contexts (Theme, Language)
+ │   ├── hooks/                  # Custom Hooks (useAppLogic, useSocketListeners)
+ │   ├── App.tsx                 # Main Logic & Routing
+ │   └── types.ts                # TypeScript Interfaces (Updated for E2E)
  ├── backend/                    # Backend Root (NestJS)
  │   ├── src/
- │   │   ├── schemas/          # MongoDB Models (Updated for E2E MAC field)
- │   │   ├── chat/             # WebSocket Gateway, Chat Controller & Service
- │   │   ├── locations/        # New GeoDB Proxy Module
- │   │   ├── notifications/    # Real-time Alert System
- │   │   └── [modules]/        # Feature Modules (Auth, Bookings, Activities, etc.)
- └── package.json            # Frontend Dependencies
-📄 License
-This project is licensed under the MIT License.
+ │   │   ├── schemas/            # MongoDB Models 
+ │   │   ├── chat/               # WebSocket Gateway, Chat Controller & Service
+ │   │   ├── locations/          # New GeoDB Proxy Module
+ │   │   ├── notifications/      # Real-time Alert System
+ │   │   └── [modules]/          # Feature Modules (Auth, Bookings, Activities, etc.)
+ └── package.json                # Frontend Dependencies
