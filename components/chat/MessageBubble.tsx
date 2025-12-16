@@ -13,15 +13,29 @@ interface MessageBubbleProps {
   messages: ChatMessage[];
 }
 
+// Comprehensive emoji list to simulate a full picker
+const FULL_EMOJI_LIST = [
+    '😀', '😁', '😂', '🤣', '😅', '😆', '😊', '😋', '😎', '😍',
+    '😘', '😗', '😙', '😚', '🙂', '🤗', '🤔', '😮', '😥', '😭',
+    '😩', '😫', '😴', '😌', '😛', '😜', '😝', '🤤', '😷', '🤒',
+    '🤕', '🤢', '🤧', '😇', '🤠', '🥳', '🤯', '🤫', '🤭', '🧐',
+    '🤓', '🤩', '🥳', '😎', '😒', '😞', '😟', '😠', '😡', '🤬',
+    '🥺', '😳', '😱', '😨', '😰', '😢', '😥', '😓', '😭', '😫',
+    '🤣', '😂', '😅', '😆', '😁', '😀', '🥲', '🫠', '🫠', '🫠'
+];
+
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onReaction, onRemoveReaction, onReply, onDelete, onScrollToMessage, messages }) => {
   const isMe = message.senderId === currentUser.id;
   const [showActions, setShowActions] = useState(false);
+  // NEW STATE: To control the visibility of the full emoji picker
+  const [showFullPicker, setShowFullPicker] = useState(false); 
   
   // Resolve Reply Context
   const replyContext = message.replyTo ? messages.find(m => m.id === message.replyTo) : null;
 
   const handleReactionClick = (emoji: string) => {
     setShowActions(false);
+    setShowFullPicker(false); // Close full picker after selection
     onReaction(message.id, emoji);
   };
 
@@ -42,14 +56,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
   const handleBubbleClick = (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest('.reaction-pill')) return;
       setShowActions(!showActions);
+      setShowFullPicker(false); // Reset full picker when opening the action menu
+  };
+  
+  // NEW HANDLER: Opens the full emoji selection
+  const handleOpenFullPicker = () => {
+      setShowActions(false);
+      setShowFullPicker(true);
+  };
+  
+  // Handler to close the full picker manually
+  const handleCloseFullPicker = (e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      setShowFullPicker(false);
   };
 
   const avatarUrl = message.senderPhoto || `https://i.pravatar.cc/150?u=${message.senderId}`;
 
+  // IMPLEMENTATION: Set dynamic width (85% for self, 95% for others)
+  const bubbleMaxWidth = isMe ? 'max-w-[85%]' : 'max-w-[95%]';
+  // IMPLEMENTATION: Add CSS hook class for the tail on user messages
+  const tailClass = isMe ? 'user-bubble-tail' : 'other-bubble-tail';
+
   return (
     <div 
         className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-6 relative group`}
-        onMouseLeave={() => setShowActions(false)}
+        onMouseLeave={() => { setShowActions(false); if (!showFullPicker) setShowActions(false); }} // Keep open if full picker is active
     >
       {/* Sender Name (Group Chat) */}
       {!isMe && (
@@ -59,7 +91,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
           </div>
       )}
 
-      <div className={`relative max-w-[75%] min-w-[120px] ${showActions ? 'z-20' : 'z-0'}`}>
+      <div className={`relative ${bubbleMaxWidth} min-w-[120px] ${showActions || showFullPicker ? 'z-20' : 'z-0'}`}>
         
         {/* Reply Context */}
         {replyContext && (
@@ -76,8 +108,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
 
         {/* Main Bubble */}
         <div 
-            // UPDATED: Removed specific corner classes to allow CSS to define the tail and rounded shape universally.
-            className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors whatsapp-bubble
+            // IMPLEMENTATION: Use neutral rounding classes, and add the CSS hook class
+            className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors ${tailClass}
             ${isMe ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-800 dark:text-gray-100' : 'bg-white dark:bg-[#202c33] text-gray-800 dark:text-gray-100'}
             ${message.deleted ? 'italic opacity-70' : ''}`}
             onClick={handleBubbleClick}
@@ -115,7 +147,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
         </div>
 
         {/* --- UI CONTROLS --- */}
-        {showActions && !message.deleted && (
+        {showActions && !message.deleted && !showFullPicker && (
             <>
                 {/* 1. Action Menu (Reply/Delete) - UP */}
                 <div className={`absolute ${isMe ? 'right-0' : 'left-0'} -top-12 z-30 flex flex-col items-${isMe ? 'end' : 'start'}`}>
@@ -131,11 +163,29 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
                     </div>
                 </div>
 
-                {/* 2. Reaction Picker - DOWN */}
+                {/* 2. Reaction Picker - DOWN (Standard) */}
                 <div className={`absolute ${isMe ? 'right-0' : 'left-0'} top-full mt-2 z-30`}>
-                     <ReactionPicker onSelect={handleReactionClick} />
+                     <ReactionPicker onSelect={handleReactionClick} onOpenFullPicker={handleOpenFullPicker} />
                 </div>
             </>
+        )}
+        
+        {/* IMPLEMENTATION: Full Emoji Picker (Expanded, Scrollable, Simulated) */}
+        {showFullPicker && (
+            <div className={`absolute ${isMe ? 'right-0' : 'left-0'} top-full mt-2 z-30 w-64 bg-[var(--bg-card)] shadow-2xl rounded-xl border border-[var(--border-color)] p-3 animate-fade-in`}>
+                <div className='flex justify-between items-center mb-2'>
+                    <h4 className='font-semibold text-sm'>Select Any Emoji</h4>
+                    <button onClick={handleCloseFullPicker} className='text-lg hover:text-red-500'>&times;</button>
+                </div>
+                {/* Scrollable Container */}
+                <div className='h-48 overflow-y-auto grid grid-cols-6 gap-2'>
+                    {FULL_EMOJI_LIST.map((emoji) => (
+                        <button key={emoji} onClick={(e) => { e.stopPropagation(); handleReactionClick(emoji); }} className='p-1 hover:bg-[var(--bg-hover)] rounded text-xl'>
+                            {emoji}
+                        </button>
+                    ))}
+                </div>
+            </div>
         )}
       </div>
     </div>
