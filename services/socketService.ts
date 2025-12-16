@@ -113,8 +113,9 @@ class SocketService {
       this.socket?.emit('typing', { roomId, userId, userName });
   }
 
-  sendStopTyping(roomId: string, userId: string) {
-      this.socket?.emit('stop_typing', { roomId, userId });
+  // UPDATED: Now requires userName to ensure we remove the correct name from the list
+  sendStopTyping(roomId: string, userId: string, userName: string) {
+      this.socket?.emit('stop_typing', { roomId, userId, userName });
   }
 
   sendReaction(roomId: string, messageId: string, userId: string, emoji: string) {
@@ -176,7 +177,7 @@ class SocketService {
       return () => { this.clearHandlers = this.clearHandlers.filter(h => h !== handler); };
   }
 
-  onTyping(handler: (data: {userId: string, userName: string, isTyping: boolean}) => void) {
+  onTyping(handler: (data: {roomId: string, userId: string, userName: string, isTyping: boolean}) => void) {
       this.typingHandlers.push(handler);
       return () => { this.typingHandlers = this.typingHandlers.filter(h => h !== handler); };
   }

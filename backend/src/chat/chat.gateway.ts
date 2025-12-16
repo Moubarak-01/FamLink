@@ -88,8 +88,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.to(data.roomId).emit('user_typing', data);
   }
 
+  // UPDATED: Now accepts and broadcasts 'userName' so the client knows who stopped typing
   @SubscribeMessage('stop_typing')
-  handleStopTyping(@MessageBody() data: { roomId: string, userId: string }, @ConnectedSocket() client: Socket) {
+  handleStopTyping(@MessageBody() data: { roomId: string, userId: string, userName: string }, @ConnectedSocket() client: Socket) {
       client.to(data.roomId).emit('user_stop_typing', data);
   }
 

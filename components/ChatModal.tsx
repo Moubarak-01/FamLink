@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Activity, User, SharedOuting, SkillRequest, BookingRequest, ChatMessage } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { socketService } from '../services/socketService';
@@ -21,13 +21,16 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
   const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   
-  // New States
+  // New States for Online/Typing status
   const [isRecipientOnline, setIsRecipientOnline] = useState(false);
   const [recipientLastSeen, setRecipientLastSeen] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Ref to track the last time we sent a "typing" signal (prevents spamming)
+  const lastTypingSentRef = useRef<number>(0);
 
   const contextItem = activity || outing || skillRequest || bookingRequest;
   const contextId = contextItem?.id || '';
@@ -62,6 +65,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
   useEffect(() => {
       if (contextId) {
+          // 1. Reset typing status immediately when switching rooms
+          // This prevents "ghost" typing indicators from previous chats
+          setTypingUsers([]);
+          
           chatService.getHistory(contextId).then(setHistoryMessages).catch(console.error);
           socketService.joinRoom(contextId, currentUser.id);
           
@@ -142,7 +149,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
           }
       });
       
-      // NEW: Typing Listener with immediate update
+      // 2. Typing Listener with immediate State Update
+      // This ensures the UI updates instantly when the socket receives the signal (no refresh needed)
       const unsubTyping = socketService.onTyping((data) => {
           if(data.roomId !== contextId || data.userId === currentUser.id) return;
           
@@ -150,7 +158,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
               // Add user if not already there
               setTypingUsers(prev => prev.includes(data.userName) ? prev : [...prev, data.userName]);
           } else {
-              // Remove user immediately
+              // Remove user immediately - causes React to re-render instantly
               setTypingUsers(prev => prev.filter(name => name !== data.userName));
           }
       });
@@ -158,7 +166,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       return () => {
           unsubMsg(); unsubReaction(); unsubDelete(); unsubClear(); unsubPresence(); unsubStatus(); unsubTyping();
           if (contextId) {
-              socketService.sendStopTyping(contextId, currentUser.id); // Ensure we stop typing when leaving modal
+              // UPDATED: Now sending currentUser.fullName so the server knows WHO stopped
+              socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName); 
               socketService.leaveRoom(contextId);
           }
       };
@@ -170,21 +179,35 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     }
   }, [contextId]);
 
-  // --- Typing Indicator Logic ---
+  // --- INSTANT TYPING LOGIC (Refined) ---
 
   const startTyping = () => {
+      // 1. Always clear the "Stop" timer so the indicator doesn't vanish while you are active
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      socketService.sendTyping(contextId, currentUser.id, currentUser.fullName);
       
-      // Auto-stop after 3 seconds if no keys are pressed (fallback)
+      // 2. Throttle: Only send the "I am typing" signal if 2 seconds have passed since the last one.
+      const now = Date.now();
+      if (now - lastTypingSentRef.current > 2000) {
+          socketService.sendTyping(contextId, currentUser.id, currentUser.fullName);
+          lastTypingSentRef.current = now;
+      }
+      
+      // 3. Set a backup timer to stop typing if you fall asleep (3 seconds of silence)
       typingTimeoutRef.current = setTimeout(() => {
-          socketService.sendStopTyping(contextId, currentUser.id);
+          stopTyping();
       }, 3000);
   };
 
   const stopTyping = () => {
+      // Clear the timeout so we don't send a duplicate signal later
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      socketService.sendStopTyping(contextId, currentUser.id);
+      
+      // Send "Stop" immediately - UPDATED to include userName
+      socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName);
+      
+      // CRITICAL FIX: Reset the throttle timer. 
+      // This ensures that if you start typing again immediately, the "Start" signal goes through instantly.
+      lastTypingSentRef.current = 0;
   };
 
   // 1. On Focus: Start typing immediately
@@ -192,7 +215,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
       startTyping();
   };
 
-  // 2. On Blur: Stop typing immediately
+  // 2. On Blur: The "Trigger" - Stop typing immediately when focus is lost
   const handleBlur = () => {
       stopTyping();
   };
@@ -340,8 +363,12 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <textarea 
                     value={messageText} 
                     onChange={e => setMessageText(e.target.value)} 
-                    onFocus={handleFocus} // Start typing when focused
-                    onBlur={handleBlur}   // Stop typing IMMEDIATELY when blurred
+                    
+                    // --- EVENT HANDLERS FOR INSTANT UPDATES ---
+                    onFocus={handleFocus} // Start typing immediately when focused
+                    onBlur={handleBlur}   // Trigger "Stop Typing" INSTANTLY when you leave the box
+                    onClick={startTyping} // Wake up status if you click inside (even if already focused)
+                    
                     onKeyDown={(e) => {
                         handleKeyDown(); // Reset timeout on key press
                         if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
