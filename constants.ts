@@ -1,8 +1,40 @@
-
 import { Question } from './types';
 import { TFunction } from './contexts/LanguageContext';
 
+// NEW: Constant for Perplexity API Key retrieval in geminiService
+export const PPLX_API_KEY_ENV = 'VITE_PPLX_API_KEY';
+
+// NEW: Perplexity Model Constant (for assessment/specific tasks)
+export const PPLX_MODEL = 'sonar-reasoning-pro';
+
+// FINALIZED: Array of all Gemini models for chat failover
+export const GEMINI_FALLBACK_MODELS: string[] = [
+  // Prioritize known stable models
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite', 
+  
+  // Include other specified models for completeness, even if they returned 404/errors previously
+  'gemini-2.5-flash-native-audio-dialog',
+  'gemini-2.5-flash-tts',
+  'gemini-robotics-er-1.5-preview',
+  'gemma-3-27b',
+  'gemma-3-12b',
+  'gemma-3-4b',
+  'gemma-3-2b',
+  'gemma-3-1b',
+];
+
+// NEW: List of Perplexity models to try in sequential order for chat fallback
+export const PPLX_FALLBACK_MODELS: string[] = [
+  'sonar', // Default lightweight model for fast answers
+  'sonar-reasoning', // For general chat that might need logic
+  'sonar-pro', // Advanced search offering
+  'sonar-reasoning-pro', // High-end reasoning
+  'sonar-deep-research', // Specialized research model
+];
+
 export const ASSESSMENT_QUESTIONS = (t: TFunction): Question[] => [
+// ... (Assessment questions remain unchanged)
   // Single-Choice (10 questions)
   {
     id: 1,
@@ -311,3 +343,14 @@ export const ASSESSMENT_QUESTIONS = (t: TFunction): Question[] => [
     options: []
   }
 ];
+
+
+export const LOCATION_OPTIONS = [ /* ... */ ];
+export const THEME_MODES = [ /* ... */ ];
+export const LANGUAGE_OPTIONS = [ /* ... */ ];
+export const DEFAULT_LANGUAGE = 'en';
+export const DEFAULT_THEME = 'light';
+export const MAP_CENTER = { lat: 34.0522, lng: -118.2437 }; // Los Angeles
+export const MAP_ZOOM = 10;
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_REVIEWS_DISPLAY = 3;

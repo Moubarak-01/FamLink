@@ -4,7 +4,9 @@ import Header from './components/Header';
 import WelcomeScreen from './components/WelcomeScreen';
 import Questionnaire from './components/Questionnaire';
 import ResultScreen from './components/ResultScreen';
-import { evaluateAnswers } from './services/geminiService';
+// FIX: Corrected the import. We import the single exported instance 'geminiService'.
+// The method is accessed later as geminiService.evaluateAnswers
+import { geminiService } from './services/geminiService'; 
 import LoadingSpinner from './components/LoadingSpinner';
 import SubscriptionScreen from './components/SubscriptionScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -267,7 +269,24 @@ const App: React.FC = () => {
   const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); localStorage.setItem('authToken', data.access_token); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
   const handleForgotPassword = async (email: string) => { await new Promise(resolve => setTimeout(resolve, 1500)); alert(t('alert_forgot_password_sent')); navigateTo(Screen.Login); };
 
-  const submitAssessment = async (finalAnswers: Answer[]) => { if (!currentUser) return; setIsLoading(true); navigateTo(Screen.Loading); try { const assessmentResult = await evaluateAnswers(finalAnswers, language); let updatedUser = { ...currentUser, assessmentResult }; await userService.updateProfile({ assessmentResult }); setCurrentUser(updatedUser); setCurrentScreen(Screen.Result); } catch (err) { setError(t('error_assessment_evaluation')); setCurrentScreen(Screen.Questionnaire); } finally { setIsLoading(false); } };
+  const submitAssessment = async (finalAnswers: Answer[]) => { 
+      if (!currentUser) return; 
+      setIsLoading(true); 
+      navigateTo(Screen.Loading); 
+      try { 
+          // CORRECT USAGE: Call the method on the service instance
+          const assessmentResult = await geminiService.evaluateAnswers(finalAnswers, language); 
+          let updatedUser = { ...currentUser, assessmentResult }; 
+          await userService.updateProfile({ assessmentResult }); 
+          setCurrentUser(updatedUser); 
+          setCurrentScreen(Screen.Result); 
+      } catch (err) { 
+          setError(t('error_assessment_evaluation')); 
+          setCurrentScreen(Screen.Questionnaire); 
+      } finally { 
+          setIsLoading(false); 
+      } 
+  };
   const handleSubscribe = async (plan: Plan) => { if (!currentUser) return; const renewalDate = new Date(); renewalDate.setMonth(renewalDate.getMonth() + 1); const newSubscription: Subscription = { plan, status: 'active', renewalDate: renewalDate.toLocaleDateString() }; try { const updatedUser = await userService.updateProfile({ subscription: newSubscription }); setCurrentUser(updatedUser); alert(t('alert_subscription_success')); if (pendingAction) { const action = { ...pendingAction }; setPendingAction(null); if (action.type === 'contact') setContactNannyInfo(action.nanny); if (action.type === 'book') setBookingNannyInfo(action.nanny); } navigateTo(Screen.Dashboard); } catch(e) { alert("Subscription failed"); } };
   const handleNannyProfileSubmit = async (profileData: any) => { if(!currentUser) return; try { const updatedUser = await userService.updateProfile({ fullName: profileData.fullName, email: profileData.email, photo: profileData.photo, profile: { ...profileData } }); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e) { alert("Failed to save profile"); } };
   const handleParentProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile(profileData); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch(e) { alert("Failed to save profile"); } };
@@ -584,7 +603,7 @@ const App: React.FC = () => {
       {requestOutingInfo && <RequestOutingJoinModal outing={requestOutingInfo} onClose={() => setRequestOutingInfo(null)} onSubmit={handleRequestOutingJoin} existingRequests={requestOutingInfo.requests} currentUserId={currentUser?.id || ''} />}
       {isCreateSkillRequestModalOpen && <CreateSkillRequestModal onClose={() => setIsCreateSkillRequestModalOpen(false)} onSubmit={handleCreateSkillRequest} />}
       {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
-      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onSendMessage={handleSendMessage} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
+      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} />}
       
       {isSettingsModalOpen && (
           <SettingsModal 

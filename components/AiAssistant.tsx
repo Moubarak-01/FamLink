@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { User, Screen } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { geminiService } from '../services/geminiService'; 
+import MessageContent from './chat/MessageContent'; 
+import { PPLX_API_KEY_ENV } from '../constants'; // Import for better API key awareness
 
 interface AiAssistantProps {
   user: User;
@@ -19,16 +21,6 @@ interface Message {
   text: string;
 }
 
-// Safe API Key retrieval
-const getApiKey = () => {
-  if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) return import.meta.env.VITE_GEMINI_API_KEY;
-  try {
-    // @ts-ignore
-    if (typeof process !== 'undefined' && process.env) return process.env.API_KEY || process.env.GEMINI_API_KEY;
-  } catch (e) {}
-  return '';
-};
-
 const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, currentScreen }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -36,143 +28,128 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   const { language } = useLanguage();
   const [aiLanguage, setAiLanguage] = useState<string>(language);
   
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const langMenuRef = useRef<HTMLDivElement>(null);
+  // Define the comprehensive FamLink system prompt
+  const FAM_LINK_SYSTEM_INSTRUCTION = `
+    You are the official FamLink AI Assistant. Your user is named ${user.fullName} and is on the ${currentScreen} screen.
+    Your core goal is to answer user questions *exclusively* about the FamLink application and its features.
+    
+    FAMILINK APPLICATION CONTEXT:
+    1.  **Purpose:** FamLink connects parents with trusted care providers and community features to relieve the mental load of parenthood.
+    2.  **Core Features:** Nanny Booking, AI-Powered Nanny Assessment (Gemini evaluated), Task Management, Real-time Chat (E2E encrypted), Notifications, Subscription handling.
+    3.  **Community:** Mom-to-Mom Activities, Child Outing Sharing, Skill Marketplace.
+    4.  **Technical Info:** Supports multilingual (6 languages), global location services (GeoDB), and uses keyboard shortcuts (Shift+N to open, Shift+A to toggle).
+
+    CONSTRAINTS:
+    - **REFUSAL:** You MUST politely refuse to answer general knowledge questions (e.g., history, science, coding help outside of app context) or perform creative writing.
+    - **Language:** Answer ONLY in the user's language: ${aiLanguage}.
+    - **Tone:** Be friendly, concise, and professional.
+    
+    Begin by greeting the user and asking how you can help them specifically with the FamLink app.
+  `.trim();
+
+  // Initialize with a welcome message
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: `Hi ${user.fullName.split(' ')[0]}! 👋 I'm your FamLink assistant. Ask me anything about the app!` }
+      { role: 'model', text: `Hello ${user.fullName}, I'm your FamLink AI Assistant. How can I help you today?` }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [hasSent, setHasSent] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const apiKey = getApiKey();
-  const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
-
-  // Expose methods to parent via ref
+  // Expose methods via ref
   useImperativeHandle(ref, () => ({
-    openChat: () => {
-        if (isVisible) setIsOpen(true);
-    },
-    toggleVisibility: () => {
-        setIsVisible(prev => !prev);
-    }
+    openChat: () => setIsOpen(true),
+    toggleVisibility: () => setIsVisible(prev => !prev),
   }));
 
-  const displayLanguageMap: { [key: string]: string } = {
-    en: 'English', fr: 'Français', es: 'Español', ja: '日本語', zh: '中文', ar: 'العربية'
-  };
-
-  useEffect(() => { setAiLanguage(language); }, [language]);
-
+  // Auto-scroll to bottom when messages update
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
-        setShowLangMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => { document.removeEventListener('mousedown', handleClickOutside); };
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
+  // Update AI language setting if context language changes
   useEffect(() => {
-      if (!hasSent && messages.length < 3) {
-          const tips: Partial<Record<Screen, string>> = {
-              [Screen.Dashboard]: "Tip: You can manage your bookings and tasks directly here.",
-              [Screen.NannyListing]: "Tip: Use the search bar to find nannies by name or location.",
-          };
-
-          const tip = tips[currentScreen];
-          if (tip) {
-              const lastMsg = messages[messages.length - 1];
-              if (lastMsg.text !== tip) {
-                  const timer = setTimeout(() => {
-                      setMessages(prev => [...prev, { role: 'model', text: tip }]);
-                  }, 1000);
-                  return () => clearTimeout(timer);
-              }
-          }
-      }
-  }, [currentScreen, hasSent]);
-
+    setAiLanguage(language);
+  }, [language]);
+  
+  // Focus the input when the chat opens
   useEffect(() => {
-    if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isOpen]);
+    if (isOpen) {
+        textareaRef.current?.focus();
+    }
+  }, [isOpen]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!inputValue.trim()) return;
-
-    if (!ai) {
-        setMessages(prev => [...prev, { role: 'user', text: inputValue.trim() }, { role: 'model', text: "AI Assistant is not configured (Missing API Key)." }]);
-        setInputValue('');
-        return;
-    }
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage = inputValue.trim();
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    const newMessages: Message[] = [...messages, { role: 'user', text: userMessage }];
+    
+    setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
-    setHasSent(true);
 
     try {
-      const targetLangName = displayLanguageMap[aiLanguage] || 'English';
-      const systemInstruction = `You are the friendly AI assistant for FamLink. User: ${user.fullName} (${user.userType}). Answer ONLY in ${targetLangName}.`;
+        const prompt = userMessage; // The system prompt contains all the context now
+        
+        // NEW: Pass the full system instruction to the service
+        const aiResponse = await geminiService.generateResponse(prompt, FAM_LINK_SYSTEM_INSTRUCTION);
+        
+        setMessages(prev => [...prev, { role: 'model', text: aiResponse }]);
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-        config: { systemInstruction }
-      });
-
-      const text = response.response.text();
-      setMessages(prev => [...prev, { role: 'model', text: text || "I'm having trouble connecting right now." }]);
     } catch (error) {
-      console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Sorry, I encountered an error. Please try again." }]);
+        console.error("AI API Call Failed:", error);
+        setMessages(prev => [...prev, { role: 'model', text: "Sorry, a serious error occurred during the API communication. Please try again." }]);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+        e.preventDefault();
+        handleSendMessage();
     }
-  };
-
-  const handleClearChat = () => {
-      if (window.confirm("Clear conversation history?")) {
-        setMessages([{ role: 'model', text: `Hi ${user.fullName.split(' ')[0]}! 👋 I'm your FamLink assistant. Ask me anything about the app!` }]);
-        setHasSent(false);
-      }
   };
 
   if (!isVisible) return null;
 
   return (
-    <>
-      {!isOpen && (
-          <button onClick={() => setIsOpen(true)} className="fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg bg-[var(--accent-primary)] text-white animate-fade-in-up hover:scale-110 transition-transform">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.405 0 4.781.173 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clipRule="evenodd" /></svg>
-          </button>
-      )}
-
-      {isOpen && (
-        <div className="fixed bottom-6 right-6 w-80 sm:w-96 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden h-[500px] max-h-[80vh]">
-          <div className="bg-[var(--accent-primary)] p-4 flex items-center justify-between shadow-sm">
-             <h3 className="font-bold text-white text-base">FamLink Assistant</h3>
-             <button onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 p-1 rounded-full">✕</button>
+    <div className={`fixed bottom-0 right-0 m-4 transition-all duration-300 ${isOpen ? 'w-full max-w-sm h-96' : 'w-16 h-16'}`}>
+      {!isOpen ? (
+        // Closed State (Floating Button)
+        <button 
+          onClick={() => setIsOpen(true)} 
+          className="w-16 h-16 bg-[var(--accent-primary)] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[var(--accent-primary-hover)] transition-transform active:scale-95"
+          title="Open AI Assistant"
+        >
+          {/* ICON: Using the lightning bolt icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+              <path fillRule="evenodd" d="M13 10V3L4 14h7v7l9-11h-7z" clipRule="evenodd" />
+          </svg>
+        </button>
+      ) : (
+        // Open State (Modal-like interface)
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-2xl h-full flex flex-col border border-[var(--border-color)]">
+          
+          {/* Header */}
+          <div className="p-3 border-b border-[var(--border-color)] flex justify-between items-center shrink-0">
+            <h3 className="font-bold text-[var(--text-primary)]">AI Assistant</h3>
+            <button onClick={() => setIsOpen(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none">&times;</button>
           </div>
-
-          <div className="flex-1 p-4 overflow-y-auto bg-[var(--bg-card-subtle)] space-y-4">
+          
+          {/* Messages Area */}
+          <div className="flex-1 p-3 overflow-y-auto space-y-3 scrollbar-thin">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 text-sm rounded-2xl ${msg.role === 'user' ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-color)]'}`}>
-                    {msg.text}
+                <div className={`max-w-[85%] p-3 text-sm rounded-2xl ${msg.role === 'user' ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-card-subtle)] text-[var(--text-primary)] border border-[var(--border-color)]'}`}>
+                    {/* Use MessageContent for universal rendering */}
+                    <MessageContent 
+                        content={msg.text} 
+                        isUser={msg.role === 'user'} 
+                    />
                 </div>
               </div>
             ))}
@@ -180,23 +157,24 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-3 bg-[var(--bg-card)] border-t border-[var(--border-color)]">
+          {/* Input Area */}
+          <div className="p-3 bg-[var(--bg-card)] border-t border-[var(--border-color)] shrink-0">
              <form onSubmit={handleSendMessage} className="flex gap-2">
                 <textarea
                     ref={textareaRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message..."
+                    placeholder="Ask about FamLink features..."
                     rows={1}
-                    className="flex-1 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg text-sm focus:outline-none resize-none"
+                    className="flex-1 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none"
                 />
-                <button type="submit" disabled={!inputValue.trim() || isLoading} className="text-[var(--accent-primary)] font-bold disabled:opacity-50">Send</button>
+                <button type="submit" disabled={!inputValue.trim() || isLoading} className="text-[var(--accent-primary)] font-bold disabled:opacity-50 transition-transform active:scale-95">Send</button>
              </form>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 });
 

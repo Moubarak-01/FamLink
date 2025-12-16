@@ -1,138 +1,267 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Model } from "@google/genai";
 import { Answer, AssessmentResult, Decision } from '../types';
-import { ASSESSMENT_QUESTIONS } from '../constants';
+import { ASSESSMENT_QUESTIONS, GEMINI_FALLBACK_MODELS, PPLX_API_KEY_ENV, PPLX_FALLBACK_MODELS } from '../constants'; 
 import { translations } from "../locales/index";
+import { cleanAIText } from '../utils/LLMHelper'; // NEW: Import the cleaner
 
-// Safer API Key retrieval that won't crash the browser
-const getApiKey = () => {
-  // 1. Try Vite env var (standard)
-  if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
-    return import.meta.env.VITE_GEMINI_API_KEY;
+// --- API INITIALIZATION ---
+
+// Safe API Key retrieval for both services
+const getApiKey = (envVar: string): string => {
+  if (import.meta.env && (import.meta.env as any)[envVar]) {
+    return (import.meta.env as any)[envVar];
   }
-  // 2. Try process.env safely (ignores error if process is undefined)
   try {
     // @ts-ignore
-    if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+    if (typeof process !== 'undefined' && process.env && process.env[envVar]) {
         // @ts-ignore
-        return process.env.GEMINI_API_KEY;
+        return process.env[envVar];
     }
-  } catch (e) {
-    // ignore
-  }
+  } catch (e) {}
   return '';
 };
 
-const apiKey = getApiKey();
+const geminiApiKey = getApiKey('VITE_GEMINI_API_KEY');
+const pplxApiKey = getApiKey(PPLX_API_KEY_ENV);
 
-// Initialize AI only if key exists to prevent immediate crash
-const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
+// Initialize Gemini only if key exists
+const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
+
+// --- RESPONSE SCHEMA ---
 
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
-    score: {
-      type: Type.INTEGER,
-      description: "The calculated score between 0 and 100."
-    },
-    feedback: {
-      type: Type.STRING,
-      description: "A brief, constructive, and personalized feedback for the candidate based on their answers."
-    },
-    decision: {
-      type: Type.STRING,
-      description: "The final decision based on the score. Must be one of: 'Approved', 'Rejected'."
-    }
+    score: { type: Type.INTEGER, description: "The calculated score between 0 and 100." },
+    feedback: { type: Type.STRING, description: "Constructive feedback and summary of the candidate's performance, tailored to the assessment, written in the target language." },
+    decision: { type: Type.STRING, enum: ['Approved', 'Rejected'], description: "The final decision based on the calculated score." }
   },
   required: ['score', 'feedback', 'decision']
 };
 
-export const evaluateAnswers = async (answers: Answer[], language: string): Promise<AssessmentResult> => {
-  if (!ai || !apiKey) {
-      console.error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in .env.local");
-      return {
-        score: 0,
-        feedback: "System Error: AI Configuration missing. Please check your API key settings.",
-        decision: 'Rejected'
-      };
+/**
+ * Executes a raw text generation request with multi-model failover (Gemini -> Perplexity).
+ */
+const executeTextGenerationWithFailover = async (prompt: string, systemInstruction: string): Promise<string> => {
+    // --- 1. GEMINI API FALLBACK CHAIN ---
+    if (ai) {
+        const modelsToTry = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0 
+            ? GEMINI_FALLBACK_MODELS 
+            : ['gemini-2.5-flash'];
+
+        for (const currentModel of modelsToTry) {
+            try {
+                console.log(`Attempting API call with Gemini model: ${currentModel}`);
+                
+                const response = await ai.models.generateContent({
+                    model: currentModel as Model,
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    config: { 
+                        temperature: 0.7,
+                        // NEW: Pass system instruction for grounding
+                        systemInstruction: systemInstruction 
+                    }
+                });
+
+                // FIX: Check for response existence to avoid TypeError
+                if (response?.response?.text) {
+                    const responseText = response.response.text.trim();
+                    // NEW IMPLEMENTATION: Clean the response before returning
+                    return cleanAIText(responseText); 
+                }
+            } catch (error) {
+                console.warn(`Gemini Model ${currentModel} failed. Error:`, (error as any)?.error?.message || error);
+            }
+        }
+    } else {
+        console.warn("Gemini API key is missing. Skipping Gemini fallback chain.");
+    }
+    
+    // --- 2. PERPLEXITY AI FALLBACK CHAIN (FINAL ATTEMPT) ---
+    if (pplxApiKey) {
+        
+        for (const pplxModel of PPLX_FALLBACK_MODELS) {
+            try {
+                console.log(`Attempting fallback with Perplexity AI model: ${pplxModel}`);
+                
+                const pplxResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${pplxApiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: pplxModel,
+                        messages: [
+                            // NEW: Pass system instruction for grounding
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.7
+                    })
+                });
+
+                const pplxData = await pplxResponse.json();
+                
+                if (pplxResponse.ok && pplxData.choices && pplxData.choices.length > 0) {
+                    const responseText = pplxData.choices[0].message.content.trim();
+                    // NEW IMPLEMENTATION: Clean the response before returning
+                    return cleanAIText(responseText); 
+                } else {
+                    console.warn(`Perplexity Model ${pplxModel} failed. API Error:`, pplxData);
+                }
+
+            } catch (error) {
+                console.warn(`Perplexity Model ${pplxModel} failed. Network/Parsing Error:`, error);
+            }
+        }
+    } else {
+        console.warn("Perplexity API key is missing. Skipping final fallback.");
+    }
+
+    // --- 3. GLOBAL FAILURE ---
+    return "Sorry, I encountered an error. All AI services failed. Please try again.";
+};
+
+// --- GEMINI SERVICE CLASS (Exports the instance) ---
+
+class GeminiService {
+  
+  // Method for AI Assistant chat
+  async generateResponse(prompt: string, systemInstruction: string): Promise<string> {
+    return executeTextGenerationWithFailover(prompt, systemInstruction);
   }
 
-  const model = 'gemini-2.0-flash'; 
-  
-  const tEn = (key: string, options?: { [key: string]: string | number }) => {
-    let translation = translations.en[key as keyof typeof translations.en] || key;
-    if (options) {
-      Object.keys(options).forEach(optionKey => {
-        translation = translation.replace(`{${optionKey}}`, String(options[optionKey]));
-      });
+  // Method for Nanny Assessment (Uses internal failover logic)
+  async evaluateAnswers(answers: Answer[], responseLanguage: string): Promise<AssessmentResult> {
+    
+    if (!ai) {
+        if (pplxApiKey) {
+            return this._evaluateAnswersWithPplx(answers, responseLanguage);
+        }
+        return { score: 0, feedback: "AI system unavailable.", decision: 'Rejected' };
     }
-    return translation;
-  };
-  const englishQuestions = ASSESSMENT_QUESTIONS(tEn);
 
-  const formattedAnswers = answers.map(answer => {
-    const question = englishQuestions.find(q => q.id === answer.questionId);
-    const answerText = Array.isArray(answer.answer) ? answer.answer.join(', ') : answer.answer;
-    return `Question ${answer.questionId}: "${question?.text}"\nAnswer: "${answerText}"`;
-  }).join('\n\n');
+    const assessmentQuestions = ASSESSMENT_QUESTIONS(translations[responseLanguage]?.t || translations.en.t);
+    const formattedAnswers = answers.map(answer => {
+      const question = assessmentQuestions.find(q => q.id === answer.questionId);
+      const questionText = question?.text || `Question ${answer.questionId}`;
+      const answerValue = Array.isArray(answer.value) ? answer.value.join('; ') : answer.value; 
+      return `Q: ${questionText}\nA: ${answerValue}\n---\n`;
+    }).join('\n');
 
-  const languageMap: { [key: string]: string } = {
-    en: 'English',
-    fr: 'French',
-    es: 'Spanish',
-    ja: 'Japanese',
-    zh: 'Chinese',
-    ar: 'Arabic'
-  };
-  const responseLanguage = languageMap[language] || 'English';
-
-  const systemInstruction = `You are an expert HR evaluator for 'FamLink', a platform connecting families with trusted nannies. Your task is to assess a nanny candidate's suitability based on their answers to a 15-question assessment.
-
-Analyze the provided answers to evaluate the candidate on these key criteria:
-1.  **Empathy and Patience:** Ability to understand and manage a child's emotions.
-2.  **Professionalism & Communication:** Clear, respectful interaction with parents.
-3.  **Emotional Regulation & Stress Management:** Healthy coping mechanisms.
-4.  **Problem-Solving & Safety Awareness:** Adaptability and prioritizing child safety.
-5.  **Motivation & Core Values:** Genuine interest in child welfare.
-
-Scoring Rubric:
--   Calculate a final weighted score from 0 to 100 based on the 15 answers provided.
--   Positive, child-centric answers score high. Negative or dismissive answers score low.
-
-Decision Logic:
--   Score >= 70: 'Approved'
--   Score < 70: 'Rejected'
-
+    const systemInstruction = `
+You are an expert Nanny Assessment AI. Your task is to evaluate a candidate's answers based on expertise, judgment, and child welfare.
+Scoring: 0-100. Decision: Approved (>=70) or Rejected (<70).
 CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response must be written exclusively in ${responseLanguage}.`;
 
-  const prompt = `Please evaluate the following candidate's answers:\n\n${formattedAnswers}`;
+    const prompt = `Please evaluate the following candidate's answers:\n\n${formattedAnswers}`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        temperature: 0.3,
-      },
-    });
+    const modelsToTry = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0 
+        ? GEMINI_FALLBACK_MODELS 
+        : ['gemini-2.5-flash'];
 
-    const jsonString = response.response.text().trim();
-    const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
-    
-    if (!['Approved', 'Rejected'].includes(result.decision)) {
-        result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
+    // --- GEMINI ASSESSMENT FAILOVER ---
+    for (const currentModel of modelsToTry) {
+        try {
+            console.log(`Attempting assessment with Gemini model: ${currentModel}`);
+            
+            const response = await ai.models.generateContent({
+                model: currentModel as Model,
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                config: {
+                    systemInstruction: systemInstruction,
+                    responseMimeType: "application/json",
+                    responseSchema: responseSchema,
+                    temperature: 0.3,
+                },
+            });
+
+            // FIX: Check for response existence to avoid errors
+            if (response?.response?.text) {
+                const jsonString = response.response.text.trim();
+                const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
+                
+                if (!['Approved', 'Rejected'].includes(result.decision)) {
+                    result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
+                }
+                
+                return result; // Success!
+            }
+
+        } catch (error) {
+            console.warn(`Assessment model ${currentModel} failed. Attempting next model. Error:`, error);
+        }
     }
     
-    return result;
+    // --- PERPLEXITY ASSESSMENT FAILOVER (JSON response is critical) ---
+    if (pplxApiKey) {
+        return this._evaluateAnswersWithPplx(answers, responseLanguage);
+    }
 
-  } catch (error) {
-    console.error("Error evaluating answers with Gemini API:", error);
-    return {
-        score: 0,
-        feedback: "We're sorry, an error occurred while processing your assessment. Please try again later.",
-        decision: 'Rejected'
-    };
+    return { score: 0, feedback: "All AI models failed to complete the assessment. Please try again later.", decision: 'Rejected' };
   }
-};
+  
+  // Helper for Perplexity Assessment logic
+  private async _evaluateAnswersWithPplx(answers: Answer[], responseLanguage: string): Promise<AssessmentResult> {
+      
+        const assessmentQuestions = ASSESSMENT_QUESTIONS(translations[responseLanguage]?.t || translations.en.t);
+        const formattedAnswers = answers.map(answer => {
+          const question = assessmentQuestions.find(q => q.id === answer.questionId);
+          const questionText = question?.text || `Question ${answer.questionId}`;
+          const answerValue = Array.isArray(answer.value) ? answer.value.join('; ') : answer.value; 
+          return `Q: ${questionText}\nA: ${answerValue}\n---\n`;
+        }).join('\n');
+
+        const systemInstruction = `
+You are an expert Nanny Assessment AI. Your task is to evaluate a candidate's answers based on expertise, judgment, and child welfare.
+Scoring: 0-100. Decision: Approved (>=70) or Rejected (<70).
+CRITICAL REQUIREMENT: Output must be a single JSON object matching the schema: { "score": number, "feedback": string, "decision": "Approved" | "Rejected" }. The 'feedback' field must be written exclusively in ${responseLanguage}.`;
+
+        const prompt = `Please evaluate the following candidate's answers:\n\n${formattedAnswers}`;
+
+        for (const pplxModel of PPLX_FALLBACK_MODELS) { // Try all PPLX models for reliable JSON output
+            try {
+                console.log(`Attempting assessment fallback with Perplexity AI model: ${pplxModel}`);
+                
+                const pplxResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${pplxApiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: pplxModel,
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.3,
+                        response_format: { type: "json_object" }
+                    })
+                });
+
+                const pplxData = await pplxResponse.json();
+
+                if (pplxResponse.ok && pplxData.choices && pplxData.choices.length > 0) {
+                    const jsonString = pplxData.choices[0].message.content.trim();
+                    const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
+                    
+                    if (!['Approved', 'Rejected'].includes(result.decision)) {
+                        result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
+                    }
+                    return result; // Success!
+                } else {
+                     console.warn(`Perplexity Assessment Model ${pplxModel} failed. API Error:`, pplxData);
+                }
+            } catch (error) {
+                 console.warn(`Perplexity Assessment Model ${pplxModel} failed. Network/Parsing Error:`, error);
+            }
+        }
+        
+        return { score: 0, feedback: "All AI models failed to complete the assessment. Please try again later.", decision: 'Rejected' };
+  }
+}
+
+// Export the single instance of the service
+export const geminiService = new GeminiService();
