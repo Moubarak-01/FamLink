@@ -1,9 +1,3 @@
-I understand. You want to update your README.md file to reflect all the recent UI/UX and functionality changes we implemented, while specifically noting two areas where implementation was unsuccessful or stalled (the chat button next to accepted bookings, and the native emoji picker).
-
-Here is the full, updated README.md content for your GitHub repository.
-
-Markdown
-
 # FamLink ✨
 
 FamLink is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
@@ -23,19 +17,27 @@ The application is fully architected and implemented with a **React Frontend** a
 
 This release significantly upgrades the user experience in the AI Assistant and standard Chat Modal, introducing new input methods, custom layouts, and accessibility shortcuts.
 
-### 1. AI Assistant & Accessibility
+### 1. Multi-Model AI Stability Architecture (New)
+To ensure the AI Assistant remains stable and available even if the primary Gemini model fails or hits rate limits, a robust fallback system has been implemented:
+* **Perplexity AI Integration:** Added support for the Perplexity AI API, including models like `sonar-reasoning-pro`.
+* **Sequential Failover:** The system attempts to generate responses sequentially across a comprehensive list of models:
+    * **Primary:** Multiple Gemini models (`gemini-2.5-flash`, etc.) are attempted first.
+    * **Fallback:** A list of Perplexity AI models (`sonar-reasoning-pro`, `sonar-deep-research`, etc.) is used as a final fallback.
+* **System Resilience:** This multi-tiered approach provides submission-level model failover to guarantee the AI Assistant's availability.
+
+### 2. AI Assistant & Accessibility
 The AI Assistant component has been enhanced with new UX features and global shortcuts:
 * **Smart Thinking Loader:** Implemented a time-gated loader that only displays if the AI response takes longer than 2 seconds, preventing visual flickering during fast API responses.
 * **Draggability Fix:** Resolved visual artifacts and ensured the drag handles in the header of the AI Assistant are perfectly centered (`mx-auto` solution).
 * **Custom UI Styling:** Applied consistent pink/white branding to the floating button and the send button, and implemented the WhatsApp-style send icon.
 
-### 2. Global Keyboard Shortcuts (Expanded)
+### 3. Global Keyboard Shortcuts (Expanded)
 We have added global keyboard shortcuts to improve accessibility and navigation speed:
 * **`Shift + N`**: **Toggle AI Chat Open/Close.** Opens the chat window if closed, and closes it if open.
 * **`Shift + A`**: Toggle the AI Assistant visibility (hide/show) on the screen.
 * **`Ctrl + D`**: **Clear AI Chat History.** Triggers a confirmation prompt and clears all conversation history in the AI Assistant.
 
-### 3. Universal Chat & Messaging UX
+### 4. Universal Chat & Messaging UX
 The core messaging system now offers advanced layout control and reaction functionality:
 * **Asymmetrical Message Layout:** Implemented flexible message widths across all chat modals: User messages are constrained to **85% width** (right-aligned), while other/AI messages are allowed up to **95% width** (left-aligned) for better display of long content or code.
 * **Advanced Reactions (Native Picker Attempt):** Enhanced the quick-reaction menu (`👍, ❤️, etc.`) with a **`+` button**. Clicking the `+` button now attempts to trigger the user's **native OS emoji picker** (e.g., Windows V / Win + .) by focusing a hidden input field, allowing access to the full emoji library.
@@ -73,8 +75,10 @@ To run this project locally without errors, you must configure environment varia
 Create a file named `.env.local` in the project root.
 
 ```env
-# Required for AI Assessment and Assistant
+# Required for AI Assessment and Assistant (Gemini)
 VITE_GEMINI_API_KEY=AIzaSyC... (Your Google Gemini API Key)
+# NEW: Required for Perplexity AI Fallback
+VITE_PPLX_API_KEY=pplx-sk-... (Your Perplexity AI API Key)
 2. Backend Environment (/backend Directory)
 Create a file named .env inside the /backend/ folder.
 
