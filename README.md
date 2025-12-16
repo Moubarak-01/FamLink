@@ -71,8 +71,8 @@ The following features were either implemented but failed QA or were stalled due
 
 To run this project locally without errors, you must configure environment variables correctly for both the Frontend and Backend. **They are separate.**
 
-### 1. Frontend Environment (`/` Root Directory)
-Create a file named `.env.local` in the project root.
+### 1. Frontend Environment (*Root Directory*)
+***Create a file named `.env.local`*** in the project root and add the following content:
 
 ```env
 # Required for AI Assessment and Assistant (Gemini)
@@ -80,7 +80,7 @@ VITE_GEMINI_API_KEY=AIzaSyC... (Your Google Gemini API Key)
 # NEW: Required for Perplexity AI Fallback
 VITE_PPLX_API_KEY=pplx-sk-... (Your Perplexity AI API Key)
 2. Backend Environment (/backend Directory)
-Create a file named .env inside the /backend/ folder.
+Create a file named .env inside the /backend/ folder and add the following content:
 
 Code snippet
 
