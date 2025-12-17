@@ -44,6 +44,23 @@ The core messaging system now offers advanced layout control and reaction functi
 
 ---
 
+## 🚀 Tech Stack
+
+FamLink is built using a modern, performant, and resilient full-stack JavaScript architecture.
+
+| Category | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | **React 19, TypeScript** | User Interface and application logic. |
+| **Styling** | **Tailwind CSS, Vite** | Utility-first CSS framework and fast development server/bundler. |
+| **Backend** | **NestJS, Node.js, Express** | Robust, scalable server framework. |
+| **Database** | **MongoDB (Mongoose)** | Flexible, non-relational data persistence. |
+| **Real-time** | **Socket.io (WebSockets)** | Instant messaging and notification alerts. |
+| **AI** | **Google Gemini API, Perplexity AI** | Multi-Model AI for Nanny Assessment and Assistant Fallback. |
+| **Localization** | **Custom i18n** | Multilingual support (English, French, Spanish, Japanese, Chinese, Arabic). |
+| **External APIs** | **GeoDB Cities API** | Location data and geographic service integration. |
+
+---
+
 ## 🚧 Known Issues & Future Implementation Goals
 
 The following features were either implemented but failed QA or were stalled due to technical constraints.
@@ -55,24 +72,13 @@ The following features were either implemented but failed QA or were stalled due
 
 ---
 
-## 🚀 Tech Stack
+## 📦 Installation & Setup
 
-* **Frontend**: React 19, TypeScript, Tailwind CSS, Vite.
-* **Backend**: NestJS, Node.js, Express.
-* **Database**: MongoDB (Mongoose).
-* **Real-time**: Socket.io (WebSockets) for Chat and Notifications.
-* **AI**: Google Gemini API (`@google/genai`) for Nanny Assessment and Assistant.
-* **Localization**: Custom i18n (English, French, Spanish, Japanese, Chinese, Arabic).
-* **External APIs**: GeoDB Cities API (RapidAPI).
-
----
-
-### 📦 Installation & Setup
-**Prerequisites:**
+### Prerequisites
 * Node.js (v16 or higher)
 * MongoDB (Running locally or a cloud Atlas URI)
 
-**Backend Setup (Server & Database)**
+### Backend Setup (Server & Database)
 Navigate to the backend folder:
 
 ```bash
@@ -81,7 +87,8 @@ npm install
 npm run start:dev
 The server will start on http://localhost:3001.
 
-Frontend Setup Navigate to the root folder (open a new terminal):
+Frontend Setup
+Navigate to the root folder (open a new terminal):
 
 Bash
 
@@ -115,13 +122,11 @@ STRIPE_SECRET_KEY=sk_test_placeholder_key
 GEODB_API_KEY=your_rapidapi_key_here
 🌟 Features Overview
 🛡️ Safety & Trust
-
 AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety.
 
 Authentication: Secure JWT-based login and signup for Parents and Nannies.
 
 🤖 AI Assistant
-
 Context-Aware: A floating chatbot (Gemini 2.5 Flash) that helps users navigate the app and answers parenting questions.
 
 Multilingual: Supports 6 languages natively.
@@ -129,7 +134,6 @@ Multilingual: Supports 6 languages natively.
 Shortcuts: Use Shift + N to toggle open/close; Shift + A to toggle visibility.
 
 👥 Community & Marketplace
-
 Mom-to-Mom Activities: Schedule playdates, walks, and workouts.
 
 Child Outing Sharing: Coordinate group outings to share costs and supervision.
@@ -137,7 +141,6 @@ Child Outing Sharing: Coordinate group outings to share costs and supervision.
 Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the community.
 
 💼 Management Dashboard
-
 Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete).
 
 Real-time Chat: Instant messaging with robust persistence, E2E encryption, and read receipts.
@@ -149,20 +152,20 @@ Tasks: Assign specific to-do items to hired nannies.
 📂 Folder Structure
 Bash
 
-/                               # Frontend Root
- ├── src/
- │   ├── components/             # React UI Components
- │   │   └── chat/               # (ReactionPicker, MessageBubble, etc.)
- │   ├── services/               # API Clients (Axios, Socket.io, chatService, cryptoService, locationService)
- │   ├── contexts/               # React Contexts (Theme, Language)
- │   ├── hooks/                  # Custom Hooks (useAppLogic, useSocketListeners)
- │   ├── App.tsx                 # Main Logic & Routing
- │   └── types.ts                # TypeScript Interfaces (Updated for E2E)
- ├── backend/                    # Backend Root (NestJS)
- │   ├── src/
- │   │   ├── schemas/            # MongoDB Models 
- │   │   ├── chat/               # WebSocket Gateway, Chat Controller & Service
- │   │   ├── locations/          # New GeoDB Proxy Module
- │   │   ├── notifications/      # Real-time Alert System
- │   │   └── [modules]/          # Feature Modules (Auth, Bookings, Activities, etc.)
- └── package.json                # Frontend Dependencies
+/                               # Frontend Root
+├── src/
+│   ├── components/             # React UI Components
+│   │   └── chat/               # (ReactionPicker, MessageBubble, etc.)
+│   ├── services/               # API Clients (Axios, Socket.io, chatService, cryptoService, locationService)
+│   ├── contexts/               # React Contexts (Theme, Language)
+│   ├── hooks/                  # Custom Hooks (useAppLogic, useSocketListeners)
+│   ├── App.tsx                 # Main Logic & Routing
+│   └── types.ts                # TypeScript Interfaces (Updated for E2E)
+├── backend/                    # Backend Root (NestJS)
+│   ├── src/
+│   │   ├── schemas/            # MongoDB Models 
+│   │   ├── chat/               # WebSocket Gateway, Chat Controller & Service
+│   │   ├── locations/          # New GeoDB Proxy Module
+│   │   ├── notifications/      # Real-time Alert System
+│   │   └── [modules]/          # Feature Modules (Auth, Bookings, Activities, etc.)
+└── package.json                # Frontend Dependencies
