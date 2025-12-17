@@ -11,6 +11,9 @@ export const useAppLogic = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeChat, setActiveChat] = useState<{ type: string, item: any } | null>(null);
+  
+  // NEW STATE: For settings modal visibility
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Auth Check
   useEffect(() => {
@@ -43,6 +46,29 @@ export const useAppLogic = () => {
       setActiveChat
   });
 
+  // NEW FUNCTION: Toggle settings
+  const toggleSettingsModal = () => {
+      setShowSettingsModal(prev => !prev);
+  };
+  
+  // IMPLEMENTATION: Global Keyboard Shortcut Listener (Shift + P)
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          
+          // Shift + P for Settings
+          if (e.shiftKey && e.key === 'P') { 
+              e.preventDefault();
+              toggleSettingsModal();
+          }
+          // Note: Other global shortcuts (Shift+N, Shift+A, Ctrl+D) would be implemented here
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+          document.removeEventListener('keydown', handleKeyDown);
+      };
+  }, []);
+  
   // Nav
   const navigateTo = (screen: Screen, replace = false) => {
       setError(null);
@@ -67,6 +93,7 @@ export const useAppLogic = () => {
       currentScreen, setCurrentScreen,
       error, setError,
       activeChat, setActiveChat,
+      showSettingsModal, toggleSettingsModal, // NEW EXPOSURE
       navigateTo, goBack,
       ...data
   };

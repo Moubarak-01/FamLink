@@ -211,13 +211,20 @@ const App: React.FC = () => {
       checkAuth();
   }, []);
 
+  // IMPLEMENTATION FIX: Global Keyboard Shortcut Listener
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       // Prevent shortcut if user is typing in a form field
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
       
-      // IMPLEMENTATION: Shift + N toggles open/close
+      // Shift + P to toggle settings modal (NEW IMPLEMENTATION)
+      if (e.shiftKey && e.key.toUpperCase() === 'P') {
+        e.preventDefault();
+        setIsSettingsModalOpen(prev => !prev); 
+      }
+
+      // Shift + N toggles open/close
       if (e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         aiAssistantRef.current?.toggleOpenState(); 
@@ -228,7 +235,7 @@ const App: React.FC = () => {
         aiAssistantRef.current?.toggleVisibility();
       }
 
-      // NEW IMPLEMENTATION: Control + D clears history
+      // Control + D clears history
       if (e.ctrlKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         aiAssistantRef.current?.clearHistory(); 
@@ -236,7 +243,7 @@ const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+  }, []); // isSettingsModalOpen is a local state, so no dependencies needed here.
 
   const refreshData = useCallback(async () => {
     if (!currentUser) return;
@@ -614,6 +621,7 @@ const App: React.FC = () => {
       {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
       {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onSendMessage={handleSendMessage} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
       
+      {/* Conditional Rendering of Settings Modal (Now driven by state) */}
       {isSettingsModalOpen && (
           <SettingsModal 
             onClose={() => setIsSettingsModalOpen(false)} 
@@ -625,7 +633,20 @@ const App: React.FC = () => {
           />
       )}
 
-      <Header isAuthenticated={!!currentUser} user={currentUser} onLogout={handleLogout} onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined} onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined} onOpenSettings={() => setIsSettingsModalOpen(true)} notifications={currentUser ? notifications.filter(n => !n.read) : []} onClearNotifications={handleClearNotifications} onNotificationClick={handleNotificationClick} noiseReductionEnabled={noiseReductionEnabled} />
+      {/* Passing the correct toggle handler to the Header component */}
+      <Header 
+        isAuthenticated={!!currentUser} 
+        user={currentUser} 
+        onLogout={handleLogout} 
+        onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined} 
+        onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined} 
+        // FIX: The header button now toggles the state directly
+        onOpenSettings={() => setIsSettingsModalOpen(true)} 
+        notifications={currentUser ? notifications.filter(n => !n.read) : []} 
+        onClearNotifications={handleClearNotifications} 
+        onNotificationClick={handleNotificationClick} 
+        noiseReductionEnabled={noiseReductionEnabled} 
+      />
       <main className="w-full max-w-3xl mx-auto p-4 sm:p-6 md:p-8 flex-grow"><div className="bg-[var(--bg-card)] rounded-2xl shadow-lg overflow-hidden transition-all duration-500">{renderScreen()}</div></main>
       
       {showAiAssistant && currentUser && (

@@ -27,6 +27,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, noiseReductionEn
             <div className="border-t border-[var(--border-color)] pt-4">
                 <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Keyboard Shortcuts</h3>
                 <div className="space-y-2">
+                    {/* IMPLEMENTATION: Shift + P for Settings Modal */}
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-[var(--text-secondary)]">{t('shortcut_open_settings')}</span> 
+                        <kbd className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono shadow-sm">Shift + P</kbd>
+                    </div>
                     {/* UPDATED: Shift + N toggles chat open/close */}
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-[var(--text-secondary)]">Toggle AI Chat Open/Close</span>

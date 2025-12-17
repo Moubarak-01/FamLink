@@ -6,6 +6,7 @@ export const en = {
     button_settings: "Settings",
     menu_edit_profile: "Edit Profile",
     menu_subscription_status: "Subscription Status",
+    shortcut_open_settings: "Open Settings Modal", // NEW IMPLEMENTATION
 
     // Generic Statuses (New)
     status_pending: "Pending",
