@@ -17,13 +17,13 @@ export function cleanAIText(text: string): string {
 
     // 1. Remove DeepSeek/Claude/Perplexity Thinking Tags: <think>...</think> (and content inside)
     // The 's' flag allows '.' to match newlines, ensuring multi-line thinking blocks are captured.
-    cleanedText = cleanedText.replace(/<think>[\s\S]*?<\/think>/gs, '').trim();
+    cleanedText = cleanedText.replace(/<think>[\s\S]*?<\/think>/gs, '');
 
     // 2. Remove Citations/Footnotes: [1], [5], [1, 2], or single letters/words in brackets
     // Matches any content enclosed in single brackets where the content is one or more
     // digits, comma-separated digits, or letters/words.
-    cleanedText = cleanedText.replace(/\[[^\]]+\]/g, '').trim();
+    cleanedText = cleanedText.replace(/\[[^\]]+\]/g, '');
 
-    // 3. Remove excess leading/trailing whitespace
-    return cleanedText.trim();
+    // 3. Return the cleaned text (PRESERVING WHITESPACE for streaming)
+    return cleanedText;
 }

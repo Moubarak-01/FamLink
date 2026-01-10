@@ -20,19 +20,27 @@ interface MessageContentProps {
 }
 
 const MessageContent: React.FC<MessageContentProps> = ({ content, isUser }) => {
-    
+
     const markdownComponents = {
+        // Custom rendering for paragraphs to control spacing
+        p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0">{props.children}</p>,
+
+        // Custom rendering for lists to fix indentation and spacing
+        ul: ({ node, ...props }: any) => <ul className="list-disc list-outside ml-4 mb-2 space-y-1">{props.children}</ul>,
+        ol: ({ node, ...props }: any) => <ol className="list-decimal list-outside ml-4 mb-2 space-y-1">{props.children}</ol>,
+        li: ({ node, ...props }: any) => <li className="pl-1">{props.children}</li>,
+
         // Custom rendering for blockquotes (for visual distinction)
         blockquote: ({ node, ...props }: any) => (
             <blockquote className="border-l-4 border-[var(--accent-primary)] pl-3 italic text-[var(--text-secondary)] my-2">
                 {props.children}
             </blockquote>
         ),
-        
+
         // Custom rendering for headers (optional, for custom styling)
         h1: ({ node, ...props }: any) => <h1 className="text-xl font-bold mt-4 mb-2 text-[var(--text-primary)]">{props.children}</h1>,
         h2: ({ node, ...props }: any) => <h2 className="text-lg font-semibold mt-3 mb-1 text-[var(--text-primary)]">{props.children}</h2>,
-        
+
         // Custom rendering for strong tags to add emphasis color
         strong: ({ node, ...props }: any) => (
             <strong className="font-extrabold text-[var(--accent-primary)]">{props.children}</strong>
@@ -44,7 +52,7 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, isUser }) => {
                 {props.children}
             </pre>
         ),
-        
+
         // Custom link styling
         a: ({ node, ...props }: any) => (
             <a href={props.href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline transition-colors">

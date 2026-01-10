@@ -7,10 +7,28 @@ export const PPLX_API_KEY_ENV = 'VITE_PPLX_API_KEY';
 // NEW: Perplexity Model Constant (for assessment/specific tasks)
 export const PPLX_MODEL = 'sonar-reasoning-pro';
 
+// NEW: OpenRouter API Key constant
+export const OPENROUTER_API_KEY_ENV = 'VITE_OPENROUTER_API_KEY';
+
+// NEW: OpenRouter Free Models - Tier 1 (Primary)
+// These are the best free models available on OpenRouter as of Jan 2026
+export const OPENROUTER_FREE_MODELS: string[] = [
+  'meta-llama/llama-4-scout:free',           // 512k context - best for long conversations
+  'xiaomi/mimo-v2-flash:free',               // #1 open-source for reasoning & coding
+  'tngtech/deepseek-r1t2-chimera:free',     // 671B MoE - strong reasoning
+  'google/gemini-3-flash:free',              // Multimodal, 128k context
+  'z-ai/glm-4.5-air:free',                   // Lightweight, agent-centric, 131k context
+  'meta-llama/llama-4-maverick:free',        // 400B multimodal, 256k context
+  'mistralai/devstral-2-2512:free',          // Specialized for coding
+  'allenai/molmo-2-8b:free',                 // Vision-language model
+  'moonshotai/kimi-vl-a3b-thinking:free',    // Visual reasoning & math
+  'qwen/qwen3-coder-480b-a35b-instruct:free' // MoE for tool-use & function calling
+];
+
 // FINALIZED: Array of all Gemini models for chat failover
 export const GEMINI_FALLBACK_MODELS: string[] = [
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite', 
+  'gemini-2.5-flash-lite',
   'gemini-2.5-flash-native-audio-dialog',
   'gemini-2.5-flash-tts',
   'gemini-robotics-er-1.5-preview',
@@ -341,9 +359,9 @@ export const ASSESSMENT_QUESTIONS = (t: TFunction): Question[] => [
 ];
 
 
-export const LOCATION_OPTIONS = [ /* ... */ ];
-export const THEME_MODES = [ /* ... */ ];
-export const LANGUAGE_OPTIONS = [ /* ... */ ];
+export const LOCATION_OPTIONS = [ /* ... */];
+export const THEME_MODES = [ /* ... */];
+export const LANGUAGE_OPTIONS = [ /* ... */];
 export const DEFAULT_LANGUAGE = 'en';
 export const DEFAULT_THEME = 'light';
 export const MAP_CENTER = { lat: 34.0522, lng: -118.2437 }; // Los Angeles

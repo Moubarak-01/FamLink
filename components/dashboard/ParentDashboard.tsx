@@ -26,10 +26,10 @@ interface ParentDashboardProps {
     onOpenBookingChat: (request: BookingRequest) => void; // Add this
 }
 
-const ParentDashboard: React.FC<ParentDashboardProps> = ({ 
-    user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests, 
-    onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onKeepTask, 
-    onSearchNannies, onViewActivities, onViewOutings, onViewSkillMarketplace, onClearAllBookings, 
+const ParentDashboard: React.FC<ParentDashboardProps> = ({
+    user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests,
+    onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onKeepTask,
+    onSearchNannies, onViewActivities, onViewOutings, onViewSkillMarketplace, onClearAllBookings,
     onUpdateTaskStatus, onDeleteTask, onOpenBookingChat
 }) => {
     const { t, language } = useLanguage();
@@ -40,25 +40,57 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
     return (
         <>
             {/* Navigation Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {/* ... (Keep navigation cards as is) ... */}
-                <div className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
-                    <div><h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4><p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
+            {/* Navigation Cards (Redesigned 2x2 Grid) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+
+                {/* Find Nanny Card */}
+                <div className="bg-[var(--bg-pink-card)] rounded-2xl border border-[var(--border-pink-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                    <div>
+                        <h4 className="text-2xl font-bold text-[var(--text-pink-card-header)] mb-3">{t('dashboard_find_nanny_card_title')}</h4>
+                        <p className="text-base text-[var(--text-pink-card-body)] mb-6 leading-relaxed">{t('dashboard_find_nanny_card_subtitle')}</p>
+                    </div>
+                    <button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                        {t('button_search_nannies')}
+                    </button>
                 </div>
-                <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between">
-                    <div><h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4><p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
+
+                {/* Community Card */}
+                <div className="bg-[var(--bg-purple-card)] rounded-2xl border border-[var(--border-purple-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                    <div>
+                        <h4 className="text-2xl font-bold text-[var(--text-purple-card-header)] mb-3">{t('dashboard_community_title')}</h4>
+                        <p className="text-base text-[var(--text-purple-card-body)] mb-6 leading-relaxed">{t('dashboard_community_subtitle')}</p>
+                    </div>
+                    <button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                        {t('dashboard_community_button')}
+                    </button>
                 </div>
-                <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between">
-                    <div><h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4><p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
+
+                {/* Child Outing Card */}
+                <div className="bg-[var(--bg-teal-card)] rounded-2xl border border-[var(--border-teal-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                    <div>
+                        <h4 className="text-2xl font-bold text-[var(--text-teal-card-header)] mb-3">{t('dashboard_child_sharing_title')}</h4>
+                        <p className="text-base text-[var(--text-teal-card-body)] mb-6 leading-relaxed">{t('dashboard_child_sharing_subtitle')}</p>
+                    </div>
+                    <button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                        {t('dashboard_child_sharing_button')}
+                    </button>
                 </div>
-                <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between">
-                    <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
+
+                {/* Skill Sharing Card */}
+                <div className="bg-[var(--bg-blue-card)] rounded-2xl border border-[var(--border-blue-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                    <div>
+                        <h4 className="text-2xl font-bold text-[var(--text-blue-card-header)] mb-3">{t('dashboard_skill_sharing_title')}</h4>
+                        <p className="text-base text-[var(--text-blue-card-body)] mb-6 leading-relaxed">{t('dashboard_skill_sharing_subtitle')}</p>
+                    </div>
+                    <button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                        {t('dashboard_skill_sharing_button')}
+                    </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 {/* My Booking Requests */}
-                 <div>
+                {/* My Booking Requests */}
+                <div>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
                         {bookingRequests.length > 0 && (
@@ -68,9 +100,9 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     {bookingRequests.length > 0 ? (
                         <div className="space-y-4">
                             {bookingRequests.map(req => (
-                                <ParentBookingCard 
-                                    key={req.id} 
-                                    request={req} 
+                                <ParentBookingCard
+                                    key={req.id}
+                                    request={req}
                                     onChat={onOpenBookingChat} // WIRED UP HERE
                                 />
                             ))}
@@ -88,16 +120,16 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     {addedNannies.length > 0 ? (
                         <div className="space-y-4">
                             {addedNannies.map(nanny => (
-                                <AddedNannyCard 
-                                    key={nanny.id} 
-                                    nanny={nanny} 
-                                    currentUser={user} 
-                                    tasks={allTasks.filter(t => t.nannyId === nanny.id)} 
-                                    onRemove={onRemoveNanny} 
-                                    onContact={onContactNanny} 
-                                    onView={onViewNanny} 
-                                    onRate={onRateNanny} 
-                                    onAddTask={() => onOpenTaskModal(nanny)} 
+                                <AddedNannyCard
+                                    key={nanny.id}
+                                    nanny={nanny}
+                                    currentUser={user}
+                                    tasks={allTasks.filter(t => t.nannyId === nanny.id)}
+                                    onRemove={onRemoveNanny}
+                                    onContact={onContactNanny}
+                                    onView={onViewNanny}
+                                    onRate={onRateNanny}
+                                    onAddTask={() => onOpenTaskModal(nanny)}
                                     onKeepTask={onKeepTask}
                                 />
                             ))}
@@ -116,17 +148,17 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 {myTasks.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4">
                         {myTasks.map(task => (
-                             <InteractiveTaskItem 
-                                key={task.id} 
-                                task={task} 
-                                onUpdateStatus={onUpdateTaskStatus} 
-                                onKeep={onKeepTask} 
+                            <InteractiveTaskItem
+                                key={task.id}
+                                task={task}
+                                onUpdateStatus={onUpdateTaskStatus}
+                                onKeep={onKeepTask}
                                 onDelete={onDeleteTask}
                             />
                         ))}
                     </div>
                 ) : (
-                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                         <p className="text-[var(--text-light)]">You haven't assigned any tasks yet.</p>
                     </div>
                 )}
@@ -134,7 +166,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
             {/* Requests */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                 <div>
+                <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
                     {myOutingRequests.length > 0 ? (
                         <div className="space-y-4">
@@ -153,27 +185,27 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                             <p className="text-[var(--text-light)]">{t('dashboard_no_outing_requests')}</p>
                         </div>
                     )}
-                 </div>
+                </div>
 
                 <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_skill_requests')}</h3>
-                     {mySkillRequests.length > 0 ? (
+                    {mySkillRequests.length > 0 ? (
                         <div className="space-y-4">
                             {mySkillRequests.map(req => (
-                                 <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                                     <div>
-                                         <h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4>
-                                         <p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p>
-                                     </div>
-                                     <div className="flex gap-2">
+                                <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
+                                    <div>
+                                        <h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4>
+                                        <p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p>
+                                    </div>
+                                    <div className="flex gap-2">
                                         <button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button>
                                         <StatusTag status={req.status} />
-                                     </div>
-                                 </div>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     ) : (
-                         <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                             <p className="text-[var(--text-light)]">{t('dashboard_no_skill_requests')}</p>
                         </div>
                     )}
