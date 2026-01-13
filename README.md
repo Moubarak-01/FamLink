@@ -1,171 +1,422 @@
 # FamLink ✨
 
-FamLink is a comprehensive, community-driven mobile web application designed to empower parents and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
+<div align="center">
+
+![Version](https://img.shields.io/badge/version-1.8-pink?style=for-the-badge)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs)
+![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?style=for-the-badge&logo=mongodb)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)
+
+**An AI-powered community platform connecting parents with trusted care providers**
+
+[Features](#-features-overview) • [Tech Stack](#-tech-stack) • [Installation](#-installation--setup) • [API Reference](#-api-reference) • [Contributing](#-contributing)
+
+</div>
 
 ---
 
-## ✅ Project Status: Core Implementation Complete (v1.7)
+## 📖 Overview
 
-The application is fully architected and implemented with a **React Frontend** and a **NestJS Backend**.
+FamLink is a comprehensive, community-driven mobile web application designed to **empower parents** and connect families with trusted care providers. It combines AI-powered vetting, community sharing features, and a robust marketplace to relieve the mental load of parenthood.
 
-* **Frontend**: Complete UI, API integration, Real-time Chat with persistent history, Interactive Maps (simulated), and Multilingual support.
-* **Backend**: Full NestJS server with Authentication, MongoDB Database, WebSockets (Socket.io) for real-time features, Payment Logic (Stripe), and CRUD endpoints for all modules.
+### Key Highlights
+
+- 🛡️ **AI-Powered Nanny Vetting** - 50-question assessment evaluated by multi-model AI (Gemini, Perplexity, OpenRouter)
+- 💬 **Real-time Messaging** - End-to-end encrypted chat with read receipts, reactions, and replies
+- 🌍 **Multilingual Support** - 6 languages (English, French, Spanish, Japanese, Chinese, Arabic)
+- 🤖 **AI Assistant** - Context-aware chatbot with streaming responses and keyboard shortcuts
+- 💳 **Subscription System** - Stripe-integrated payment processing
 
 ---
 
-## 🆕 Latest Implementations (v1.7 - AI & Chat UX Focus)
+## ✅ Project Status: Core Implementation Complete (v1.8)
 
-This release significantly upgrades the user experience in the AI Assistant and standard Chat Modal, introducing new input methods, custom layouts, and accessibility shortcuts.
+The application is fully architected and implemented with a **React Frontend** and **NestJS Backend**.
 
-### 1. Multi-Model AI Stability Architecture (New)
-To ensure the AI Assistant remains stable and available even if the primary Gemini model fails or hits rate limits, a robust fallback system has been implemented:
-* **Perplexity AI Integration:** Added support for the Perplexity AI API, including models like `sonar-reasoning-pro`.
-* **Sequential Failover:** The system attempts to generate responses sequentially across a comprehensive list of models:
-    * **Primary:** Multiple Gemini models (`gemini-2.5-flash`, etc.) are attempted first.
-    * **Fallback:** A list of Perplexity AI models (`sonar-reasoning-pro`, `sonar-deep-research`, etc.) is used as a final fallback.
-* **System Resilience:** This multi-tiered approach provides submission-level model failover to guarantee the AI Assistant's availability.
+| Layer | Status | Description |
+|:------|:------:|:------------|
+| **Frontend** | ✅ | Complete UI, API integration, Real-time Chat, Interactive Maps, Multilingual support |
+| **Backend** | ✅ | Full NestJS server with Authentication, MongoDB, WebSockets, Payment Logic (Stripe) |
+| **AI Services** | ✅ | Three-tier AI waterfall: OpenRouter → Gemini → Perplexity |
+| **Testing** | 🔄 | Jest configuration in place, Cypress e2e setup |
 
-### 2. AI Assistant & Accessibility
-The AI Assistant component has been enhanced with new UX features and global shortcuts:
-* **Smart Thinking Loader:** Implemented a time-gated loader that only displays if the AI response takes longer than 2 seconds, preventing visual flickering during fast API responses.
-* **Draggability Fix:** Resolved visual artifacts and ensured the drag handles in the header of the AI Assistant are perfectly centered (`mx-auto` solution).
-* **Custom UI Styling:** Applied consistent pink/white branding to the floating button and the send button, and implemented the WhatsApp-style send icon.
+---
 
-### 3. Global Keyboard Shortcuts (Expanded)
-We have added global keyboard shortcuts to improve accessibility and navigation speed:
-* **`Shift + N`**: **Toggle AI Chat Open/Close.** Opens the chat window if closed, and closes it if open.
-* **`Shift + A`**: Toggle the AI Assistant visibility (hide/show) on the screen.
-* **`Ctrl + D`**: **Clear AI Chat History.** Triggers a confirmation prompt and clears all conversation history in the AI Assistant.
+## 🆕 Latest Updates (v1.8)
 
-### 4. Universal Chat & Messaging UX
-The core messaging system now offers advanced layout control and reaction functionality:
-* **Asymmetrical Message Layout:** Implemented flexible message widths across all chat modals: User messages are constrained to **85% width** (right-aligned), while other/AI messages are allowed up to **95% width** (left-aligned) for better display of long content or code.
-* **Advanced Reactions (Native Picker Attempt):** Enhanced the quick-reaction menu (`👍, ❤️, etc.`) with a **`+` button**. Clicking the `+` button now attempts to trigger the user's **native OS emoji picker** (e.g., Windows V / Win + .) by focusing a hidden input field, allowing access to the full emoji library.
+### 1. Three-Tier AI Stability Architecture
+The application now uses a robust multi-provider AI fallback system:
+
+| Tier | Provider | Models | Purpose |
+|:----:|:---------|:-------|:--------|
+| **1** | OpenRouter | 10 free models (Llama 4, Gemini 3, DeepSeek R1T2, etc.) | Primary - Cost-free tier |
+| **2** | Google Gemini | gemini-2.5-flash, gemma-3-* variants | Secondary - High-quality fallback |
+| **3** | Perplexity | sonar, sonar-reasoning-pro, sonar-deep-research | Tertiary - Research-focused backup |
+
+### 2. Enhanced AI Assistant
+- **Smart Thinking Loader** - Only displays if response takes >2 seconds
+- **Draggable Modal** - Fully repositionable chat window
+- **Custom Styling** - Pink/white branding with WhatsApp-style send icon
+
+### 3. Global Keyboard Shortcuts
+| Shortcut | Action |
+|:---------|:-------|
+| `Shift + N` | Toggle AI Chat Open/Close |
+| `Shift + A` | Toggle AI Assistant Visibility |
+| `Ctrl + D` | Clear AI Chat History |
+
+### 4. Advanced Chat Features
+- **Asymmetrical Message Layout** - User messages (85% width), AI messages (95% width)
+- **Message Reactions** - Quick reaction picker with emoji support
+- **Reply Threading** - Reference and reply to specific messages
 
 ---
 
 ## 🚀 Tech Stack
 
-FamLink is built using a modern, performant, and resilient full-stack JavaScript architecture.
+### Frontend
 
-| Category | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Frontend** | **React 19, TypeScript** | User Interface and application logic. |
-| **Styling** | **Tailwind CSS, Vite** | Utility-first CSS framework and fast development server/bundler. |
-| **Backend** | **NestJS, Node.js, Express** | Robust, scalable server framework. |
-| **Database** | **MongoDB (Mongoose)** | Flexible, non-relational data persistence. |
-| **Real-time** | **Socket.io (WebSockets)** | Instant messaging and notification alerts. |
-| **AI** | **Google Gemini API, Perplexity AI** | Multi-Model AI for Nanny Assessment and Assistant Fallback. |
-| **Localization** | **Custom i18n** | Multilingual support (English, French, Spanish, Japanese, Chinese, Arabic). |
-| **External APIs** | **GeoDB Cities API** | Location data and geographic service integration. |
+| Technology | Version | Purpose |
+|:-----------|:-------:|:--------|
+| **React** | 19.0 | UI Framework |
+| **TypeScript** | 5.8 | Type-safe JavaScript |
+| **Vite** | 6.2 | Build tool & Dev server |
+| **Tailwind CSS** | - | Utility-first styling |
+| **Framer Motion** | 11.0 | Animations & gestures |
+| **React Three Fiber** | 9.5 | 3D graphics |
+| **Socket.io Client** | 4.7 | Real-time communication |
+| **React Markdown** | 10.1 | Markdown rendering |
+| **Axios** | 1.13 | HTTP client |
+
+### Backend
+
+| Technology | Version | Purpose |
+|:-----------|:-------:|:--------|
+| **NestJS** | 10.0 | Server framework |
+| **MongoDB (Mongoose)** | 8.0 | Database & ODM |
+| **Socket.io** | 4.7 | WebSocket server |
+| **Passport JWT** | 4.0 | Authentication |
+| **Stripe** | 14.0 | Payment processing |
+| **bcrypt** | 6.0 | Password hashing |
+| **Axios** | 1.13 | External API calls |
+
+### AI & External APIs
+
+| Service | Purpose |
+|:--------|:--------|
+| **Google Gemini** | Primary AI for assessment & chat |
+| **Perplexity AI** | Fallback AI with research capabilities |
+| **OpenRouter** | Free-tier AI model aggregator |
+| **GeoDB Cities** | Location autocomplete & geographic data |
 
 ---
 
-## 🚧 Known Issues & Future Implementation Goals
+## 🌟 Features Overview
 
-The following features were either implemented but failed QA or were stalled due to technical constraints.
+### 🛡️ Safety & Trust
 
-| Feature/Issue | Status & Constraint | Next Steps |
-| :--- | :--- | :--- |
-| **Chat Button on Accepted Booking** | **STALLED:** We were unable to implement the "Open Chat" button directly next to an accepted booking request on the Dashboard screen. | Implement a conditional render (`if (status === 'accepted')`) on the booking card action bar to show the chat button, utilizing the existing `onOpenBookingChat` handler. |
-| **Native System Emoji Picker** | **FAILED QA:** The workaround to access the native OS emoji picker (`Win + .` on Windows, etc.) was implemented but failed to reliably capture the selected multi-byte emoji character and apply the reaction consistently. | Requires further debugging of the `onchange` and `blur` sequence in `MessageBubble.tsx` to handle multi-byte emoji character capturing correctly, or integration of a dedicated third-party React emoji library. |
+| Feature | Description |
+|:--------|:------------|
+| **AI-Powered Assessment** | 50-question exam evaluating empathy, safety awareness, and childcare knowledge |
+| **Multi-Model Evaluation** | Answers processed through Gemini with Perplexity fallback |
+| **JWT Authentication** | Secure token-based login for Parents and Nannies |
+| **E2E Encryption** | Chat messages encrypted with MAC verification |
+
+### 🤖 AI Assistant
+
+| Feature | Description |
+|:--------|:------------|
+| **Context-Aware** | Knows current screen and user context |
+| **Streaming Responses** | Real-time text generation with async generators |
+| **Multilingual** | Responds in user's selected language |
+| **Draggable Window** | Repositionable chat interface |
+
+### 👥 Community & Marketplace
+
+| Module | Features |
+|:-------|:---------|
+| **Mom-to-Mom Activities** | Schedule walks, playdates, workouts, shopping trips |
+| **Child Outings** | Coordinate group outings with cost sharing |
+| **Skill Marketplace** | Post tasks (cleaning, tutoring) and receive offers |
+
+### 💼 Management Dashboard
+
+| Feature | Description |
+|:--------|:------------|
+| **Booking Lifecycle** | Request → Accept/Decline → Complete/Cancel |
+| **Real-time Chat** | Instant messaging with read receipts |
+| **Task Management** | Assign and track to-do items for nannies |
+| **Notifications** | Real-time alerts for all key events |
 
 ---
 
 ## 📦 Installation & Setup
 
 ### Prerequisites
-* Node.js (v16 or higher)
-* MongoDB (Running locally or a cloud Atlas URI)
 
-### Backend Setup (Server & Database)
-Navigate to the backend folder:
+- **Node.js** v16 or higher
+- **MongoDB** (Local instance or MongoDB Atlas URI)
+- **npm** or **yarn**
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/moubarak-01/FamLink.git
+cd FamLink
+```
+
+### 2. Backend Setup
 
 ```bash
 cd backend
 npm install
 npm run start:dev
-The server will start on http://localhost:3001.
+```
 
-Frontend Setup
-Navigate to the root folder (open a new terminal):
+The server will start on `http://localhost:3001`.
 
-Bash
+### 3. Frontend Setup
 
-cd ..
+Open a new terminal in the root directory:
+
+```bash
 npm install
 npm run dev
-The app will open at http://localhost:5173.
+```
 
-⚙️ Environment Configuration (Crucial)
-To run this project locally without errors, you must configure environment variables correctly for both the Frontend and Backend. They are separate.
+The app will open at `http://localhost:5173`.
 
-1. Frontend Environment (Root Directory)
-Create a file named .env.local in the project root and add the following content:
+---
 
-Code snippet
+## ⚙️ Environment Configuration
 
-# Required for AI Assessment and Assistant (Gemini)
-VITE_GEMINI_API_KEY=AIzaSyC... (Your Google Gemini API Key)
-# NEW: Required for Perplexity AI Fallback
-VITE_PPLX_API_KEY=pplx-sk-... (Your Perplexity AI API Key)
-2. Backend Environment (/backend Directory)
-Create a file named .env inside the /backend/ folder and add the following content:
+### Frontend Environment (Root Directory)
 
-Code snippet
+Create a file named `.env.local` in the project root:
 
+```env
+# Google Gemini API (Primary AI)
+VITE_GEMINI_API_KEY=AIzaSyC...
+
+# Perplexity AI (Fallback)
+VITE_PPLX_API_KEY=pplx-sk-...
+
+# OpenRouter (Free Tier AI)
+VITE_OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+### Backend Environment (`/backend/.env`)
+
+Create a file named `.env` inside the `/backend/` folder:
+
+```env
+# MongoDB Connection
 MONGO_URI=mongodb://localhost:27017/famlink
+
+# JWT Secret (Change in production!)
 JWT_SECRET=super_secure_secret_key_change_this
+
+# Server Port
 PORT=3001
-STRIPE_SECRET_KEY=sk_test_placeholder_key
-# New GeoDB API Key (Get from RapidAPI)
+
+# Stripe Payment Processing
+STRIPE_SECRET_KEY=sk_test_...
+
+# GeoDB API (Get from RapidAPI)
 GEODB_API_KEY=your_rapidapi_key_here
-🌟 Features Overview
-🛡️ Safety & Trust
-AI-Powered Assessment: Nannies undergo a 15-question exam evaluated by Gemini AI for empathy and safety.
+```
 
-Authentication: Secure JWT-based login and signup for Parents and Nannies.
+---
 
-🤖 AI Assistant
-Context-Aware: A floating chatbot (Gemini 2.5 Flash) that helps users navigate the app and answers parenting questions.
+## 📂 Project Structure
 
-Multilingual: Supports 6 languages natively.
+```
+FamLink/
+├── App.tsx                    # Main application logic & routing (671 lines)
+├── index.tsx                  # React entry point with ErrorBoundary
+├── types.ts                   # TypeScript interfaces (222 lines)
+├── constants.ts               # AI models, assessment questions, configs
+├── index.css                  # Global styles & CSS variables
+│
+├── components/                # React UI Components (41 files)
+│   ├── AiAssistant.tsx        # Draggable AI chat (420 lines)
+│   ├── ChatModal.tsx          # Main messaging interface
+│   ├── DashboardScreen.tsx    # Parent/Nanny dashboards (517 lines)
+│   ├── Questionnaire.tsx      # 50-question nanny assessment
+│   ├── chat/                  # Chat sub-components
+│   │   ├── MessageBubble.tsx
+│   │   ├── MessageContent.tsx
+│   │   ├── ReactionPicker.tsx
+│   │   └── ReplyPreview.tsx
+│   ├── dashboard/             # Dashboard widgets
+│   │   ├── DashboardWidgets.tsx
+│   │   ├── NannyDashboard.tsx
+│   │   └── ParentDashboard.tsx
+│   └── login/                 # 3D login experience
+│       ├── GlassForm.tsx
+│       ├── LoginScene.tsx
+│       └── MockCodeFooter.tsx
+│
+├── services/                  # API & Service Layer (15 files)
+│   ├── geminiService.ts       # AI integration (466 lines, 3-tier waterfall)
+│   ├── socketService.ts       # WebSocket connection manager
+│   ├── chatService.ts         # Messaging methods
+│   ├── cryptoService.ts       # E2E encryption utilities
+│   ├── api.ts                 # Axios HTTP client
+│   └── [feature]Service.ts    # Activity, Booking, Marketplace, etc.
+│
+├── contexts/                  # React Context Providers
+│   ├── LanguageContext.tsx    # i18n with 6 languages
+│   └── ThemeContext.tsx       # Light/Dark theme toggle
+│
+├── hooks/                     # Custom React Hooks
+│   ├── useAppData.ts          # Data fetching & state
+│   ├── useAppLogic.ts         # Business logic handlers
+│   └── useSocketListeners.ts  # Real-time event handlers
+│
+├── locales/                   # Internationalization (6 languages)
+│   ├── en.ts                  # English (37KB)
+│   ├── fr.ts                  # French
+│   ├── es.ts                  # Spanish
+│   ├── ja.ts                  # Japanese
+│   ├── zh.ts                  # Chinese
+│   └── ar.ts                  # Arabic (47KB - largest due to RTL)
+│
+├── backend/                   # NestJS Backend (54 src files)
+│   └── src/
+│       ├── main.ts            # Server entry point
+│       ├── app.module.ts      # Root module
+│       ├── schemas/           # MongoDB Models (9 schemas)
+│       │   ├── user.schema.ts
+│       │   ├── booking.schema.ts
+│       │   ├── message.schema.ts
+│       │   └── ...
+│       ├── auth/              # JWT Authentication
+│       ├── chat/              # WebSocket Gateway
+│       ├── bookings/          # Booking CRUD
+│       ├── activities/        # Community activities
+│       ├── outings/           # Child outings
+│       ├── marketplace/       # Skill marketplace
+│       ├── notifications/     # Real-time alerts
+│       ├── payment/           # Stripe integration
+│       ├── reviews/           # Rating system
+│       └── locations/         # GeoDB proxy
+│
+└── package.json               # Frontend dependencies
+```
 
-Shortcuts: Use Shift + N to toggle open/close; Shift + A to toggle visibility.
+---
 
-👥 Community & Marketplace
-Mom-to-Mom Activities: Schedule playdates, walks, and workouts.
+## 📡 API Reference
 
-Child Outing Sharing: Coordinate group outings to share costs and supervision.
+### Authentication
 
-Skill Marketplace: Post tasks (cleaning, tutoring) and receive offers from the community.
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `POST` | `/auth/register` | Create new user account |
+| `POST` | `/auth/login` | Authenticate and receive JWT |
+| `GET` | `/auth/profile` | Get current user profile |
 
-💼 Management Dashboard
-Bookings: Full booking lifecycle (Request -> Accept/Decline -> Complete).
+### Bookings
 
-Real-time Chat: Instant messaging with robust persistence, E2E encryption, and read receipts.
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| `GET` | `/bookings` | List all bookings |
+| `POST` | `/bookings` | Create booking request |
+| `PATCH` | `/bookings/:id/status` | Update booking status |
+| `DELETE` | `/bookings/:id` | Cancel booking |
 
-Notifications: Real-time alerts for all key events.
+### Real-time Events (WebSocket)
 
-Tasks: Assign specific to-do items to hired nannies.
+| Event | Direction | Description |
+|:------|:---------:|:------------|
+| `message` | ↔️ | Chat message send/receive |
+| `notification` | ← | New notification alert |
+| `booking_update` | ← | Booking status change |
+| `typing` | ↔️ | User typing indicator |
 
-📂 Folder Structure
-Bash
+---
 
-/                               # Frontend Root
-├── src/
-│   ├── components/             # React UI Components
-│   │   └── chat/               # (ReactionPicker, MessageBubble, etc.)
-│   ├── services/               # API Clients (Axios, Socket.io, chatService, cryptoService, locationService)
-│   ├── contexts/               # React Contexts (Theme, Language)
-│   ├── hooks/                  # Custom Hooks (useAppLogic, useSocketListeners)
-│   ├── App.tsx                 # Main Logic & Routing
-│   └── types.ts                # TypeScript Interfaces (Updated for E2E)
-├── backend/                    # Backend Root (NestJS)
-│   ├── src/
-│   │   ├── schemas/            # MongoDB Models 
-│   │   ├── chat/               # WebSocket Gateway, Chat Controller & Service
-│   │   ├── locations/          # New GeoDB Proxy Module
-│   │   ├── notifications/      # Real-time Alert System
-│   │   └── [modules]/          # Feature Modules (Auth, Bookings, Activities, etc.)
-└── package.json                # Frontend Dependencies
+## 🚧 Known Issues & Roadmap
+
+### Current Limitations
+
+| Issue | Status | Notes |
+|:------|:------:|:------|
+| Chat button on accepted booking | Stalled | Needs conditional render implementation |
+| Native emoji picker | Failed QA | Multi-byte character handling issues |
+
+### Roadmap
+
+- [ ] **Fix AuthService** - Use `bcrypt.compare` for password verification
+- [ ] **Email Verification** - Add email confirmation flow
+- [ ] **Push Notifications** - Add Firebase Cloud Messaging
+- [ ] **Calendar Integration** - Google/Apple Calendar sync
+- [ ] **Video Chat** - WebRTC integration for video calls
+
+---
+
+## 🛠️ Development
+
+### Available Scripts
+
+**Frontend:**
+```bash
+npm run dev       # Start development server
+npm run build     # Build for production
+npm run preview   # Preview production build
+```
+
+**Backend:**
+```bash
+npm run start:dev   # Start with hot reload
+npm run start:prod  # Production mode
+npm run build       # Compile TypeScript
+npm run lint        # ESLint with auto-fix
+```
+
+### Testing
+
+```bash
+# Backend unit tests
+cd backend
+npm run test
+
+# E2E tests (Cypress)
+npm run cypress:open
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is **UNLICENSED** - private and proprietary.
+
+---
+
+## 👨‍💻 Author
+
+**Moubarak**
+
+- GitHub: [@moubarak-01](https://github.com/moubarak-01)
+
+---
+
+<div align="center">
+
+Made with ❤️ for families everywhere
+
+**FamLink** - *Empowering Mothers, Protecting Children*
+
+</div>
