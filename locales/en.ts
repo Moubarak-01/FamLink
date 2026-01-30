@@ -31,7 +31,7 @@ export const en = {
     welcome_already_account: "Already have an account?",
     button_login: "Log In",
     button_signup: "Sign Up",
-    
+
     // Navigation Buttons
     button_back: "Back",
     button_next: "Next",
@@ -53,6 +53,8 @@ export const en = {
     form_remember_me: "Remember me",
     form_forgot_password: "Forgot your password?",
     login_no_account: "Don't have an account?",
+    welcome_no_account: "Don't have an account?",
+    button_forgot_password: "Forgot Password?",
     forgot_password_title: "Forgot Password?",
     forgot_password_subtitle: "Enter your email and we'll send you a link to reset your password.",
     forgot_password_button: "Send Reset Link",
@@ -127,7 +129,7 @@ export const en = {
     payment_cvv: "CVV",
     button_pay_now: "Pay €{price} Now",
     button_processing: "Processing...",
-    
+
     // Dashboard
     dashboard_title: "My Dashboard",
     dashboard_welcome: "Welcome",
@@ -217,7 +219,7 @@ export const en = {
     community_view_list: "List View",
     community_view_calendar: "Calendar View",
     community_no_activities_for_date: "No activities scheduled for this date.",
-    
+
     // Chat
     chat_modal_title: "Activity Chat",
     chat_placeholder: "Type your message...",
@@ -308,7 +310,7 @@ export const en = {
     button_rated: "Rated",
     button_accept: "Accept",
     button_decline: "Decline",
-    
+
     // Profile Detail
     nanny_profile_title: "Nanny Profile",
     nanny_profile_experience: "Experience",
@@ -346,11 +348,11 @@ export const en = {
     booking_status_pending: "Pending",
     booking_status_accepted: "Accepted",
     booking_status_declined: "Declined",
-    
+
     // Footer
     footer_text: "© 2025 FamLink. Relieve parents, empower families by",
     footer_rights_reserved: ". All Rights Reserved",
-    
+
     // Errors & Alerts
     account_suspended_title: "Account Suspended",
     account_suspended_message: "You have failed the assessment multiple times. For security purposes, your account has been temporarily suspended.",

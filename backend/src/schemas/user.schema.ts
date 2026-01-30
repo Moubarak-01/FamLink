@@ -98,6 +98,9 @@ export class User {
   @Prop()
   lastSeen: Date;
 
+  @Prop()
+  location: string;
+
   // Parent specific fields
   @Prop({ type: [ChildSchema], default: [] })
   children: Child[];
@@ -124,7 +127,7 @@ export class User {
   @Prop({ type: Subscription })
   subscription: Subscription;
 
-  @Prop([String]) 
+  @Prop([String])
   addedNannyIds: string[];
 }
 

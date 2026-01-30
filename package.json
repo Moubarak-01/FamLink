@@ -10,8 +10,13 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@types/three": "^0.182.0",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
+    "framer-motion": "^11.18.2",
+    "framer-motion-3d": "^11.3.17",
     "libphonenumber-js": "1.10.18",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -20,7 +25,8 @@
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

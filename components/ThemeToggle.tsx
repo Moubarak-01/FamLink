@@ -4,9 +4,21 @@ import { useTheme } from '../contexts/ThemeContext';
 const ThemeToggle: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
 
+    const toggleWithTransition = async () => {
+        // @ts-ignore - View Transition API is experimental/new
+        if (!document.startViewTransition) {
+            toggleTheme();
+            return;
+        }
+
+        await document.startViewTransition(() => {
+            toggleTheme();
+        }).ready;
+    };
+
     return (
         <button
-            onClick={toggleTheme}
+            onClick={toggleWithTransition}
             className={`
                 p-2 rounded-full transition-all duration-500 ease-in-out
                 ${theme === 'dark'

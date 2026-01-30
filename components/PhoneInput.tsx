@@ -19,11 +19,11 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, label, require
 
   useEffect(() => {
     if (forcedIsoCode) {
-        // Ensure the ISO code is valid (2 chars, uppercase) for the library
-        const validIso = forcedIsoCode.toUpperCase() as Country;
-        if (validIso !== country) {
-            setCountry(validIso);
-        }
+      // Ensure the ISO code is valid (2 chars, uppercase) for the library
+      const validIso = forcedIsoCode.toUpperCase() as Country;
+      if (validIso !== country) {
+        setCountry(validIso);
+      }
     }
   }, [forcedIsoCode]);
 
@@ -41,7 +41,9 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ value, onChange, label, require
           value={value}
           onChange={(val: string) => onChange(val || '')}
           className={`PhoneInput flex items-center p-0.5`}
-          inputClassName="PhoneInputInput bg-transparent border-none focus:ring-0 text-[var(--text-primary)] placeholder-gray-400 h-full py-2"
+          numberInputProps={{
+            className: "PhoneInputInput bg-transparent border-none focus:ring-0 text-[var(--text-primary)] placeholder-gray-400 h-full py-2 w-full focus:outline-none"
+          }}
           countrySelectProps={{ className: "bg-transparent border-none focus:ring-0 cursor-pointer" }}
           required={required}
           limitMaxLength={true}

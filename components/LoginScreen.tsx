@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import AuthLayout, { formContainerVariants, formItemVariants } from './AuthLayout';
 
 interface LoginScreenProps {
   onLogin: (email: string, pass: string, rememberMe: boolean) => void;
@@ -12,28 +14,38 @@ interface LoginScreenProps {
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack, onSignUp, onForgotPassword, error }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { t } = useLanguage();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(email, password, rememberMe);
+    onLogin(email, password, false);
   };
 
   return (
-    <div className="p-8">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t('login_title')}</h2>
-        <p className="text-[var(--text-secondary)]">{t('login_subtitle')}</p>
-      </div>
-      
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-        <span className="block sm:inline">{error}</span>
-      </div>}
+    <AuthLayout title={t('login_title')} subtitle={t('login_subtitle')}>
+      {error && (
+        <motion.div
+          className="bg-red-500/20 backdrop-blur-sm border border-red-400/50 text-red-200 px-4 py-3 rounded-xl relative mb-4"
+          role="alert"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <span className="block sm:inline">{error}</span>
+        </motion.div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-[var(--text-secondary)]">{t('form_email_label')}</label>
+      <motion.form
+        onSubmit={handleSubmit}
+        className="space-y-5"
+        variants={formContainerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={formItemVariants}>
+          <label htmlFor="email" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+            {t('form_email_label')}
+          </label>
           <input
             type="email"
             id="email"
@@ -41,66 +53,93 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack, onSignUp, on
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]"
+            className="auth-input w-full px-4 py-3"
+            placeholder="jane@example.com"
           />
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-[var(--text-secondary)]">{t('form_password_label')}</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            className="mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-            <div className="flex items-center">
-                <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="custom-checkbox"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-[var(--text-primary)]">
-                {t('form_remember_me')}
-                </label>
-            </div>
-            <div className="text-sm">
-                <button type="button" onClick={onForgotPassword} className="font-medium text-[var(--text-accent)] hover:text-[var(--accent-primary)]">
-                {t('form_forgot_password')}
-                </button>
-            </div>
-        </div>
-        <div>
-          <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--ring-accent)]">
+        </motion.div>
+
+        <motion.div variants={formItemVariants}>
+          <div className="flex justify-between items-center mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-[var(--text-secondary)]">
+              {t('form_password_label')}
+            </label>
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-xs font-medium text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors"
+            >
+              {t('button_forgot_password')}
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="auth-input w-full px-4 py-3 pr-10"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--accent-primary)] transition-colors"
+            >
+              {showPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                  <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.742L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </motion.div>
+
+        <motion.div variants={formItemVariants}>
+          <button
+            type="submit"
+            className="w-full py-3 px-4 rounded-full font-semibold text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--ring-accent)] shadow-lg shadow-pink-500/25 transform hover:scale-[1.02] transition-all duration-200"
+          >
             {t('button_login')}
           </button>
-        </div>
-      </form>
-      
-      <div className="mt-6 text-center">
-          <p className="text-sm text-[var(--text-secondary)]">
-              {t('login_no_account')}{' '}
-              <button onClick={onSignUp} className="font-medium text-[var(--text-accent)] hover:text-[var(--accent-primary)]">
-                  {t('button_signup')}
-              </button>
-          </p>
-      </div>
+        </motion.div>
+      </motion.form>
 
-      <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex justify-start">
+      <motion.div
+        className="mt-6 text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+      >
+        <p className="text-sm text-[var(--text-secondary)]">
+          {t('welcome_no_account')}{' '}
+          <button onClick={onSignUp} className="font-medium text-[var(--text-accent)] hover:text-[var(--accent-primary)] transition-colors">
+            {t('button_signup')}
+          </button>
+        </p>
+      </motion.div>
+
+      <motion.div
+        className="mt-6 pt-6 border-t border-white/10 flex justify-start"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+      >
         <button
           onClick={onBack}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full"
+          className="auth-btn-secondary font-bold py-2 px-6 rounded-full backdrop-blur-sm shadow-sm text-sm"
         >
           {t('button_back')}
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </AuthLayout>
   );
 };
 

@@ -42,7 +42,7 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates = [], onDateChange, 
   for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
     daysInMonth.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
   }
-  
+
   const handlePrevMonth = (e: React.MouseEvent) => {
     e.preventDefault();
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -52,10 +52,10 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates = [], onDateChange, 
     e.preventDefault();
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
-  
+
   const handleDateClick = (day: Date) => {
     if (!isEditable) return;
-    
+
     const year = day.getFullYear();
     const month = String(day.getMonth() + 1).padStart(2, '0');
     const d = String(day.getDate()).padStart(2, '0');
@@ -69,16 +69,22 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates = [], onDateChange, 
   };
 
   return (
-    <div className="bg-[var(--bg-input)] p-4 rounded-lg border border-[var(--border-color)]">
-      <div className="flex justify-between items-center mb-4">
-        <button type="button" onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]">&larr;</button>
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-        <button type="button" onClick={handleNextMonth} className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]">&rarr;</button>
+    <div className="w-full max-w-[900px] mx-auto bg-[var(--bg-input)] p-6 rounded-2xl border border-white/10 shadow-xl transition-all duration-300">
+      <div className="flex justify-between items-center mb-8 px-2">
+        <button type="button" onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] transition-colors">&larr;</button>
+        <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-wide">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+        <button type="button" onClick={handleNextMonth} className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] transition-colors">&rarr;</button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-sm text-[var(--text-light)] mb-2">
-        {dayNames.map(day => <div key={day}>{day}</div>)}
+
+      <div className="grid grid-cols-7 gap-y-4 mb-4">
+        {dayNames.map(day => (
+          <div key={day} className="text-center text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+            {day}
+          </div>
+        ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+
+      <div className="grid grid-cols-7 gap-y-2 gap-x-1 justify-items-center">
         {daysInMonth.map((day, index) => {
           if (!day) return <div key={`empty-${index}`} />;
 
@@ -90,24 +96,23 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates = [], onDateChange, 
           const isToday = day.getTime() === today.getTime();
           const isAvailable = safeAvailableDates.includes(dateString);
           const isPast = day < today;
-          
-          // This logic ensures pending dates (which are removed from safeAvailableDates) appear disabled
           const isDisabled = isPast || (restrictToAvailable && !isAvailable);
 
-          let buttonClass = "w-full aspect-square flex items-center justify-center rounded-full text-sm transition-colors duration-200";
+          let buttonClass = "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full text-sm transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]";
 
           if (isDisabled) {
-            buttonClass += " text-gray-300 dark:text-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800";
+            buttonClass += " text-gray-300 dark:text-gray-700 cursor-not-allowed bg-transparent";
           } else if (isAvailable) {
-            buttonClass += " bg-[var(--accent-primary)] text-white font-bold shadow-sm";
-            if (isEditable) buttonClass += " hover:bg-[var(--accent-primary-hover)] hover:scale-105 transform";
+            buttonClass += " bg-[var(--accent-primary)] text-white font-bold shadow-md hover:shadow-lg";
+            if (isEditable) buttonClass += " hover:scale-110";
           } else {
             buttonClass += " text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]";
-            if (isToday) buttonClass += " border-2 border-[var(--accent-primary)] font-bold text-[var(--accent-primary)]";
+            if (isToday) buttonClass += " bg-[var(--bg-card)] border border-[var(--accent-primary)] text-[var(--accent-primary)] font-bold shadow-[0_0_15px_rgba(236,72,153,0.3)]";
+            if (isEditable) buttonClass += " hover:scale-110 hover:bg-[var(--bg-card-subtle)]";
           }
 
           return (
-            <div key={day.toString()}>
+            <div key={day.toString()} className="flex justify-center items-center">
               <button
                 type="button"
                 onClick={() => handleDateClick(day)}

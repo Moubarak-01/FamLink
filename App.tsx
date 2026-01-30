@@ -649,7 +649,7 @@ const App: React.FC = () => {
         onNotificationClick={handleNotificationClick}
         noiseReductionEnabled={noiseReductionEnabled}
       />
-      <main className={`w-full mx-auto p-4 sm:p-6 md:p-8 flex-grow transition-all duration-500 ${isWideScreen ? 'max-w-[95%] xl:max-w-[1400px]' : 'max-w-xl'}`}>
+      <main className={`w-full mx-auto p-4 pt-20 sm:p-6 sm:pt-24 md:p-8 md:pt-28 flex-grow transition-all duration-500 ${isWideScreen ? 'max-w-[95%] xl:max-w-[1400px]' : 'max-w-xl'}`}>
         <div className={`transition-all duration-500 ${isWideScreen ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
           {renderScreen()}
         </div>

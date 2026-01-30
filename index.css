@@ -18,12 +18,23 @@
     --glass-bg-light: rgba(255, 255, 255, 0.4);
     --glass-border-light: rgba(0, 0, 0, 0.05);
     --text-main-light: #0f172a;
-    /* Slate-900 for max contrast */
+
+    /* AUTH VARIABLES - LIGHT */
+    --auth-card-bg: rgba(255, 255, 255, 0.6);
+    --auth-card-border: rgba(255, 255, 255, 0.4);
+    --auth-input-bg: rgba(0, 0, 0, 0.03);
+    --auth-input-border: rgba(0, 0, 0, 0.05);
+    --auth-input-text: #0f172a;
+    --auth-input-placeholder: #94a3b8;
 
     /* 3. HIGH-CONTRAST INTERACTIVE ELEMENTS - Light Mode Buttons */
     --btn-primary-bg-light: #1e293b;
     /* Deep Navy/Charcoal */
     --btn-primary-text-light: #ffffff;
+
+    --btn-secondary-bg-light: rgba(0, 0, 0, 0.05);
+    --btn-secondary-hover-light: rgba(0, 0, 0, 0.1);
+    --btn-secondary-text-light: #1e293b;
 }
 
 /* 1. DYNAMIC IMMERSIVE CANVAS - Dark Mode (Base) */
@@ -44,11 +55,23 @@
     --glass-border-dark: rgba(255, 255, 255, 0.2);
     --text-main-dark: rgba(255, 255, 255, 0.95);
 
+    /* AUTH VARIABLES - DARK */
+    --auth-card-bg: rgba(255, 255, 255, 0.05);
+    --auth-card-border: rgba(255, 255, 255, 0.1);
+    --auth-input-bg: rgba(255, 255, 255, 0.05);
+    --auth-input-border: rgba(255, 255, 255, 0.1);
+    --auth-input-text: rgba(255, 255, 255, 0.95);
+    --auth-input-placeholder: rgba(255, 255, 255, 0.4);
+
     /* 3. HIGH-CONTRAST INTERACTIVE ELEMENTS - Dark Mode Buttons */
     --btn-primary-bg-dark: rgba(255, 255, 255, 0.9);
     /* Solid White/Glowing */
     --btn-primary-text-dark: #0f172a;
     /* Black Text */
+
+    --btn-secondary-bg-dark: rgba(255, 255, 255, 0.1);
+    --btn-secondary-hover-dark: rgba(255, 255, 255, 0.2);
+    --btn-secondary-text-dark: #ffffff;
 }
 
 body {
@@ -94,4 +117,54 @@ code {
 .spring-hover:hover {
     transform: scale(1.02);
     /* +2% scale as per blueprint */
+}
+
+/* ===========================================
+   VIEW TRANSITIONS API (Circular Wipe)
+   =========================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* ===========================================
+   FROSTED GLASS AUTH CARD (Dual-Mode)
+   =========================================== */
+.auth-glass-card {
+    /* Dynamic Background & Border */
+    background: var(--auth-card-bg);
+    border: 1px solid var(--auth-card-border);
+
+    /* Blur Effect */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    border-radius: 32px;
+
+    /* Shadows based on mode - handled via extra classes or generic shadow */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    transition: all 0.5s ease-in-out;
+}
+
+/* Adaptive Inputs */
+.auth-input {
+    background: var(--auth-input-bg);
+    border: 1px solid var(--auth-input-border);
+    color: var(--auth-input-text);
+    border-radius: 12px;
+
+    transition: all 0.3s ease-in-out;
+}
+
+.auth-input::placeholder {
+    color: var(--auth-input-placeholder);
+}
+
+.auth-input:focus {
+    background: transparent;
+    border-color: var(--accent-primary, #ec4899);
+    outline: none;
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
 }

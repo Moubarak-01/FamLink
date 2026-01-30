@@ -1,292 +1,424 @@
-
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FamLink – Empowering Mothers</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Official CSS for react-phone-number-input -->
-    <link rel="stylesheet" href="https://unpkg.com/react-phone-number-input@3.x/style.css" />
-    <style>
-      :root {
-        --bg-page: #fdf2f8; /* pink-50 */
-        --bg-card: #ffffff;
-        --bg-card-subtle: #f9fafb; /* gray-50 */
-        --bg-input: #ffffff;
-        --bg-hover: #f9fafb; /* gray-50 */
-        --bg-accent-light: #fff1f2; /* pink-100 */
-        --text-primary: #1f2937; /* gray-800 */
-        --text-secondary: #4b5563; /* gray-600 */
-        --text-light: #6b7280; /* gray-500 */
-        --text-accent: #db2777; /* pink-600 */
-        --text-inverted: #ffffff;
-        --border-color: #e5e7eb; /* gray-200 */
-        --border-input: #d1d5db; /* gray-300 */
-        --border-accent: #ec4899; /* pink-500 */
-        --ring-accent: #ec4899;
-        --accent-primary: #ec4899; /* pink-500 */
-        --accent-primary-hover: #db2777; /* pink-600 */
-        --accent-secondary: #a855f7; /* purple-500 */
-        --accent-secondary-hover: #9333ea; /* purple-600 */
-        --accent-green: #10b981;
-        --accent-yellow: #f59e0b;
-        --accent-red: #ef4444;
-        --accent-blue: #3b82f6;
-        --shadow-color: rgba(0, 0, 0, 0.1);
-        --header-bg: rgba(255, 255, 255, 0.8);
-        --header-border: #e5e7eb; /* gray-200 */
-        --header-text: #4b5563; /* gray-600 */
-        --header-text-strong: #1f2937; /* gray-800 */
-        --header-icon-bg: #f3f4f6;
-        --header-icon-fg: #4b5563;
-        --modal-overlay: rgba(0, 0, 0, 0.6);
 
-        /* Themed Accent Cards */
-        --bg-purple-card: #f5f3ff;
-        --text-purple-card-header: #4c1d95;
-        --text-purple-card-body: #5b21b6;
-        --border-purple-card: #e9d5ff;
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/famlink-icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FamLink – Empowering Mothers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Official CSS for react-phone-number-input -->
+  <link rel="stylesheet" href="https://unpkg.com/react-phone-number-input@3.x/style.css" />
+  <style>
+    :root {
+      --bg-page: #fdf2f8;
+      /* pink-50 */
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f9fafb;
+      /* gray-50 */
+      --bg-input: #ffffff;
+      --bg-hover: #f9fafb;
+      /* gray-50 */
+      --bg-accent-light: #fff1f2;
+      /* pink-100 */
+      --text-primary: #1f2937;
+      /* gray-800 */
+      --text-secondary: #4b5563;
+      /* gray-600 */
+      --text-light: #6b7280;
+      /* gray-500 */
+      --text-accent: #db2777;
+      /* pink-600 */
+      --text-inverted: #ffffff;
+      --border-color: #e5e7eb;
+      /* gray-200 */
+      --border-input: #d1d5db;
+      /* gray-300 */
+      --border-accent: #ec4899;
+      /* pink-500 */
+      --ring-accent: #ec4899;
+      --accent-primary: #ec4899;
+      /* pink-500 */
+      --accent-primary-hover: #db2777;
+      /* pink-600 */
+      --accent-secondary: #a855f7;
+      /* purple-500 */
+      --accent-secondary-hover: #9333ea;
+      /* purple-600 */
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-blue: #3b82f6;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --header-bg: rgba(255, 255, 255, 0.8);
+      --header-border: #e5e7eb;
+      /* gray-200 */
+      --header-text: #4b5563;
+      /* gray-600 */
+      --header-text-strong: #1f2937;
+      /* gray-800 */
+      --header-icon-bg: #f3f4f6;
+      --header-icon-fg: #4b5563;
+      --modal-overlay: rgba(0, 0, 0, 0.6);
 
-        --bg-teal-card: #f0fdfa;
-        --text-teal-card-header: #115e59;
-        --text-teal-card-body: #134e4a;
-        --border-teal-card: #ccfbf1;
+      /* Themed Accent Cards */
+      --bg-purple-card: #f5f3ff;
+      --text-purple-card-header: #4c1d95;
+      --text-purple-card-body: #5b21b6;
+      --border-purple-card: #e9d5ff;
 
-        --bg-blue-card: #eff6ff;
-        --text-blue-card-header: #1e3a8a;
-        --text-blue-card-body: #1e40af;
-        --border-blue-card: #bfdbfe;
+      --bg-teal-card: #f0fdfa;
+      --text-teal-card-header: #115e59;
+      --text-teal-card-body: #134e4a;
+      --border-teal-card: #ccfbf1;
 
-        --bg-pink-card: #fff1f2;
-        --text-pink-card-header: #9d174d;
-        --text-pink-card-body: #be185d;
-        --border-pink-card: #fbcfe8;
+      --bg-blue-card: #eff6ff;
+      --text-blue-card-header: #1e3a8a;
+      --text-blue-card-body: #1e40af;
+      --border-blue-card: #bfdbfe;
 
-        /* Status Tags */
-        --bg-status-yellow: #fef3c7;
-        --text-status-yellow: #92400e;
-        --bg-status-green: #d1fae5;
-        --text-status-green: #065f46;
-        --bg-status-red: #fee2e2;
-        --text-status-red: #991b1b;
-      }
-      
-      html[data-theme='dark'] {
-        --bg-page: #111827; /* gray-900 */
-        --bg-card: #1f2937; /* gray-800 */
-        --bg-card-subtle: #374151; /* gray-700 */
-        --bg-input: #374151; /* gray-700 */
-        --bg-hover: #374151; /* gray-700 */
-        --bg-accent-light: #4a2237;
-        --text-primary: #f3f4f6; /* gray-100 */
-        --text-secondary: #9ca3af; /* gray-400 */
-        --text-light: #6b7280; /* gray-500 */
-        --text-accent: #f9a8d4; /* pink-300 */
-        --text-inverted: #1f2937;
-        --border-color: #374151; /* gray-700 */
-        --border-input: #4b5563; /* gray-600 */
-        --border-accent: #f472b6; /* pink-400 */
-        --ring-accent: #f472b6;
-        --accent-primary: #f472b6; /* pink-400 */
-        --accent-primary-hover: #f9a8d4; /* pink-300 */
-        --accent-secondary: #c084fc; /* purple-400 */
-        --accent-secondary-hover: #d8b4fe; /* purple-300 */
-        --accent-green: #34d399;
-        --accent-yellow: #fbbf24;
-        --accent-red: #f87171;
-        --accent-blue: #60a5fa;
-        --shadow-color: rgba(0, 0, 0, 0.4);
-        --header-bg: rgba(17, 24, 39, 0.9);
-        --header-border: #374151;
-        --header-text: #9ca3af; /* gray-400 */
-        --header-text-strong: #ffffff;
-        --header-icon-bg: #374151;
-        --header-icon-fg: #d1d5db;
-        --modal-overlay: rgba(0, 0, 0, 0.8);
+      --bg-pink-card: #fff1f2;
+      --text-pink-card-header: #9d174d;
+      --text-pink-card-body: #be185d;
+      --border-pink-card: #fbcfe8;
 
-        /* Themed Accent Cards */
-        --bg-purple-card: rgba(76, 29, 149, 0.3);
-        --text-purple-card-header: #c4b5fd;
-        --text-purple-card-body: #d8b4fe;
-        --border-purple-card: rgba(126, 34, 206, 0.5);
+      /* Status Tags */
+      --bg-status-yellow: #fef3c7;
+      --text-status-yellow: #92400e;
+      --bg-status-green: #d1fae5;
+      --text-status-green: #065f46;
+      --bg-status-red: #fee2e2;
+      --text-status-red: #991b1b;
+    }
 
-        --bg-teal-card: rgba(15, 76, 70, 0.3);
-        --text-teal-card-header: #99f6e4;
-        --text-teal-card-body: #a7f3d0;
-        --border-teal-card: rgba(20, 129, 121, 0.5);
+    html[data-theme='dark'] {
+      --bg-page: #111827;
+      /* gray-900 */
+      --bg-card: #1f2937;
+      /* gray-800 */
+      --bg-card-subtle: #374151;
+      /* gray-700 */
+      --bg-input: #374151;
+      /* gray-700 */
+      --bg-hover: #374151;
+      /* gray-700 */
+      --bg-accent-light: #4a2237;
+      --text-primary: #f3f4f6;
+      /* gray-100 */
+      --text-secondary: #9ca3af;
+      /* gray-400 */
+      --text-light: #6b7280;
+      /* gray-500 */
+      --text-accent: #f9a8d4;
+      /* pink-300 */
+      --text-inverted: #1f2937;
+      --border-color: #374151;
+      /* gray-700 */
+      --border-input: #4b5563;
+      /* gray-600 */
+      --border-accent: #f472b6;
+      /* pink-400 */
+      --ring-accent: #f472b6;
+      --accent-primary: #f472b6;
+      /* pink-400 */
+      --accent-primary-hover: #f9a8d4;
+      /* pink-300 */
+      --accent-secondary: #c084fc;
+      /* purple-400 */
+      --accent-secondary-hover: #d8b4fe;
+      /* purple-300 */
+      --accent-green: #34d399;
+      --accent-yellow: #fbbf24;
+      --accent-red: #f87171;
+      --accent-blue: #60a5fa;
+      --shadow-color: rgba(0, 0, 0, 0.4);
+      --header-bg: rgba(17, 24, 39, 0.9);
+      --header-border: #374151;
+      --header-text: #9ca3af;
+      /* gray-400 */
+      --header-text-strong: #ffffff;
+      --header-icon-bg: #374151;
+      --header-icon-fg: #d1d5db;
+      --modal-overlay: rgba(0, 0, 0, 0.8);
 
-        --bg-blue-card: rgba(30, 64, 175, 0.3);
-        --text-blue-card-header: #93c5fd;
-        --text-blue-card-body: #bfdbfe;
-        --border-blue-card: rgba(59, 130, 246, 0.5);
+      /* Themed Accent Cards */
+      --bg-purple-card: rgba(76, 29, 149, 0.3);
+      --text-purple-card-header: #c4b5fd;
+      --text-purple-card-body: #d8b4fe;
+      --border-purple-card: rgba(126, 34, 206, 0.5);
 
-        --bg-pink-card: rgba(131, 24, 67, 0.3);
-        --text-pink-card-header: #fbcfe8;
-        --text-pink-card-body: #f9a8d4;
-        --border-pink-card: rgba(219, 39, 119, 0.5);
+      --bg-teal-card: rgba(15, 76, 70, 0.3);
+      --text-teal-card-header: #99f6e4;
+      --text-teal-card-body: #a7f3d0;
+      --border-teal-card: rgba(20, 129, 121, 0.5);
 
-        /* Status Tags */
-        --bg-status-yellow: rgba(217, 119, 6, 0.2);
-        --text-status-yellow: #fcd34d;
-        --bg-status-green: rgba(5, 150, 105, 0.2);
-        --text-status-green: #6ee7b7;
-        --bg-status-red: rgba(220, 38, 38, 0.2);
-        --text-status-red: #fca5a5;
-      }
+      --bg-blue-card: rgba(30, 64, 175, 0.3);
+      --text-blue-card-header: #93c5fd;
+      --text-blue-card-body: #bfdbfe;
+      --border-blue-card: rgba(59, 130, 246, 0.5);
 
-      body {
-        font-family: 'Poppins', sans-serif;
-        background-color: var(--bg-page);
-        color: var(--text-primary);
-        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-      }
+      --bg-pink-card: rgba(131, 24, 67, 0.3);
+      --text-pink-card-header: #fbcfe8;
+      --text-pink-card-body: #f9a8d4;
+      --border-pink-card: rgba(219, 39, 119, 0.5);
 
-      @keyframes rainbow-gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
+      /* Status Tags */
+      --bg-status-yellow: rgba(217, 119, 6, 0.2);
+      --text-status-yellow: #fcd34d;
+      --bg-status-green: rgba(5, 150, 105, 0.2);
+      --text-status-green: #6ee7b7;
+      --bg-status-red: rgba(220, 38, 38, 0.2);
+      --text-status-red: #fca5a5;
+    }
 
-      .animate-rainbow {
-        background: linear-gradient(
-          to right, 
-          #ff0000, #ff7f00, #ffff00, #00ff00, 
-          #0000ff, #4b0082, #9400d3, #ff0000
-        );
-        background-size: 200% auto;
-        color: transparent;
-        -webkit-background-clip: text;
-        background-clip: text;
-        animation: rainbow-gradient 7s ease infinite;
-      }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+    }
 
-      @keyframes subtle-glow {
-        0%, 100% {
-          text-shadow: 0 0 4px var(--accent-primary);
-        }
-        50% {
-          text-shadow: 0 0 12px var(--accent-primary);
-        }
-      }
+    /* =========================================
+         VIEW TRANSITIONS API - Circular Wipe
+         ========================================= */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none;
+      mix-blend-mode: normal;
+    }
 
-      .animate-subtle-glow {
-        animation: subtle-glow 3s ease-in-out infinite;
-      }
-      
-      /* Custom styles for the "Remember Me" checkbox */
-      .custom-checkbox {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        width: 1rem;
-        height: 1rem;
-        border: 1px solid var(--border-input);
-        border-radius: 0.25rem; /* rounded */
-        background-color: var(--bg-input);
-        display: inline-block;
-        position: relative;
-        cursor: pointer;
-        transition: background-color 0.2s, border-color 0.2s;
-      }
-      .custom-checkbox:checked {
-        border-color: var(--accent-blue);
-        background-color: var(--accent-blue);
-      }
-      .custom-checkbox:checked::after {
-        content: '';
-        position: absolute;
-        left: 0.25rem;
-        top: 0.05rem;
-        width: 0.35rem;
-        height: 0.65rem;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-      }
+    /* =========================================
+         GLASSMORPHISM AUTH CARD STYLES
+         ========================================= */
+    .auth-glass-card {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 2rem;
+      /* rounded-3xl = 32px */
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
 
-      /* Overrides for React Phone Number Input to match theme */
-      .PhoneInput {
-        display: flex;
-        align-items: center;
-        background-color: var(--bg-input);
-        border: 1px solid var(--border-input);
-        border-radius: 0.375rem; /* rounded-md */
-        padding-left: 0.75rem; /* px-3 */
-        transition: border-color 0.2s, box-shadow 0.2s;
-      }
+    /* Light Mode - Pastel Pink Halo */
+    .auth-glass-card-light {
+      background: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 8px 32px rgba(252, 231, 243, 0.8), 0 0 60px rgba(236, 72, 153, 0.15);
+    }
 
-      .PhoneInput:focus-within {
-        border-color: var(--border-accent);
-        box-shadow: 0 0 0 2px var(--ring-accent);
-      }
-      
-      .PhoneInput--error {
-        border-color: #ef4444 !important; /* red-500 */
-      }
-      .PhoneInput--error:focus-within {
-        box-shadow: 0 0 0 2px #ef4444 !important;
-      }
-      
-      .PhoneInputInput {
-        flex: 1;
-        min-width: 0;
-        background-color: transparent;
-        border: none;
-        padding: 0.5rem 0; /* py-2 */
-        padding-right: 0.75rem;
-        font-size: 0.875rem; /* text-sm */
-        color: var(--text-primary);
-        outline: none;
-      }
-      
-      .PhoneInputInput::placeholder {
-          color: #9ca3af; /* gray-400 */
+    /* Dark Mode - Pulsing Purple/Teal Glow */
+    html[data-theme='dark'] .auth-glass-card,
+    .dark .auth-glass-card {
+      background: rgba(255, 255, 255, 0.1);
+      animation: auth-pulse-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes auth-pulse-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.4),
+          0 0 40px rgba(20, 184, 166, 0.2),
+          inset 0 0 30px rgba(168, 85, 247, 0.05);
       }
 
-      .PhoneInputCountry {
-        margin-right: 0.5rem;
-        display: flex;
-        align-items: center;
-        position: relative;
+      50% {
+        box-shadow: 0 0 30px rgba(168, 85, 247, 0.6),
+          0 0 60px rgba(20, 184, 166, 0.4),
+          inset 0 0 40px rgba(168, 85, 247, 0.1);
+      }
+    }
+
+    /* Semi-transparent inputs for auth */
+    .auth-input {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .auth-input:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+    }
+
+    html:not([data-theme='dark']) .auth-input {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    html:not([data-theme='dark']) .auth-input:focus {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    @keyframes rainbow-gradient {
+      0% {
+        background-position: 0% 50%;
       }
 
-      .PhoneInputCountrySelect {
-        background-color: var(--bg-input);
-        color: var(--text-primary);
-        border: none;
-        opacity: 0; /* Hide the native select but keep it clickable over the flag */
-        cursor: pointer;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
+      50% {
+        background-position: 100% 50%;
       }
 
-      /* Ensure dropdown options are visible and styled correctly in both light and dark modes */
-      select, option {
-        background-color: #ffffff !important; /* Force white bg */
-        color: #1f2937 !important; /* Force dark text */
+      100% {
+        background-position: 0% 50%;
       }
-      
-      html[data-theme='dark'] select, 
-      html[data-theme='dark'] option {
-         background-color: #1f2937 !important; /* Dark gray bg */
-         color: #f3f4f6 !important; /* Light gray text */
+    }
+
+    .animate-rainbow {
+      background: linear-gradient(to right,
+          #ff0000, #ff7f00, #ffff00, #00ff00,
+          #0000ff, #4b0082, #9400d3, #ff0000);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: rainbow-gradient 7s ease infinite;
+    }
+
+    @keyframes subtle-glow {
+
+      0%,
+      100% {
+        text-shadow: 0 0 4px var(--accent-primary);
       }
 
-      :root {
-        --PhoneInputCountryFlag-height: 1rem;
-        --PhoneInputCountrySelectArrow-color: var(--text-secondary);
-        --PhoneInputCountrySelectArrow-opacity: 1;
+      50% {
+        text-shadow: 0 0 12px var(--accent-primary);
       }
-    </style>
+    }
+
+    .animate-subtle-glow {
+      animation: subtle-glow 3s ease-in-out infinite;
+    }
+
+    /* Custom styles for the "Remember Me" checkbox */
+    .custom-checkbox {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 1rem;
+      height: 1rem;
+      border: 1px solid var(--border-input);
+      border-radius: 0.25rem;
+      /* rounded */
+      background-color: var(--bg-input);
+      display: inline-block;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .custom-checkbox:checked {
+      border-color: var(--accent-blue);
+      background-color: var(--accent-blue);
+    }
+
+    .custom-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 0.25rem;
+      top: 0.05rem;
+      width: 0.35rem;
+      height: 0.65rem;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* Overrides for React Phone Number Input to match theme */
+    .PhoneInput {
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-input);
+      border-radius: 0.375rem;
+      /* rounded-md */
+      padding-left: 0.75rem;
+      /* px-3 */
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .PhoneInput:focus-within {
+      border-color: var(--border-accent);
+      box-shadow: 0 0 0 2px var(--ring-accent);
+    }
+
+    .PhoneInput--error {
+      border-color: #ef4444 !important;
+      /* red-500 */
+    }
+
+    .PhoneInput--error:focus-within {
+      box-shadow: 0 0 0 2px #ef4444 !important;
+    }
+
+    .PhoneInputInput {
+      flex: 1;
+      min-width: 0;
+      background-color: transparent;
+      border: none;
+      padding: 0.5rem 0;
+      /* py-2 */
+      padding-right: 0.75rem;
+      font-size: 0.875rem;
+      /* text-sm */
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .PhoneInputInput::placeholder {
+      color: #9ca3af;
+      /* gray-400 */
+    }
+
+    .PhoneInputCountry {
+      margin-right: 0.5rem;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .PhoneInputCountrySelect {
+      background-color: var(--bg-input);
+      color: var(--text-primary);
+      border: none;
+      opacity: 0;
+      /* Hide the native select but keep it clickable over the flag */
+      cursor: pointer;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Ensure dropdown options are visible and styled correctly in both light and dark modes */
+    select,
+    option {
+      background-color: #ffffff !important;
+      /* Force white bg */
+      color: #1f2937 !important;
+      /* Force dark text */
+    }
+
+    html[data-theme='dark'] select,
+    html[data-theme='dark'] option {
+      background-color: #1f2937 !important;
+      /* Dark gray bg */
+      color: #f3f4f6 !important;
+      /* Light gray text */
+    }
+
+    :root {
+      --PhoneInputCountryFlag-height: 1rem;
+      --PhoneInputCountrySelectArrow-color: var(--text-secondary);
+      --PhoneInputCountrySelectArrow-opacity: 1;
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -313,10 +445,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>
