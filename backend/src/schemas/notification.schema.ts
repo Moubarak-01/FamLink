@@ -11,7 +11,7 @@ export class Notification {
   @Prop({ required: true })
   message: string;
 
-  @Prop({ required: true, enum: ['booking', 'task', 'system', 'chat', 'outing', 'skill'] })
+  @Prop({ required: true, enum: ['booking', 'task', 'system', 'chat', 'outing', 'skill', 'activity_request', 'activity_approved', 'activity_declined'] })
   type: string;
 
   @Prop()

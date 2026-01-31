@@ -4,8 +4,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import LocationInput from './LocationInput';
 
 interface CreateOutingModalProps {
-  onClose: () => void;
-  onSubmit: (outingData: any) => void;
+    onClose: () => void;
+    onSubmit: (outingData: any) => void;
 }
 
 const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -27,16 +27,16 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
     const [liveLocationEnabled, setLiveLocationEnabled] = useState(false);
     const [image, setImage] = useState<string>('');
     const [imagePreview, setImagePreview] = useState<string>('');
-    
+
     const inputStyles = "mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]";
     const labelStyles = "block text-sm font-medium text-[var(--text-secondary)]";
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          setImagePreview(URL.createObjectURL(file));
-          const base64 = await toBase64(file);
-          setImage(base64);
+            const file = e.target.files[0];
+            setImagePreview(URL.createObjectURL(file));
+            const base64 = await toBase64(file);
+            setImage(base64);
         }
     };
 
@@ -46,7 +46,9 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
             alert('Please fill in all fields.');
             return;
         }
-        onSubmit({ title, description, location, date, time, maxChildren, costDetails, liveLocationEnabled, image });
+        // @ts-ignore
+        const privacy = document.querySelector('input[name="privacy"]:checked')?.value || 'public';
+        onSubmit({ title, description, location, date, time, maxChildren, costDetails, liveLocationEnabled, image, privacy });
     };
 
     return (
@@ -54,20 +56,20 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
             <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="p-8">
                     <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('create_outing_modal_title')}</h2>
-                    
+
                     <div className="space-y-4">
-                         {/* Image Upload Section */}
-                         <div>
+                        {/* Image Upload Section */}
+                        <div>
                             <label className={labelStyles}>Outing Image (Optional)</label>
                             <div className="mt-2 flex items-center gap-4">
                                 <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
-                                {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
+                                    {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
                                 </span>
                                 <label htmlFor="outing-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
                                     Upload
                                     <input id="outing-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 </label>
-                                {image && <button type="button" onClick={() => {setImage(''); setImagePreview('')}} className="text-sm text-red-500 hover:underline">Remove</button>}
+                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">Remove</button>}
                             </div>
                         </div>
 
@@ -81,25 +83,51 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
                         </div>
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('outing_label_location')}</label>
-                             <LocationInput
+                            <LocationInput
                                 value={location}
                                 onChange={setLocation}
                                 className={inputStyles}
                                 placeholder="Where are you going?"
                             />
                         </div>
-                        
+
                         <div className="flex items-center mt-2">
-                            <input 
-                                type="checkbox" 
-                                id="liveLocation" 
-                                checked={liveLocationEnabled} 
+                            <input
+                                type="checkbox"
+                                id="liveLocation"
+                                checked={liveLocationEnabled}
                                 onChange={e => setLiveLocationEnabled(e.target.checked)}
                                 className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)] border-gray-300 rounded cursor-pointer"
                             />
                             <label htmlFor="liveLocation" className="ml-2 block text-sm text-[var(--text-primary)] cursor-pointer">
                                 Enable Live Location Sharing for participants
                             </label>
+                        </div>
+
+                        {/* Privacy Toggle */}
+                        <div className="mt-4">
+                            <label className={labelStyles}>Privacy Setting</label>
+                            <div className="mt-2 flex gap-4">
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="privacy"
+                                        value="public"
+                                        defaultChecked
+                                        className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)]"
+                                    />
+                                    <span className="ml-2 text-sm text-[var(--text-primary)]">Public (Anyone can join)</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="privacy"
+                                        value="private"
+                                        className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)]"
+                                    />
+                                    <span className="ml-2 text-sm text-[var(--text-primary)]">Private (Requires Approval)</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -121,7 +149,7 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
                             <input type="text" id="cost" value={costDetails} onChange={e => setCostDetails(e.target.value)} required placeholder={t('outing_placeholder_cost')} className={inputStyles} />
                         </div>
                     </div>
-                    
+
                     <div className="mt-6 flex flex-col sm:flex-row gap-4">
                         <button type="button" onClick={onClose} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg">{t('button_back')}</button>
                         <button type="submit" className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">{t('button_post_outing')}</button>

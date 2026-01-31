@@ -16,6 +16,7 @@ export class MarketplaceService {
     const createdTask = new this.skillTaskModel({
       ...createTaskDto,
       requesterId: userId,
+      privacy: createTaskDto.privacy || 'public'
     });
     const saved = await createdTask.save();
     this.chatGateway.server.emit('marketplace_update', { action: 'create' });

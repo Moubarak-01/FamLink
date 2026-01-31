@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('activities')
 export class ActivitiesController {
-  constructor(private readonly activitiesService: ActivitiesService) {}
+  constructor(private readonly activitiesService: ActivitiesService) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -25,14 +25,26 @@ export class ActivitiesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/request/:userId/approve')
+  approveRequest(@Param('id') id: string, @Param('userId') userId: string, @Request() req) {
+    return this.activitiesService.approveRequest(id, userId, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/request/:userId/decline')
+  declineRequest(@Param('id') id: string, @Param('userId') userId: string, @Request() req) {
+    return this.activitiesService.declineRequest(id, userId, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
-      return this.activitiesService.delete(id);
+    return this.activitiesService.delete(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete()
   removeAll() {
-      return this.activitiesService.deleteAll();
+    return this.activitiesService.deleteAll();
   }
 }

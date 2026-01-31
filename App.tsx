@@ -708,6 +708,19 @@ const App: React.FC = () => {
       if (skill) { setActiveChat({ type: 'skill', item: skill }); return; }
       const booking = bookingRequests.find(b => b.id === notification.relatedId);
       if (booking) { setActiveChat({ type: 'booking', item: booking }); return; }
+    } else if (notification.type === 'activity_request') {
+      // FORCE REFETCH OF ACTIVITIES TO SHOW PENDING REQUEST
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      navigateTo(Screen.Dashboard);
+    } else if (notification.type === 'activity_approved') {
+      // Find activity and open chat
+      queryClient.invalidateQueries({ queryKey: ['activities'] }); // Ensure we have latest participants list
+      const act = activities.find(a => a.id === notification.relatedId);
+      if (act) setActiveChat({ type: 'activity', item: act });
+      else navigateTo(Screen.CommunityActivities);
+    } else if (notification.type === 'activity_declined') {
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      navigateTo(Screen.Dashboard);
     } else if (notification.type === 'booking') {
       navigateTo(Screen.Dashboard);
       if (notification.relatedId) {
@@ -822,6 +835,7 @@ const App: React.FC = () => {
         onViewSkillMarketplace={() => navigateTo(Screen.SkillMarketplace)}
         onEditProfile={handleEditProfile}
         onOpenBookingChat={(booking) => setActiveChat({ type: 'booking', item: booking })}
+        onOpenChat={(type, item) => setActiveChat({ type, item })}
         onCancelBooking={currentUser.userType === 'parent' ? handleCancelBooking : handleNannyHideBooking}
         onClearAllBookings={handleClearAllBookings}
         onKeepTask={handleKeepTask}

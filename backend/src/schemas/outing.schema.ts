@@ -54,9 +54,12 @@ export class Outing {
 
   @Prop()
   costDetails: string;
-  
+
   @Prop()
   image: string; // Base64 image string
+
+  @Prop({ type: String, enum: ['public', 'private'], default: 'public' })
+  privacy: string;
 
   @Prop({ type: [OutingRequestSchema], default: [] })
   requests: OutingRequest[];

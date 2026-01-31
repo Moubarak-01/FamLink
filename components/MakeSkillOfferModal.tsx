@@ -3,9 +3,9 @@ import { SkillRequest } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface MakeSkillOfferModalProps {
-  request: SkillRequest;
-  onClose: () => void;
-  onSubmit: (request: SkillRequest, offerAmount: number, message: string) => void;
+    request: SkillRequest;
+    onClose: () => void;
+    onSubmit: (request: SkillRequest, offerAmount: number, message: string) => void;
 }
 
 const MakeSkillOfferModal: React.FC<MakeSkillOfferModalProps> = ({ request, onClose, onSubmit }) => {
@@ -31,9 +31,9 @@ const MakeSkillOfferModal: React.FC<MakeSkillOfferModalProps> = ({ request, onCl
                 <form onSubmit={handleSubmit} className="p-8">
                     <div className="text-center mb-6">
                         <h2 className="text-2xl font-bold text-[var(--text-primary)]">{t('make_offer_title', { taskTitle: request.title })}</h2>
-                        <p className="text-[var(--text-secondary)] text-sm mt-2">{t('make_offer_subtitle', { name: request.requesterName.split(' ')[0] })}</p>
+                        <p className="text-[var(--text-secondary)] text-sm mt-2">{t('make_offer_subtitle', { name: (request.requesterName || 'User').split(' ')[0] })}</p>
                     </div>
-                    
+
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="offerAmount" className={labelStyles}>{t('offer_label_amount')}</label>
@@ -44,7 +44,7 @@ const MakeSkillOfferModal: React.FC<MakeSkillOfferModalProps> = ({ request, onCl
                             <textarea id="message" value={message} onChange={e => setMessage(e.target.value)} rows={3} placeholder={t('offer_placeholder_message')} className={inputStyles} />
                         </div>
                     </div>
-                    
+
                     <div className="mt-6 flex flex-col sm:flex-row gap-4">
                         <button type="button" onClick={onClose} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg">{t('button_back')}</button>
                         <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">{t('button_send_offer')}</button>

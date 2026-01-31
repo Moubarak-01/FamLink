@@ -3,6 +3,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { User, BookingRequest, Task, SharedOuting, SkillRequest, Activity } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { formatActivityTitle } from '../utils/textUtils';
+import { activityService } from '../services/activityService';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -48,9 +50,10 @@ interface DashboardScreenProps {
     onClearAllBookings: () => void;
     onKeepTask?: (id: string) => void;
     onDeleteTask?: (id: string) => void;
-    onDeleteActivities: () => void; // <-- ADDED
-    onDeleteOutings: () => void; // <-- ADDED
-    onDeleteSkillRequests: () => void; // <-- ADDED
+    onDeleteActivities?: () => void; // <-- ADDED
+    onDeleteOutings?: () => void; // <-- ADDED
+    onDeleteSkillRequests?: () => void; // <-- ADDED
+    onOpenChat: (type: 'activity' | 'outing' | 'skill' | 'booking', item: any) => void;
 }
 
 const formatDateSafe = (dateString: string) => {
@@ -281,11 +284,20 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus,
     onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking,
     onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus,
-    onDeleteActivities, onDeleteOutings, onDeleteSkillRequests // <-- NEW DELETE HANDLERS
+    onDeleteActivities, onDeleteOutings, onDeleteSkillRequests, // <-- NEW DELETE HANDLERS
+    onOpenChat // <-- NEW Unified Chat Handler
 }) => {
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
     const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
+
+    // DEBUG LOGGING
+    console.log('DashboardScreen Debug:', {
+        userId: user.id,
+        activitiesCount: activities.length,
+        hostedActivities: activities.filter(a => a.hostId === user.id),
+        activitiesWithRequests: activities.filter(a => a.requests && a.requests.length > 0)
+    });
 
     // Parent sees tasks they created
     const myTasks = allTasks.filter(t => t.parentId === user.id);
@@ -417,30 +429,254 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                 )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
-                    {myOutingRequests.length > 0 ? (
-                        <div className="space-y-4">
-                            {myOutingRequests.map((req, idx) => (
-                                <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                                    <div><h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4><p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p></div><StatusTag status={req.status} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                {/* My Activity Requests (Unified) */}
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden flex flex-col h-full">
+                    <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card-subtle)]">
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">My Activity Requests</h3>
+                    </div>
+                    <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
+                        {/* INCOMING (Host View) */}
+                        {activities.filter(a => {
+                            if (!a.hostId) return false;
+                            const hostIdStr = typeof a.hostId === 'object' ? (a.hostId._id || a.hostId.id) : a.hostId;
+                            return hostIdStr === user.id && a.requests?.some(r => r.status === 'pending');
+                        }).flatMap(activity =>
+                            (activity.requests || []).filter(r => r.status === 'pending').map(req => (
+                                <div key={`inc-act-${activity.id}-${req.userId}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-l-4 border-l-yellow-400 border-[var(--border-color)] shadow-sm">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h4 className="font-bold text-[var(--text-primary)] text-sm">{formatActivityTitle(activity.category)}</h4>
+                                            <p className="text-xs text-[var(--text-secondary)]">Request from <span className="font-semibold">User {req.userId.substring(0, 6)}...</span></p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">Action Needed</span>
+                                    </div>
+                                    <div className="flex gap-2 mt-2">
+                                        <button
+                                            onClick={async () => {
+                                                try { await activityService.approveRequest(activity.id, req.userId); } catch (e) { alert('Error approving'); }
+                                            }}
+                                            className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
+                                        >
+                                            Accept
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                try { await activityService.declineRequest(activity.id, req.userId); } catch (e) { alert('Error declining'); }
+                                            }}
+                                            className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
+                                        >
+                                            Decline
+                                        </button>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    ) : <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8"><p className="text-[var(--text-light)]">{t('dashboard_no_outing_requests')}</p></div>}
+                            ))
+                        )}
+
+                        {/* OUTGOING (User View) + HOSTED (Creator View) */}
+                        {activities.map(activity => {
+                            if (!activity.hostId) return null; // Safe check
+                            const hostIdStr = typeof activity.hostId === 'object' ? (activity.hostId as any)._id : activity.hostId;
+                            const isHost = hostIdStr === user.id;
+                            const myRequest = activity.requests?.find(r => r.userId === user.id);
+
+                            if (!isHost && !myRequest) return null;
+
+                            const isOpen = isHost || myRequest?.status === 'accepted';
+                            const statusLabel = isHost ? 'Hosted' : myRequest?.status;
+                            const statusColor = isHost ? 'bg-purple-100 text-purple-700' :
+                                (statusLabel === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700');
+
+                            return (
+                                <div key={`out-act-${activity.id}`} className={`bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm ${isOpen ? 'border-l-4 border-l-pink-500' : ''}`}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h4 className="font-bold text-[var(--text-primary)] text-sm">{formatActivityTitle(activity.category)}</h4>
+                                            <p className="text-xs text-[var(--text-secondary)]">{formatDateSafe(activity.date)}</p>
+                                        </div>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
+                                            {statusLabel}
+                                        </span>
+                                    </div>
+                                    {isOpen && (
+                                        <button
+                                            onClick={() => onOpenChat('activity', activity)}
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 animate-pulse"
+                                        >
+                                            <span>💬</span> Open Chat
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        }).filter(Boolean)}
+
+                        {/* Empty State */}
+                        {(!activities.some(a => {
+                            if (!a.hostId) return false;
+                            const hostIdStr = typeof a.hostId === 'object' ? (a.hostId._id || a.hostId.id) : a.hostId;
+                            // Check for incoming pending requests OR if hosted by user OR if requested by user
+                            return (hostIdStr === user.id) || // Includes hosted + incoming
+                                (a.requests?.some(r => r.userId === user.id));
+                        })) && (
+                                <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
+                                    You haven't requested to join any activities yet.
+                                </div>
+                            )}
+                    </div>
                 </div>
-                <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_skill_requests')}</h3>
-                    {mySkillRequests.length > 0 ? (
-                        <div className="space-y-4">
-                            {mySkillRequests.map(req => (
-                                <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                                    <div><h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4><p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p></div><div className="flex gap-2"><button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button><StatusTag status={req.status} /></div>
+
+                {/* My Outing Requests (Unified) */}
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden flex flex-col h-full">
+                    <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card-subtle)]">
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">My Outing Requests</h3>
+                    </div>
+                    <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
+                        {/* INCOMING (Host View) */}
+                        {sharedOutings.filter(o => {
+                            if (!o.hostId) return false;
+                            const hostIdStr = typeof o.hostId === 'object' ? (o.hostId._id || o.hostId.id) : o.hostId;
+                            return hostIdStr === user.id && o.requests?.some(r => r.status === 'pending');
+                        }).flatMap(outing =>
+                            (outing.requests || []).filter(r => r.status === 'pending').map(req => (
+                                <div key={`inc-out-${outing.id}-${req.parentId}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-l-4 border-l-yellow-400 border-[var(--border-color)] shadow-sm">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h4 className="font-bold text-[var(--text-primary)] text-sm">{outing.title}</h4>
+                                            <p className="text-xs text-[var(--text-secondary)]">Request for <span className="font-semibold">{req.childName}</span></p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">Action Needed</span>
+                                    </div>
+                                    <div className="flex gap-2 mt-2">
+                                        <button
+                                            onClick={() => onUpdateOutingRequestStatus(outing.id, req.parentId, 'accepted')}
+                                            className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
+                                        >
+                                            Accept
+                                        </button>
+                                        <button
+                                            onClick={() => onUpdateOutingRequestStatus(outing.id, req.parentId, 'declined')}
+                                            className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
+                                        >
+                                            Decline
+                                        </button>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    ) : <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8"><p className="text-[var(--text-light)]">{t('dashboard_no_skill_requests')}</p></div>}
+                            ))
+                        )}
+
+                        {/* OUTGOING (User View) + HOSTED (Creator View) */}
+                        {sharedOutings.map(outing => {
+                            if (!outing.hostId) return null; // Safe check
+                            const hostIdStr = typeof outing.hostId === 'object' ? (outing.hostId as any)._id : outing.hostId;
+                            const isHost = hostIdStr === user.id;
+                            const myRequest = outing.requests?.find(r => r.parentId === user.id);
+
+                            if (!isHost && !myRequest) return null;
+
+                            const isOpen = isHost || myRequest?.status === 'accepted';
+                            const statusLabel = isHost ? 'Hosted' : myRequest?.status;
+                            const statusColor = isHost ? 'bg-purple-100 text-purple-700' :
+                                (statusLabel === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700');
+
+                            return (
+                                <div key={`out-out-${outing.id}`} className={`bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm ${isOpen ? 'border-l-4 border-l-pink-500' : ''}`}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h4 className="font-bold text-[var(--text-primary)] text-sm">{outing.title}</h4>
+                                            <p className="text-xs text-[var(--text-secondary)]">{formatDateSafe(outing.date)} • {isHost ? 'Hosted by You' : myRequest?.childName}</p>
+                                        </div>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
+                                            {statusLabel}
+                                        </span>
+                                    </div>
+                                    {isOpen && (
+                                        <button
+                                            onClick={() => onOpenChat('outing', outing)}
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 animate-pulse"
+                                        >
+                                            <span>💬</span> Open Chat
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        }).filter(Boolean)}
+
+                        {/* Empty State */}
+                        {(!sharedOutings.some(o => {
+                            if (!o.hostId) return false;
+                            const hostIdStr = typeof o.hostId === 'object' ? (o.hostId._id || o.hostId.id) : o.hostId;
+                            // Check for incoming pending requests OR if hosted by user OR if requested by user
+                            return (hostIdStr === user.id) ||
+                                (o.requests?.some(r => r.parentId === user.id));
+                        })) && (
+                                <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
+                                    You haven't requested to join any outings yet.
+                                </div>
+                            )}
+                    </div>
+                </div>
+
+                {/* My Skill Requests (Unified) */}
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden flex flex-col h-full">
+                    <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card-subtle)]">
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">My Skill Requests</h3>
+                    </div>
+                    <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
+                        {/* MY REQUESTS (Requester View) */}
+                        {/* Shows tasks I created that have offers */}
+                        {skillRequests?.filter(s => s.requesterId === user.id).map(task => {
+                            const offerCount = task.offers?.length || 0;
+                            const hasPendingOffers = task.offers?.some(o => o.status === 'pending');
+                            return (
+                                <div key={`my-skill-${task.id}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full ${hasPendingOffers ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
+                                            {offerCount} Offer{offerCount !== 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => onViewSkillMarketplace()}
+                                        className="w-full mt-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold py-1.5 rounded transition-colors"
+                                    >
+                                        View Details / Chat
+                                    </button>
+                                </div>
+                            );
+                        })}
+
+                        {/* MY OFFERS (Helper View) */}
+                        {skillRequests?.filter(s => s.offers?.some(o => o.helperId === user.id)).map(task => {
+                            const myOffer = task.offers.find(o => o.helperId === user.id);
+                            const isAccepted = myOffer?.status === 'accepted';
+                            return (
+                                <div key={`off-skill-${task.id}`} className={`bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm ${isAccepted ? 'border-l-4 border-l-pink-500' : ''}`}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
+                                            <p className="text-xs text-[var(--text-secondary)]">Offer: ${myOffer?.offerAmount}</p>
+                                        </div>
+                                        <StatusTag status={myOffer?.status || 'pending'} />
+                                    </div>
+                                    {isAccepted && (
+                                        <button
+                                            onClick={() => onOpenChat('skill', task)}
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 animate-pulse"
+                                        >
+                                            <span>💬</span> Open Chat
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+
+                        {/* Empty State */}
+                        {(!skillRequests?.some(s => s.requesterId === user.id) && !skillRequests?.some(s => s.offers?.some(o => o.helperId === user.id))) && (
+                            <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
+                                You haven't posted any skill requests.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </>

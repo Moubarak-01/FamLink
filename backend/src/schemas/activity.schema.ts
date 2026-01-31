@@ -23,6 +23,19 @@ export class Activity {
   @Prop({ required: true })
   time: string; // HH:MM
 
+  @Prop({ type: String, enum: ['public', 'private'], default: 'public' })
+  privacy: string;
+
+  @Prop({
+    type: [{
+      userId: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+      status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },
+      timestamp: { type: Date, default: Date.now }
+    }],
+    default: []
+  })
+  requests: { userId: string, status: string, timestamp: Date }[];
+
   @Prop()
   image: string; // Base64 image string
 

@@ -25,5 +25,15 @@ export const activityService = {
   async deleteAll() {
     const response = await api.delete(`/activities`);
     return response.data;
+  },
+
+  async approveRequest(id: string, userId: string) {
+    const response = await api.patch<Activity>(`/activities/${id}/request/${userId}/approve`);
+    return response.data;
+  },
+
+  async declineRequest(id: string, userId: string) {
+    const response = await api.patch<Activity>(`/activities/${id}/request/${userId}/decline`);
+    return response.data;
   }
 };

@@ -15,23 +15,15 @@ export const OPENROUTER_API_KEY_ENV = 'VITE_OPENROUTER_API_KEY';
 export const OPENROUTER_FREE_MODELS: string[] = [
   'meta-llama/llama-4-scout:free',           // 512k context - best for long conversations
   'xiaomi/mimo-v2-flash:free',               // #1 open-source for reasoning & coding
-  'tngtech/deepseek-r1t2-chimera:free',     // 671B MoE - strong reasoning
   'google/gemini-3-flash:free',              // Multimodal, 128k context
   'z-ai/glm-4.5-air:free',                   // Lightweight, agent-centric, 131k context
   'meta-llama/llama-4-maverick:free',        // 400B multimodal, 256k context
-  'mistralai/devstral-2-2512:free',          // Specialized for coding
-  'allenai/molmo-2-8b:free',                 // Vision-language model
   'moonshotai/kimi-vl-a3b-thinking:free',    // Visual reasoning & math
   'qwen/qwen3-coder-480b-a35b-instruct:free' // MoE for tool-use & function calling
 ];
 
 // FINALIZED: Array of all Gemini models for chat failover
 export const GEMINI_FALLBACK_MODELS: string[] = [
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.5-flash-native-audio-dialog',
-  'gemini-2.5-flash-tts',
-  'gemini-robotics-er-1.5-preview',
   'gemma-3-27b',
   'gemma-3-12b',
   'gemma-3-4b',

@@ -4,15 +4,15 @@ import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
 
 interface ChildOutingScreenProps {
-  user: User;
-  outings: SharedOuting[];
-  onBack: () => void;
-  onCreateOuting: () => void;
-  onRequestJoin: (outing: SharedOuting) => void;
-  onOpenChat: (outing: SharedOuting) => void;
-  onDeleteOuting: (id: string) => void;
-  onDeleteAllOutings: () => void;
-  onRateHost?: (hostId: string) => void;
+    user: User;
+    outings: SharedOuting[];
+    onBack: () => void;
+    onCreateOuting: () => void;
+    onRequestJoin: (outing: SharedOuting) => void;
+    onOpenChat: (outing: SharedOuting) => void;
+    onDeleteOuting: (id: string) => void;
+    onDeleteAllOutings: () => void;
+    onRateHost?: (hostId: string) => void;
 }
 
 // Helper to safely get host name
@@ -24,24 +24,26 @@ const getHostName = (hostId: any, hostName?: string) => {
 
 // Helper to safely get host photo
 const getHostPhoto = (hostId: any, hostPhoto?: string) => {
-     if (typeof hostId === 'object' && hostId?.photo) return hostId.photo;
-     if (hostPhoto) return hostPhoto;
-     return 'https://i.pravatar.cc/150?u=default';
+    if (typeof hostId === 'object' && hostId?.photo) return hostId.photo;
+    if (hostPhoto) return hostPhoto;
+    return 'https://i.pravatar.cc/150?u=default';
 };
 
-const OutingCard: React.FC<{ 
-    outing: SharedOuting, 
-    currentUserId: string, 
-    onRequestJoin: (outing: SharedOuting) => void, 
+const OutingCard: React.FC<{
+    outing: SharedOuting,
+    currentUserId: string,
+    onRequestJoin: (outing: SharedOuting) => void,
     onChat: (outing: SharedOuting) => void,
     onDelete: (id: string) => void
 }> = ({ outing, currentUserId, onRequestJoin, onChat, onDelete }) => {
     const { t } = useLanguage();
-    
+
     // CRITICAL FIX: Safety check for requests array to prevent crash
     const requests = outing.requests || [];
-    
-    const hostIdStr = typeof outing.hostId === 'object' ? outing.hostId._id : outing.hostId;
+
+    // FIX: Handle null hostId safely
+    if (!outing.hostId) return null;
+    const hostIdStr = typeof outing.hostId === 'object' ? (outing.hostId as any)._id : outing.hostId;
     const isHost = hostIdStr === currentUserId;
 
     const myRequest = requests.find(r => r.parentId === currentUserId);
@@ -59,7 +61,7 @@ const OutingCard: React.FC<{
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group transition-all hover:shadow-lg">
             {/* Delete Button - Visible only to host on hover */}
             {isHost && (
-                <button 
+                <button
                     onClick={(e) => { e.stopPropagation(); onDelete(outing.id); }}
                     className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete Outing"
@@ -92,9 +94,9 @@ const OutingCard: React.FC<{
                                 <p className="text-sm text-[var(--text-secondary)]">{outing.time}</p>
                             </div>
                         </div>
-                        
+
                         <p className="text-[var(--text-secondary)] mt-3 text-sm line-clamp-2">{outing.description}</p>
-                        
+
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
                             <span className="bg-teal-50 text-teal-700 px-2 py-1 rounded-md border border-teal-100">
                                 📍 {outing.location}
@@ -120,9 +122,9 @@ const OutingCard: React.FC<{
                                     </p>
                                 )}
                             </div>
-                            
+
                             <div className="flex items-center gap-2 self-end sm:self-auto">
-                                <button 
+                                <button
                                     onClick={() => onChat(outing)}
                                     disabled={!canChat}
                                     className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
@@ -132,12 +134,12 @@ const OutingCard: React.FC<{
                                 </button>
 
                                 {!isHost && (
-                                    <button 
-                                        onClick={() => onRequestJoin(outing)} 
-                                        disabled={hasRequested || slotsLeft === 0} 
+                                    <button
+                                        onClick={() => onRequestJoin(outing)}
+                                        disabled={hasRequested || slotsLeft === 0}
                                         className={`font-bold py-1.5 px-4 rounded-full text-xs shadow-sm transition-transform active:scale-95 
-                                            ${hasRequested 
-                                                ? 'bg-gray-100 text-gray-500 cursor-default' 
+                                            ${hasRequested
+                                                ? 'bg-gray-100 text-gray-500 cursor-default'
                                                 : 'bg-teal-500 hover:bg-teal-600 text-white hover:scale-105'
                                             }`}
                                     >
@@ -153,7 +155,7 @@ const OutingCard: React.FC<{
     );
 };
 
-const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({ 
+const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
     user, outings, onBack, onCreateOuting, onRequestJoin, onOpenChat, onDeleteOuting, onDeleteAllOutings
 }) => {
     const { t } = useLanguage();
@@ -161,7 +163,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
     const handleClearAll = async () => {
-        if(window.confirm("Delete ALL outings? This cannot be undone.")) {
+        if (window.confirm("Delete ALL outings? This cannot be undone.")) {
             onDeleteAllOutings();
         }
     };
@@ -172,7 +174,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
         }
         return outings;
     }, [outings, viewMode, selectedDate]);
-    
+
     const outingDates = useMemo(() => outings.map(o => o.date), [outings]);
 
     return (
@@ -181,9 +183,9 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                 <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1">
                     <span>←</span> {t('button_back')}
                 </button>
-                
-                <button 
-                    onClick={handleClearAll} 
+
+                <button
+                    onClick={handleClearAll}
                     className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1.5 rounded-md hover:bg-red-100 transition-colors"
                 >
                     Clear All
@@ -196,33 +198,33 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
             </div>
 
             <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-4">
-                 <button 
+                <button
                     onClick={onCreateOuting}
                     className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform hover:scale-105 flex items-center gap-2"
                 >
                     <span>➕</span> {t('button_create_outing')}
                 </button>
-                
+
                 <div className="flex items-center bg-[var(--bg-card-subtle)] rounded-lg p-1 border border-[var(--border-color)]">
-                    <button 
-                        onClick={() => setViewMode('list')} 
+                    <button
+                        onClick={() => setViewMode('list')}
                         className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'list' ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                     >
                         {t('community_view_list')}
                     </button>
-                    <button 
-                        onClick={() => setViewMode('calendar')} 
+                    <button
+                        onClick={() => setViewMode('calendar')}
                         className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'calendar' ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                     >
                         {t('community_view_calendar')}
                     </button>
                 </div>
             </div>
-            
+
             {viewMode === 'calendar' && (
                 <div className="mb-8 max-w-md mx-auto">
-                    <Calendar 
-                        availableDates={outingDates} 
+                    <Calendar
+                        availableDates={outingDates}
                         isEditable={false}
                         onDateChange={(date) => setSelectedDate(prev => prev === date ? null : date)}
                     />
@@ -237,11 +239,11 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
             <div className="space-y-6">
                 {displayedOutings.length > 0 ? (
                     displayedOutings.map(outing => (
-                        <OutingCard 
-                            key={outing.id} 
-                            outing={outing} 
-                            currentUserId={user.id} 
-                            onRequestJoin={onRequestJoin} 
+                        <OutingCard
+                            key={outing.id}
+                            outing={outing}
+                            currentUserId={user.id}
+                            onRequestJoin={onRequestJoin}
                             onChat={onOpenChat}
                             onDelete={onDeleteOuting}
                         />
@@ -250,8 +252,8 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-12">
                         <span className="text-4xl block mb-2">🌳</span>
                         <p className="text-[var(--text-light)] font-medium">
-                            {selectedDate 
-                                ? t('community_no_activities_for_date') 
+                            {selectedDate
+                                ? t('community_no_activities_for_date')
                                 : 'No outings created yet. Be the first to plan one!'}
                         </p>
                     </div>

@@ -35,6 +35,15 @@
     --btn-secondary-bg-light: rgba(0, 0, 0, 0.05);
     --btn-secondary-hover-light: rgba(0, 0, 0, 0.1);
     --btn-secondary-text-light: #1e293b;
+
+    /* GENERIC INPUT VARIABLES - LIGHT */
+    --bg-input: #ffffff;
+    --border-input: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --bg-card: #ffffff;
+    --ring-accent: rgba(236, 72, 153, 0.5);
+    --border-accent: #ec4899;
 }
 
 /* 1. DYNAMIC IMMERSIVE CANVAS - Dark Mode (Base) */
@@ -72,6 +81,15 @@
     --btn-secondary-bg-dark: rgba(255, 255, 255, 0.1);
     --btn-secondary-hover-dark: rgba(255, 255, 255, 0.2);
     --btn-secondary-text-dark: #ffffff;
+
+    /* GENERIC INPUT VARIABLES - DARK */
+    --bg-input: rgba(255, 255, 255, 0.05);
+    --border-input: rgba(255, 255, 255, 0.1);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --bg-card: #1e1e1e;
+    --ring-accent: rgba(236, 72, 153, 0.5);
+    --border-accent: #ec4899;
 }
 
 body {

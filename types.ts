@@ -101,7 +101,7 @@ export interface Child {
   age: number;
 }
 
-export type NotificationType = 'booking' | 'task' | 'system' | 'chat' | 'outing' | 'skill';
+export type NotificationType = 'booking' | 'task' | 'system' | 'chat' | 'outing' | 'skill' | 'activity_request' | 'activity_approved' | 'activity_declined';
 
 export interface Notification {
   id: string;
@@ -135,8 +135,8 @@ export interface User {
   skillsToTeach?: SkillCategory[];
 }
 
-export type ActivityCategory = 'walks' | 'playdates' | 'workout' | 'shopping' | 'studying' | 'dads' | 'other';
-export type SkillCategory = 'cooking' | 'cleaning' | 'tutoring' | 'tech' | 'crafts' | 'other';
+export type ActivityCategory = 'walks' | 'playdates' | 'workout' | 'shopping' | 'studying' | 'dads' | 'other' | string;
+export type SkillCategory = 'cooking' | 'cleaning' | 'tutoring' | 'tech' | 'crafts' | 'other' | string;
 
 export interface Activity {
   id: string;
@@ -150,6 +150,8 @@ export interface Activity {
   time: string;
   image?: string; // Added image
   participants: string[];
+  privacy?: 'public' | 'private';
+  requests?: { userId: string, status: 'pending' | 'accepted' | 'declined', timestamp: string }[];
   messages?: ChatMessage[];
 }
 

@@ -5,12 +5,13 @@ import { Outing, OutingDocument } from '../schemas/outing.schema';
 
 @Injectable()
 export class OutingsService {
-  constructor(@InjectModel(Outing.name) private outingModel: Model<OutingDocument>) {}
+  constructor(@InjectModel(Outing.name) private outingModel: Model<OutingDocument>) { }
 
   async create(createOutingDto: any, userId: string): Promise<OutingDocument> {
     const createdOuting = new this.outingModel({
       ...createOutingDto,
       hostId: userId,
+      privacy: createOutingDto.privacy || 'public'
     });
     return createdOuting.save();
   }
@@ -23,27 +24,37 @@ export class OutingsService {
   }
 
   async requestJoin(outingId: string, requestDto: any, userId: string): Promise<OutingDocument> {
-      const request = { ...requestDto, parentId: userId, status: 'pending' };
-      return this.outingModel.findByIdAndUpdate(
-          outingId,
-          { $push: { requests: request } },
-          { new: true }
-      ).exec();
+    const outing = await this.outingModel.findById(outingId);
+    if (!outing) throw new Error('Outing not found');
+
+    const isPublic = outing.privacy === 'public';
+    // If public, status is accepted immediately. If private, pending.
+    const status = isPublic ? 'accepted' : 'pending';
+
+    const request = { ...requestDto, parentId: userId, status };
+
+    const updated = await this.outingModel.findByIdAndUpdate(
+      outingId,
+      { $push: { requests: request } },
+      { new: true }
+    ).exec();
+
+    return updated;
   }
 
   async updateRequestStatus(outingId: string, parentId: string, status: string): Promise<OutingDocument> {
-       return this.outingModel.findOneAndUpdate(
-           { _id: outingId, "requests.parentId": parentId },
-           { $set: { "requests.$.status": status } },
-           { new: true }
-       ).exec();
+    return this.outingModel.findOneAndUpdate(
+      { _id: outingId, "requests.parentId": parentId },
+      { $set: { "requests.$.status": status } },
+      { new: true }
+    ).exec();
   }
 
   async delete(id: string): Promise<any> {
-      return this.outingModel.findByIdAndDelete(id).exec();
+    return this.outingModel.findByIdAndDelete(id).exec();
   }
 
   async deleteAll(): Promise<any> {
-      return this.outingModel.deleteMany({}).exec();
+    return this.outingModel.deleteMany({}).exec();
   }
 }

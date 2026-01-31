@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 // FIX: Changed import to be more specific to avoid conflict with `locales.ts` file.
 import { translations } from '../locales/index';
+import { formatKeyFallback } from '../utils/textUtils';
 
 type Language = 'en' | 'fr' | 'es' | 'ja' | 'zh' | 'ar';
 
@@ -15,7 +16,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const isLanguage = (lang: string): lang is Language => {
-    return ['en', 'fr', 'es', 'ja', 'zh', 'ar'].includes(lang);
+  return ['en', 'fr', 'es', 'ja', 'zh', 'ar'].includes(lang);
 }
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,8 +42,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = useMemo((): TFunction => (key, options) => {
     const langTranslations = translations[language] || translations.en;
-    let translation = langTranslations[key as keyof typeof langTranslations] || translations.en[key as keyof typeof translations.en] || key;
-    
+    let translation = langTranslations[key as keyof typeof langTranslations] ||
+      translations.en[key as keyof typeof translations.en] ||
+      formatKeyFallback(key);
+
     if (options) {
       Object.keys(options).forEach(optionKey => {
         translation = translation.replace(`{${optionKey}}`, String(options[optionKey]));

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { SkillRequest, SkillCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import LocationInput from './LocationInput'; 
+import LocationInput from './LocationInput';
 
 interface CreateSkillRequestModalProps {
-  onClose: () => void;
-  onSubmit: (requestData: any) => void;
+    onClose: () => void;
+    onSubmit: (requestData: any) => void;
 }
 
 const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -24,7 +24,7 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
     const [budget, setBudget] = useState<number | ''>(10);
     const [image, setImage] = useState<string>('');
     const [imagePreview, setImagePreview] = useState<string>('');
-    
+
     const inputStyles = "mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]";
     const labelStyles = "block text-sm font-medium text-[var(--text-secondary)]";
 
@@ -39,10 +39,10 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          setImagePreview(URL.createObjectURL(file));
-          const base64 = await toBase64(file);
-          setImage(base64);
+            const file = e.target.files[0];
+            setImagePreview(URL.createObjectURL(file));
+            const base64 = await toBase64(file);
+            setImage(base64);
         }
     };
 
@@ -52,7 +52,9 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
             alert('Please fill in all fields with valid values.');
             return;
         }
-        onSubmit({ category, title, description, location, budget: Number(budget), image });
+        // @ts-ignore
+        const privacy = document.querySelector('input[name="privacy"]:checked')?.value || 'public';
+        onSubmit({ category, title, description, location, budget: Number(budget), image, privacy });
     };
 
     return (
@@ -60,24 +62,24 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
             <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="p-8">
                     <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('create_skill_request_title')}</h2>
-                    
+
                     <div className="space-y-4">
                         {/* Image Upload Section */}
                         <div>
                             <label className={labelStyles}>Task Image (Optional)</label>
                             <div className="mt-2 flex items-center gap-4">
                                 <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
-                                {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
+                                    {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
                                 </span>
                                 <label htmlFor="task-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
                                     Upload
                                     <input id="task-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 </label>
-                                {image && <button type="button" onClick={() => {setImage(''); setImagePreview('')}} className="text-sm text-red-500 hover:underline">Remove</button>}
+                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">Remove</button>}
                             </div>
                         </div>
 
-                         <div>
+                        <div>
                             <label htmlFor="category" className={labelStyles}>{t('skill_request_label_category')}</label>
                             <select id="category" value={category} onChange={e => setCategory(e.target.value as SkillCategory)} className={inputStyles}>
                                 {categories.map(cat => <option key={cat.key} value={cat.key}>{cat.label}</option>)}
@@ -93,7 +95,7 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                         </div>
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('skill_request_label_location')}</label>
-                             <LocationInput
+                            <LocationInput
                                 value={location}
                                 onChange={setLocation}
                                 className={inputStyles}
@@ -104,8 +106,34 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                             <label htmlFor="budget" className={labelStyles}>{t('skill_request_label_budget')}</label>
                             <input type="number" id="budget" value={budget} onChange={e => setBudget(e.target.value === '' ? '' : parseInt(e.target.value, 10))} required min="1" className={inputStyles} />
                         </div>
+
+                        {/* Privacy Toggle */}
+                        <div className="mt-4">
+                            <label className={labelStyles}>Privacy Setting</label>
+                            <div className="mt-2 flex gap-4">
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="privacy"
+                                        value="public"
+                                        defaultChecked
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-[var(--text-primary)]">Public (Anyone can offer)</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="privacy"
+                                        value="private"
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-[var(--text-primary)]">Private (Requires Approval)</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <div className="mt-6 flex flex-col sm:flex-row gap-4">
                         <button type="button" onClick={onClose} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg">{t('button_back')}</button>
                         <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">{t('button_post_request')}</button>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatActivityTitle } from '../utils/textUtils';
 import { Activity, User, SharedOuting, SkillRequest, BookingRequest, ChatMessage } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { socketService } from '../services/socketService';
@@ -56,7 +57,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         title = outing.title;
         otherUserPhoto = outing.image || outing.hostPhoto || '';
     } else if (activity) {
-        title = `${t(`activity_cat_${activity.category}`)} - Activity`;
+        title = formatActivityTitle(activity.category);
+        if (activity.participants.length > 2) {
+            title += ` (${activity.participants.length} members)`;
+        }
         otherUserPhoto = activity.image || activity.hostPhoto || '';
     }
 
@@ -149,8 +153,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 setHistoryMessages(prev => prev.map(msg => {
                     // Normalize ID comparison (msg.id vs data.messageId)
                     if (data.status === 'seen') {
-                        // If logic implies all messages are seen
-                        if (msg.senderId === data.userId && msg.status !== 'seen') {
+                        // FIX: Mark messages NOT sent by the viewer (i.e. sent by ME) as seen
+                        if (msg.senderId !== data.userId && msg.status !== 'seen') {
                             return { ...msg, status: 'seen' };
                         }
                     } else if (msg.id === data.messageId || (msg as any)._id === data.messageId) {
@@ -457,7 +461,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                             messages={allMessages}
                                             onReaction={(id, emoji) => socketService.sendReaction(contextId, id, currentUser.id, emoji)}
                                             onRemoveReaction={(id, emoji) => socketService.removeReaction(contextId, id, currentUser.id, emoji)}
-                                            onReply={(id) => setReplyToId(id)}
+                                            onReply={(id) => { setReplyToId(id); window.setTimeout(() => document.querySelector('textarea')?.focus(), 100); }}
                                             onDelete={(id) => handleDeleteClick(id, msg.senderId === currentUser.id)}
                                             onScrollToMessage={scrollToMessage}
                                         />
