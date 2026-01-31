@@ -133,8 +133,22 @@ const App: React.FC = () => {
   const aiAssistantRef = useRef<AiAssistantRef>(null);
 
   useEffect(() => {
-    socketService.connect();
-    const unsubscribe = socketService.onMessage(({ roomId, message }) => { processIncomingMessage(roomId, message); });
+    if (currentUser) {
+      socketService.connect(currentUser.id);
+    } else {
+      socketService.disconnect();
+    }
+
+    const unsubscribe = socketService.onMessage(({ roomId, message }) => {
+      // 1. Process message (toast, etc.)
+      processIncomingMessage(roomId, message);
+
+      // 2. WhatsApp-style "Delivered" tick:
+      // If we received it via socket, we are "online" enough to acknowledge delivery
+      if (currentUser && message.senderId !== currentUser.id) {
+        socketService.sendMarkDelivered(roomId, message.id);
+      }
+    });
 
     // FIX: Strict de-duplication for notifications
     const unsubNotif = socketService.onNotification((notif) => {
@@ -151,7 +165,7 @@ const App: React.FC = () => {
       unsubscribe();
       unsubNotif();
     };
-  }, []);
+  }, [currentUser]);
 
   // NEW: Auto-clear notifications when entering a Chat or Screen
   useEffect(() => {
@@ -202,7 +216,22 @@ const App: React.FC = () => {
         try {
           const profile = await authService.getProfile();
           setCurrentUser(profile);
-          navigateTo(Screen.Dashboard, true);
+          // STRICT ENFORCEMENT: Redirect based on profile status, not just existence
+          if (profile.userType === 'parent') {
+            if (!profile.location) navigateTo(Screen.ParentProfileForm, true);
+            else navigateTo(Screen.Dashboard, true);
+          } else {
+            // Nanny Logic
+            if (profile.profile) {
+              navigateTo(Screen.Dashboard, true);
+            } else if (profile.assessmentResult?.decision === 'Approved') {
+              navigateTo(Screen.NannyProfileForm, true);
+            } else if (profile.assessmentResult) {
+              navigateTo(Screen.Result, true);
+            } else {
+              navigateTo(Screen.Questionnaire, true);
+            }
+          }
         } catch (e) {
           localStorage.removeItem('authToken');
         }
@@ -280,8 +309,34 @@ const App: React.FC = () => {
   const navigateTo = (screen: Screen, replace = false) => { setError(null); if (replace) setScreenHistory([]); else setScreenHistory([...screenHistory, currentScreen]); setCurrentScreen(screen); };
   const goBack = () => { setError(null); setViewingNannyId(null); const previousScreen = screenHistory.pop(); if (previousScreen !== undefined) { setScreenHistory([...screenHistory]); setCurrentScreen(previousScreen); } else { setCurrentScreen(Screen.Welcome); } };
   const handleLogout = () => { localStorage.removeItem('authToken'); localStorage.removeItem('rememberedUser'); setCurrentScreen(Screen.Welcome); setScreenHistory([]); setCurrentUser(null); setError(null); setViewingNannyId(null); setActivities([]); setSharedOutings([]); setBookingRequests([]); setTasks([]); };
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+    try {
+      await userService.deleteAccount();
+      alert("Your account has been permanently deleted.");
+      handleLogout();
+    } catch (e) {
+      alert("Failed to delete account. Please try again.");
+    }
+  };
   const handleSelectUserType = (type: UserType) => { setUserTypeForSignup(type); navigateTo(Screen.SignUp); };
-  const handleSignUp = async (fullName: string, email: string, password: string, userType: UserType) => { try { const data = await authService.signup(fullName, email, password, userType); localStorage.setItem('authToken', data.access_token); setCurrentUser(data.user); alert(t('alert_signup_success')); navigateTo(Screen.Dashboard); } catch (err: any) { setError(err.response?.data?.message || 'Signup failed.'); } };
+  const handleSignUp = async (fullName: string, email: string, password: string, userType: UserType) => {
+    try {
+      const data = await authService.signup(fullName, email, password, userType);
+      localStorage.setItem('authToken', data.access_token);
+      setCurrentUser(data.user);
+      alert(t('alert_signup_success'));
+
+      // FIX: Redirect based on user type
+      if (userType === 'nanny') {
+        navigateTo(Screen.Questionnaire);
+      } else {
+        navigateTo(Screen.ParentProfileForm); // Parents go to profile creation
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Signup failed.');
+    }
+  };
   const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); localStorage.setItem('authToken', data.access_token); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
   const handleForgotPassword = async (email: string) => { await new Promise(resolve => setTimeout(resolve, 1500)); alert(t('alert_forgot_password_sent')); navigateTo(Screen.Login); };
 
@@ -295,6 +350,8 @@ const App: React.FC = () => {
       let updatedUser = { ...currentUser, assessmentResult };
       await userService.updateProfile({ assessmentResult });
       setCurrentUser(updatedUser);
+      // Clear backup on success
+      localStorage.removeItem('questionnaire_backup');
       setCurrentScreen(Screen.Result);
     } catch (err) {
       setError(t('error_assessment_evaluation'));
@@ -632,6 +689,7 @@ const App: React.FC = () => {
             setNoiseReductionEnabled(!noiseReductionEnabled);
             alert(!noiseReductionEnabled ? "Audio processing enabled for clearer calls." : "Noise reduction disabled.");
           }}
+          onDeleteAccount={handleDeleteAccount}
         />
       )}
 

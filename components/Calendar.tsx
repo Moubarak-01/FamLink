@@ -101,7 +101,7 @@ const Calendar: React.FC<CalendarProps> = ({ availableDates = [], onDateChange, 
           let buttonClass = "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full text-sm transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]";
 
           if (isDisabled) {
-            buttonClass += " text-gray-300 dark:text-gray-700 cursor-not-allowed bg-transparent";
+            buttonClass += " text-gray-300 dark:text-gray-500 cursor-not-allowed bg-transparent";
           } else if (isAvailable) {
             buttonClass += " bg-[var(--accent-primary)] text-white font-bold shadow-md hover:shadow-lg";
             if (isEditable) buttonClass += " hover:scale-110";

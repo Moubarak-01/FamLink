@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
 
   async create(createUserDto: any): Promise<UserDocument> {
     const salt = await bcrypt.genSalt();
@@ -52,5 +52,11 @@ export class UsersService {
 
   async getNannies(): Promise<UserDocument[]> {
     return this.userModel.find({ userType: 'nanny' }).exec();
+  }
+
+  async deleteUser(userId: string): Promise<UserDocument> {
+    const user = await this.userModel.findByIdAndDelete(userId).exec();
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 }

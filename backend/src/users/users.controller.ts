@@ -5,7 +5,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
@@ -27,20 +27,26 @@ export class UsersController {
   async getNannies() {
     const nannies = await this.usersService.getNannies();
     return nannies.map(n => {
-        const { passwordHash, ...result } = n.toObject();
-        return result;
+      const { passwordHash, ...result } = n.toObject();
+      return result;
     });
   }
-  
+
   @UseGuards(JwtAuthGuard)
   @Post('nannies/:id/add')
   async addNanny(@Request() req, @Param('id') nannyId: string) {
-      return this.usersService.addNannyToDashboard(req.user.userId, nannyId);
+    return this.usersService.addNannyToDashboard(req.user.userId, nannyId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('nannies/:id/remove')
   async removeNanny(@Request() req, @Param('id') nannyId: string) {
-      return this.usersService.removeNannyFromDashboard(req.user.userId, nannyId);
+    return this.usersService.removeNannyFromDashboard(req.user.userId, nannyId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('profile')
+  async deleteProfile(@Request() req) {
+    return this.usersService.deleteUser(req.user.userId);
   }
 }

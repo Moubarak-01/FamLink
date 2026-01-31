@@ -29,7 +29,7 @@ export interface NannyProfile {
   phone: string;
   rating: number;
   ratingCount: number;
-  location: LocationData | string; 
+  location: LocationData | string;
   description: string;
   experience: string;
   certifications: string[];
@@ -67,6 +67,7 @@ export interface ChatMessage {
   reactions?: Reaction[];
   replyTo?: string; // ID of referenced message
   deleted?: boolean;
+  deletedFor?: string[]; // IDs of users who deleted this message for themselves
 }
 
 export interface BookingRequest {
@@ -153,56 +154,56 @@ export interface Activity {
 }
 
 export interface OutingRequest {
-    parentId: string;
-    parentName: string;
-    childName: string;
-    childAge: number;
-    emergencyContactName: string;
-    emergencyContactPhone: string;
-    status: 'pending' | 'accepted' | 'declined';
+  parentId: string;
+  parentName: string;
+  childName: string;
+  childAge: number;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  status: 'pending' | 'accepted' | 'declined';
 }
 
 export interface SharedOuting {
-    id: string;
-    hostId: any; // Handles object (User) or string
-    hostName: string;
-    hostPhoto: string;
-    title: string;
-    description: string;
-    location: string;
-    liveLocationEnabled?: boolean;
-    date: string;
-    time: string;
-    maxChildren: number;
-    costDetails: string;
-    image?: string; // Added image
-    requests: OutingRequest[];
-    messages?: ChatMessage[];
+  id: string;
+  hostId: any; // Handles object (User) or string
+  hostName: string;
+  hostPhoto: string;
+  title: string;
+  description: string;
+  location: string;
+  liveLocationEnabled?: boolean;
+  date: string;
+  time: string;
+  maxChildren: number;
+  costDetails: string;
+  image?: string; // Added image
+  requests: OutingRequest[];
+  messages?: ChatMessage[];
 }
 
 export interface SkillOffer {
-    helperId: string;
-    helperName: string;
-    helperPhoto: string;
-    offerAmount: number;
-    message: string;
-    status: 'pending' | 'accepted' | 'declined';
+  helperId: string;
+  helperName: string;
+  helperPhoto: string;
+  offerAmount: number;
+  message: string;
+  status: 'pending' | 'accepted' | 'declined';
 }
 
 export interface SkillRequest {
-    id: string;
-    requesterId: any; // Handles object (User) or string
-    requesterName: string;
-    requesterPhoto: string;
-    category: SkillCategory;
-    title: string;
-    description: string;
-    location: string;
-    budget: number;
-    image?: string; // Added image
-    status: 'open' | 'in_progress' | 'completed';
-    offers: SkillOffer[];
-    messages?: ChatMessage[];
+  id: string;
+  requesterId: any; // Handles object (User) or string
+  requesterName: string;
+  requesterPhoto: string;
+  category: SkillCategory;
+  title: string;
+  description: string;
+  location: string;
+  budget: number;
+  image?: string; // Added image
+  status: 'open' | 'in_progress' | 'completed';
+  offers: SkillOffer[];
+  messages?: ChatMessage[];
 }
 
 export type UserType = 'parent' | 'nanny';

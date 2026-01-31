@@ -71,13 +71,49 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
     useEffect(() => {
         if (contextId) {
-            // ... (existing socket logic) ...
+            socketService.joinRoom(contextId, currentUser.id);
+
+            // Fetch initial history
+            chatService.getHistory(contextId)
+                .then(msgs => {
+                    setHistoryMessages(msgs);
+                    // Mark as seen immediately after loading history
+                    socketService.markMessagesAsSeen(contextId, currentUser.id);
+                })
+                .catch(err => console.error("Failed to load chat history:", err));
+
+            // Initial check for presence
+            if (otherUserId) {
+                socketService.checkOnlineStatus(otherUserId, (data) => {
+                    if (data.status === 'online') setIsRecipientOnline(true);
+                    else {
+                        setIsRecipientOnline(false);
+                        setRecipientLastSeen(data.lastSeen);
+                    }
+                });
+            }
         }
+
+        const unsubPresence = socketService.onPresenceUpdate((data) => {
+            if (data.userId === otherUserId) {
+                if (data.status === 'online') {
+                    setIsRecipientOnline(true);
+                    setRecipientLastSeen(null);
+                } else {
+                    setIsRecipientOnline(false);
+                    setRecipientLastSeen(data.lastSeen || new Date().toISOString());
+                }
+            }
+        });
 
         const unsubMsg = socketService.onMessage(({ roomId, message }) => {
             if (roomId !== contextId) return;
             setHistoryMessages(prev => {
                 if (prev.some(m => m.id === message.id)) return prev;
+                // If I am receiving a message in this active window, mark it as seen immediately
+                if (message.senderId !== currentUser.id) {
+                    socketService.markMessagesAsSeen(roomId, currentUser.id);
+                }
                 return [...prev, message];
             });
             // Auto-scroll logic as requested using scrollTop
@@ -91,7 +127,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         // ... (rest of listeners) ...
 
         return () => {
-            unsubMsg(); // ... others
+            unsubMsg();
+            unsubPresence();
             if (contextId) {
                 socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName);
                 socketService.leaveRoom(contextId);
@@ -107,7 +144,84 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         }
     }, [contextId, allMessages.length]); // Re-run when messages load
 
-    // ... (typing logic) ...
+    // --- TYPING LOGIC ---
+    const stopTyping = () => {
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+        }
+        if (contextId) {
+            socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName);
+        }
+    };
+
+    const startTyping = () => {
+        if (!contextId) return;
+
+        const now = Date.now();
+        // Throttle sending "typing" event to once every 2 seconds
+        if (now - lastTypingSentRef.current > 2000) {
+            socketService.sendTyping(contextId, currentUser.id, currentUser.fullName);
+            lastTypingSentRef.current = now;
+        }
+
+        // Clear existing stop timeout and set a new one
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Auto-stop typing after 3 seconds of inactivity
+        typingTimeoutRef.current = setTimeout(stopTyping, 3000);
+    };
+
+    const handleFocus = () => {
+        startTyping();
+    };
+
+    const handleBlur = () => {
+        stopTyping();
+    };
+
+    const handleKeyDown = () => {
+        startTyping();
+    };
+
+    // --- OTHER HELPERS ---
+    const handleDeleteClick = (messageId: string, isMyMessage: boolean) => {
+        if (isMyMessage) {
+            // If it's my message, ask if delete for all or just me
+            // For simplicity in this modal, we trigger the parent handler which likely handles "delete for all"
+            // You might want a custom UI here for "Delete for me" vs "Delete for everyone"
+            if (window.confirm(t('confirm_delete_message'))) {
+                onDeleteMessage(contextId, messageId);
+            }
+        } else {
+            // Delete for me only (local hide)
+            onDeleteMessage(contextId, messageId);
+        }
+    };
+
+    const scrollToMessage = (messageId: string) => {
+        const el = document.getElementById(`msg-${messageId}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight effect
+            el.classList.add('bg-[var(--accent-primary)]/10');
+            setTimeout(() => el.classList.remove('bg-[var(--accent-primary)]/10'), 2000);
+        }
+    };
+
+    const formatLastSeen = (isoString?: string) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        const now = new Date();
+        const diff = (now.getTime() - date.getTime()) / 1000; // seconds
+
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return date.toLocaleDateString();
+    };
 
     const handleSendMessage = (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -197,6 +311,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                         </div>
                     </div>
                     <div className="flex gap-3 items-center">
+                        <button
+                            onClick={() => {
+                                if (window.confirm(t('confirm_delete_chat'))) {
+                                    onDeleteAllMessages(contextId);
+                                }
+                            }}
+                            className="p-2 rounded-full hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-500 transition-colors"
+                            title={t('delete_chat')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
                         <button onClick={onClose} className="p-2 rounded-full hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -210,7 +337,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                     ref={scrollContainerRef}
                     className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col"
                 >
-                    <div className="space-y-4 flex flex-col justify-end min-h-0">
+                    <div className="space-y-4 pt-2 pb-2">
                         {allMessages.map((msg) => (
                             <div id={`msg-${msg.id}`} key={msg.id} className="transition-colors duration-300 rounded-lg">
                                 <MessageBubble

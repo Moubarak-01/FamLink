@@ -14,8 +14,10 @@ import { cleanAIText } from '../utils/LLMHelper';
 // --- API INITIALIZATION ---
 
 const getApiKey = (envVar: string): string => {
-    if (import.meta.env && (import.meta.env as any)[envVar]) {
-        return (import.meta.env as any)[envVar];
+    // @ts-ignore
+    if (import.meta.env && import.meta.env[envVar]) {
+        // @ts-ignore
+        return import.meta.env[envVar];
     }
     try {
         // @ts-ignore
@@ -149,7 +151,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
                 console.log(`[LLM] 🔄 Waterfall: Trying Gemini ${currentModel}...`);
 
                 const responseStream = await ai.models.generateContentStream({
-                    model: currentModel as Model,
+                    model: currentModel as any, // Cast to any to accept string models
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                     config: {
                         temperature: 0.7,
@@ -267,21 +269,23 @@ class GeminiService {
 
     // Method for Nanny Assessment (Non-streaming, JSON output)
     async evaluateAnswers(answers: Answer[], responseLanguage: string): Promise<AssessmentResult> {
-        // ... (Assessment logic remains the same, using non-streaming generateContent) ...
-        // Note: Assessment logic here is simplified for file generation, relying on the previous non-streaming structure.
 
-        if (!ai) {
-            if (pplxApiKey) {
-                return this._evaluateAnswersWithPplx(answers, responseLanguage);
-            }
-            return { score: 0, feedback: "AI system unavailable.", decision: 'Rejected' };
-        }
+        // FIX: Match chat waterfall by trying OpenRouter first (Tier 1)
+        // Previous code had "if (!ai) return ..." which skipped Tier 1 if Gemini key was missing.
+        // Now flow proceeds: OpenRouter -> Gemini -> Perplexity
 
-        const assessmentQuestions = ASSESSMENT_QUESTIONS(translations[responseLanguage]?.t || translations.en.t);
+        // Create a simple translation helper
+        const t = (key: string) => {
+            // @ts-ignore
+            return translations[responseLanguage]?.[key] || translations['en']?.[key] || key;
+        };
+        const assessmentQuestions = ASSESSMENT_QUESTIONS(t as any);
+
         const formattedAnswers = answers.map(answer => {
             const question = assessmentQuestions.find(q => q.id === answer.questionId);
             const questionText = question?.text || `Question ${answer.questionId}`;
-            const answerValue = Array.isArray(answer.value) ? answer.value.join('; ') : answer.value;
+            // FIX: answer.answer instead of answer.value
+            const answerValue = Array.isArray(answer.answer) ? answer.answer.join('; ') : answer.answer;
             return `Q: ${questionText}\nA: ${answerValue}\n---\n`;
         }).join('\n');
 
@@ -357,40 +361,44 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
         }
 
         // --- GEMINI ASSESSMENT FAILOVER (TIER 2) ---
-        const modelsToTry = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0
-            ? GEMINI_FALLBACK_MODELS
-            : ['gemini-2.5-flash'];
+        // Only try Gemini if 'ai' instance exists
+        if (ai) {
+            const modelsToTry = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0
+                ? GEMINI_FALLBACK_MODELS
+                : ['gemini-2.5-flash'];
 
-        // --- GEMINI ASSESSMENT FAILOVER ---
-        for (const currentModel of modelsToTry) {
-            try {
-                console.log(`Attempting assessment with Gemini model: ${currentModel}`);
+            for (const currentModel of modelsToTry) {
+                try {
+                    console.log(`Attempting assessment with Gemini model: ${currentModel}`);
 
-                const response = await ai.models.generateContent({
-                    model: currentModel as Model,
-                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                    config: {
-                        systemInstruction: systemInstruction,
-                        responseMimeType: "application/json",
-                        responseSchema: responseSchema,
-                        temperature: 0.3,
-                    },
-                });
+                    const response = await ai.models.generateContent({
+                        model: currentModel as any,
+                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                        config: {
+                            systemInstruction: systemInstruction,
+                            responseMimeType: "application/json",
+                            responseSchema: responseSchema,
+                            temperature: 0.3,
+                        },
+                    });
 
-                if (response?.response?.text) {
-                    const jsonString = response.response.text.trim();
-                    const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
+                    if (response?.response?.text) {
+                        const jsonString = response.response.text.trim();
+                        const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
 
-                    if (!['Approved', 'Rejected'].includes(result.decision)) {
-                        result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
+                        if (!['Approved', 'Rejected'].includes(result.decision)) {
+                            result.decision = result.score >= 70 ? 'Approved' : 'Rejected';
+                        }
+
+                        return result;
                     }
 
-                    return result;
+                } catch (error) {
+                    console.warn(`Assessment model ${currentModel} failed. Attempting next model. Error:`, error);
                 }
-
-            } catch (error) {
-                console.warn(`Assessment model ${currentModel} failed. Attempting next model. Error:`, error);
             }
+        } else {
+            console.warn("[Assessment] ⏭️ Gemini API key missing. Skipping Tier 2...");
         }
 
         // --- PERPLEXITY ASSESSMENT FAILOVER (JSON response is critical) ---
@@ -404,11 +412,18 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
     // Helper for Perplexity Assessment logic (JSON response is critical)
     private async _evaluateAnswersWithPplx(answers: Answer[], responseLanguage: string): Promise<AssessmentResult> {
 
-        const assessmentQuestions = ASSESSMENT_QUESTIONS(translations[responseLanguage]?.t || translations.en.t);
+        // Helper t function for Perplexity
+        const t = (key: string) => {
+            // @ts-ignore
+            return translations[responseLanguage]?.[key] || translations['en']?.[key] || key;
+        };
+        const assessmentQuestions = ASSESSMENT_QUESTIONS(t as any);
+
         const formattedAnswers = answers.map(answer => {
             const question = assessmentQuestions.find(q => q.id === answer.questionId);
             const questionText = question?.text || `Question ${answer.questionId}`;
-            const answerValue = Array.isArray(answer.value) ? answer.value.join('; ') : answer.value;
+            // FIX: answer.answer instead of answer.value
+            const answerValue = Array.isArray(answer.answer) ? answer.answer.join('; ') : answer.answer;
             return `Q: ${questionText}\nA: ${answerValue}\n---\n`;
         }).join('\n');
 

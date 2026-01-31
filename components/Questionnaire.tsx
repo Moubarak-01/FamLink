@@ -25,51 +25,98 @@ const shuffleArray = (array: any[]) => {
 
 const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, onBack }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  // Auto-load saved answers
+  const [answers, setAnswers] = useState<Answer[]>(() => {
+    try {
+      const saved = localStorage.getItem('questionnaire_backup');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Auto-save answers
+  useEffect(() => {
+    localStorage.setItem('questionnaire_backup', JSON.stringify(answers));
+  }, [answers]);
   const { t, language } = useLanguage();
 
-  const questions = useMemo(() => {
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+
+  // Initialize questions once on mount to prevent reshuffling on language change
+  useEffect(() => {
+    // Use the current 't' for initial selection structure (IDs don't change based on language)
     const allQuestions = ASSESSMENT_QUESTIONS(t);
-    
+
     // Separate questions by type
     const singleChoice = allQuestions.filter(q => q.type === 'single-choice');
     const multipleChoice = allQuestions.filter(q => q.type === 'multiple-choice');
     const openEnded = allQuestions.filter(q => q.type === 'open-ended');
 
-    // Select specific amounts to maintain assessment balance
-    // Target: 10 Single Choice, 3 Multiple Choice, 2 Open Ended = 15 Total
+    // Select specific amounts
     const selectedSingle = shuffleArray([...singleChoice]).slice(0, 10);
     const selectedMultiple = shuffleArray([...multipleChoice]).slice(0, 3);
     const selectedOpen = shuffleArray([...openEnded]).slice(0, 2);
 
-    // Combine and shuffle the final set so types are mixed during the test
+    // Combine and shuffle final set
     const combined = [...selectedSingle, ...selectedMultiple, ...selectedOpen];
-    return shuffleArray(combined);
-  }, [t]);
+    const finalSet = shuffleArray(combined);
 
+    setSelectedQuestionIds(finalSet.map(q => q.id));
+  }, []); // Empty dependency array = run once on mount
+
+  const questions = useMemo(() => {
+    if (selectedQuestionIds.length === 0) return [];
+
+    const allTranslatedQuestions = ASSESSMENT_QUESTIONS(t);
+    // Map the stored IDs to the current language's question objects
+    return selectedQuestionIds.map(id =>
+      allTranslatedQuestions.find(q => q.id === id)
+    ).filter((q): q is Question => !!q);
+  }, [t, selectedQuestionIds]);
+
+  // HOOKS MUST BE UNCONDITIONAL - MOVED UP
   const isSuspended = useMemo(() => {
     if (user.userType === 'nanny' && user.suspendedUntil) {
       return new Date(user.suspendedUntil) > new Date();
     }
     return false;
   }, [user]);
-  
+
   const suspensionRemainingText = useMemo(() => {
     if (isSuspended && user.suspendedUntil) {
-        const end = new Date(user.suspendedUntil).getTime();
-        const now = new Date().getTime();
-        const diff = end - now;
-        
-        if (diff > 0) {
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            return `${hours} ${t('unit_hours')} ${minutes} ${t('unit_minutes')}`;
-        }
+      const end = new Date(user.suspendedUntil).getTime();
+      const now = new Date().getTime();
+      const diff = end - now;
+
+      if (diff > 0) {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        return `${hours} ${t('unit_hours')} ${minutes} ${t('unit_minutes')}`;
+      }
     }
     return '';
   }, [isSuspended, user.suspendedUntil, t]);
 
+  const currentQuestion = questions[currentQuestionIndex];
+  const currentAnswer = answers.find(a => a.questionId === currentQuestion?.id)?.answer || (currentQuestion?.type === 'multiple-choice' ? [] : '');
+
+  const isCurrentQuestionAnswered = useMemo(() => {
+    if (!currentQuestion) return false;
+    if (currentQuestion.type === 'multiple-choice') {
+      return Array.isArray(currentAnswer) && currentAnswer.length > 0;
+    }
+    if (currentQuestion.type === 'open-ended') {
+      return typeof currentAnswer === 'string' && currentAnswer.trim().length > 3;
+    }
+    // single-choice
+    return typeof currentAnswer === 'string' && currentAnswer !== '';
+  }, [currentAnswer, currentQuestion]);
+
+  useEffect(() => {
+    setValidationError(null); // Clear validation error on question change
+  }, [currentQuestionIndex]);
+
+  // CONDITIONAL RENDERING NOW HAPPENS AFTER ALL HOOKS
   if (isSuspended) {
     return (
       <div className="p-8 text-center min-h-[400px] flex flex-col justify-center items-center">
@@ -79,31 +126,21 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
         <p className="text-[var(--text-secondary)] mt-4">{t('account_suspended_try_again')}</p>
         <p className="text-lg font-semibold text-[var(--text-primary)] mt-2 bg-[var(--bg-accent-light)] px-4 py-2 rounded-lg">{suspensionRemainingText}</p>
         <div className="mt-8">
-            <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full">
-                {t('button_back')}
-            </button>
+          <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full">
+            {t('button_back')}
+          </button>
         </div>
       </div>
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const currentAnswer = answers.find(a => a.questionId === currentQuestion.id)?.answer || (currentQuestion.type === 'multiple-choice' ? [] : '');
+  if (questions.length === 0) {
+    return <div className="p-8 text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-primary)] mx-auto"></div></div>;
+  }
 
-  const isCurrentQuestionAnswered = useMemo(() => {
-    if (currentQuestion.type === 'multiple-choice') {
-      return Array.isArray(currentAnswer) && currentAnswer.length > 0;
-    }
-    if (currentQuestion.type === 'open-ended') {
-      return typeof currentAnswer === 'string' && currentAnswer.trim().length > 3;
-    }
-    // single-choice
-    return typeof currentAnswer === 'string' && currentAnswer !== '';
-  }, [currentAnswer, currentQuestion.type]);
 
-  useEffect(() => {
-    setValidationError(null); // Clear validation error on question change
-  }, [currentQuestionIndex]);
+
+
 
   const handleAnswerUpdate = (answerValue: string | string[]) => {
     const questionId = currentQuestion.id;
@@ -115,7 +152,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   const handleSingleChoice = (option: string) => {
     handleAnswerUpdate(option);
   };
-  
+
   const handleMultipleChoice = (option: string) => {
     const currentSelection = (Array.isArray(currentAnswer) ? currentAnswer : []) as string[];
     const newSelection = currentSelection.includes(option)
@@ -123,13 +160,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
       : [...currentSelection, option];
     handleAnswerUpdate(newSelection);
   };
-  
+
   const handleOpenEndedChange = (text: string) => {
     handleAnswerUpdate(text);
   };
 
   const goToNextQuestion = () => {
-     if (!isCurrentQuestionAnswered) {
+    if (!isCurrentQuestionAnswered) {
       setValidationError(t('alert_answer_required'));
       return;
     }
@@ -145,56 +182,54 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   };
 
   const progressPercentage = (answers.length / questions.length) * 100;
-  
+
   const renderAnswerOptions = () => {
-    switch(currentQuestion.type) {
-        case 'single-choice':
-            return (
-                <div className="space-y-3">
-                    {currentQuestion.options.map((option, index) => (
-                    <button
-                        key={index}
-                        onClick={() => handleSingleChoice(option)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 text-[var(--text-primary)] ${
-                        currentAnswer === option
-                            ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
-                            : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
-                        }`}
-                    >
-                        {option}
-                    </button>
-                    ))}
-                </div>
-            );
-        case 'multiple-choice':
-            return (
-                 <div className="space-y-3">
-                    {currentQuestion.options.map((option, index) => (
-                    <button
-                        key={index}
-                        onClick={() => handleMultipleChoice(option)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-4 text-[var(--text-primary)] ${
-                         (currentAnswer as string[]).includes(option)
-                            ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
-                            : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
-                        }`}
-                    >
-                        <div className={`w-5 h-5 border-2 rounded ${ (currentAnswer as string[]).includes(option) ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)]' : 'border-gray-300'}`}></div>
-                        <span>{option}</span>
-                    </button>
-                    ))}
-                </div>
-            );
-        case 'open-ended':
-            return (
-                <textarea
-                    value={currentAnswer as string}
-                    onChange={(e) => handleOpenEndedChange(e.target.value)}
-                    rows={5}
-                    placeholder={t('profile_form_description_placeholder')}
-                    className="mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]"
-                />
-            );
+    switch (currentQuestion.type) {
+      case 'single-choice':
+        return (
+          <div className="space-y-3">
+            {currentQuestion.options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleSingleChoice(option)}
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 text-[var(--text-primary)] ${currentAnswer === option
+                  ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
+                  : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
+                  }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        );
+      case 'multiple-choice':
+        return (
+          <div className="space-y-3">
+            {currentQuestion.options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleMultipleChoice(option)}
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-4 text-[var(--text-primary)] ${(currentAnswer as string[]).includes(option)
+                  ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
+                  : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
+                  }`}
+              >
+                <div className={`w-5 h-5 border-2 rounded ${(currentAnswer as string[]).includes(option) ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)]' : 'border-gray-300'}`}></div>
+                <span>{option}</span>
+              </button>
+            ))}
+          </div>
+        );
+      case 'open-ended':
+        return (
+          <textarea
+            value={currentAnswer as string}
+            onChange={(e) => handleOpenEndedChange(e.target.value)}
+            rows={5}
+            placeholder={t('profile_form_description_placeholder')}
+            className="mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]"
+          />
+        );
     }
   }
 
@@ -209,12 +244,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
           <div className="bg-[var(--accent-primary)] h-2.5 rounded-full transition-all duration-500" style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}></div>
         </div>
       </div>
-      
+
       {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
         <strong className="font-bold">{t('error_oops')}</strong>
         <span className="block sm:inline ml-2">{error}</span>
       </div>}
-       {validationError && <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+      {validationError && <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
         <span className="block sm:inline">{validationError}</span>
       </div>}
 
@@ -223,15 +258,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
         <p className="text-sm text-[var(--text-light)] mb-1">{t('questionnaire_question_of', { current: currentQuestionIndex + 1, total: questions.length })}</p>
         <h3 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">{currentQuestion.text}</h3>
       </div>
-      
+
       {renderAnswerOptions()}
-      
+
       <div className="mt-8 pt-6 border-t border-[var(--border-color)] flex justify-between items-center">
         <button onClick={onBack} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full">
           {t('button_back')}
         </button>
         <div className="flex items-center gap-2">
-           <button onClick={goToPrevQuestion} disabled={currentQuestionIndex === 0} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold py-2 px-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={goToPrevQuestion} disabled={currentQuestionIndex === 0} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold py-2 px-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed">
             {t('button_prev')}
           </button>
           {currentQuestionIndex === questions.length - 1 ? (

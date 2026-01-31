@@ -26,5 +26,10 @@ export const userService = {
   async removeNanny(nannyId: string) {
     const response = await api.delete<User>(`/users/nannies/${nannyId}/remove`);
     return response.data;
+  },
+
+  async deleteAccount() {
+    const response = await api.delete('/users/profile');
+    return response.data;
   }
 };

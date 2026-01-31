@@ -13,32 +13,55 @@ export class ChatService {
     @InjectModel('Booking') private bookingModel: Model<BookingDocument>,
     @InjectModel('SkillTask') private skillTaskModel: Model<SkillTaskDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>, // Inject User Model
-  ) {}
+  ) { }
 
   async saveMessage(roomId: string, senderId: string, text: string, mac: string, replyTo?: string): Promise<MessageDocument> {
     let receiverId = null;
+
+    // DEBUG: Log incoming values
+    console.log(`📩 [saveMessage] roomId: ${roomId}, senderId: ${senderId}`);
+
     const booking = await this.bookingModel.findById(roomId).exec();
     if (booking) {
-        const parentIdStr = booking.parentId.toString();
-        const nannyIdStr = booking.nannyId.toString();
-        receiverId = parentIdStr === senderId ? nannyIdStr : parentIdStr;
+      const parentIdStr = booking.parentId.toString();
+      const nannyIdStr = booking.nannyId.toString();
+      const senderIdStr = senderId.toString();
+
+      // DEBUG: Log comparison values
+      console.log(`📊 [Booking] parentIdStr: "${parentIdStr}", nannyIdStr: "${nannyIdStr}", senderIdStr: "${senderIdStr}"`);
+      console.log(`📊 [Booking] Is sender Parent? ${parentIdStr === senderIdStr}`);
+
+      receiverId = parentIdStr === senderIdStr ? nannyIdStr : parentIdStr;
+      console.log(`📊 [Booking] Calculated receiverId: "${receiverId}"`);
     } else {
-         const skill = await this.skillTaskModel.findById(roomId).exec();
-         if (skill) {
-             const requesterIdStr = skill.requesterId.toString();
-             receiverId = requesterIdStr === senderId ? null : requesterIdStr; 
-         }
+      const skill = await this.skillTaskModel.findById(roomId).exec();
+      if (skill) {
+        const requesterIdStr = skill.requesterId.toString();
+        const senderIdStr = senderId.toString();
+
+        // DEBUG: For Skills (Parent-to-Parent)
+        console.log(`📊 [SkillTask] requesterId: "${requesterIdStr}", senderId: "${senderIdStr}"`);
+
+        // FIX: For skill tasks, if sender is requester, we need to find the OTHER participant
+        // The issue: skill.requesterId only stores ONE user. Who is the other?
+        // We need to check if there's an "assignedTo" or "acceptedBy" field
+        // For now, if requester is sender, receiverId is null (group chat behavior)
+        receiverId = requesterIdStr === senderIdStr ? null : requesterIdStr;
+        console.log(`📊 [SkillTask] Calculated receiverId: "${receiverId}"`);
+      } else {
+        console.log(`⚠️ [saveMessage] Room ${roomId} not found in Bookings or SkillTasks`);
+      }
     }
 
-    const message = new this.messageModel({ 
-        roomId, 
-        senderId, 
-        receiverId, 
-        text, 
-        mac, 
-        replyTo: replyTo || null,
-        status: 'sent',
-        deletedFor: [] // Initialize array
+    const message = new this.messageModel({
+      roomId,
+      senderId,
+      receiverId,
+      text,
+      mac,
+      replyTo: replyTo || null,
+      status: 'sent',
+      deletedFor: [] // Initialize array
     });
     return message.save();
   }
@@ -53,42 +76,42 @@ export class ChatService {
   async addReaction(messageId: string, userId: string, emoji: string): Promise<MessageDocument> {
     const message = await this.messageModel.findById(messageId);
     if (!message) throw new NotFoundException('Message not found');
-    
+
     const exists = message.reactions.find(r => r.userId === userId && r.emoji === emoji);
     if (!exists) {
-        message.reactions.push({ userId, emoji });
-        return message.save();
+      message.reactions.push({ userId, emoji });
+      return message.save();
     }
     return message;
   }
 
   async removeReaction(messageId: string, userId: string, emoji: string): Promise<MessageDocument> {
     return this.messageModel.findByIdAndUpdate(
-        messageId,
-        { $pull: { reactions: { userId, emoji } } },
-        { new: true }
+      messageId,
+      { $pull: { reactions: { userId, emoji } } },
+      { new: true }
     ).exec();
   }
 
   // UPDATED: Handle "Delete for Me" vs "Delete for Everyone"
   async deleteMessage(messageId: string, userId: string, forEveryone: boolean): Promise<MessageDocument> {
     if (forEveryone) {
-        return this.messageModel.findByIdAndUpdate(
-            messageId,
-            { 
-                deleted: true, 
-                deletedAt: new Date(),
-                text: '', 
-                mac: ''
-            },
-            { new: true }
-        ).exec();
+      return this.messageModel.findByIdAndUpdate(
+        messageId,
+        {
+          deleted: true,
+          deletedAt: new Date(),
+          text: '',
+          mac: ''
+        },
+        { new: true }
+      ).exec();
     } else {
-        return this.messageModel.findByIdAndUpdate(
-            messageId,
-            { $addToSet: { deletedFor: userId } },
-            { new: true }
-        ).exec();
+      return this.messageModel.findByIdAndUpdate(
+        messageId,
+        { $addToSet: { deletedFor: userId } },
+        { new: true }
+      ).exec();
     }
   }
 
@@ -101,22 +124,31 @@ export class ChatService {
     return this.messageModel.find({ receiverId: userObjectId, status: 'delivered' }).exec();
   }
 
+  // NEW: Mark single message as delivered (for real-time updates)
+  async markMessageAsDelivered(messageId: string): Promise<MessageDocument | null> {
+    return this.messageModel.findByIdAndUpdate(
+      messageId,
+      { status: 'delivered', deliveredAt: new Date() },
+      { new: true }
+    ).exec();
+  }
+
   async markMessagesAsSeen(roomId: string, viewerId: string): Promise<string[]> {
     const viewerObjectId = new Types.ObjectId(viewerId);
-    
-    const messagesToUpdate = await this.messageModel.find({ 
-        roomId, 
-        receiverId: viewerObjectId, 
-        status: { $ne: 'seen' } 
+
+    const messagesToUpdate = await this.messageModel.find({
+      roomId,
+      receiverId: viewerObjectId,
+      status: { $ne: 'seen' }
     });
 
     if (messagesToUpdate.length > 0) {
-        await this.messageModel.updateMany(
-            { roomId, receiverId: viewerObjectId, status: { $ne: 'seen' } },
-            { status: 'seen', seenAt: new Date() }
-        ).exec();
+      await this.messageModel.updateMany(
+        { roomId, receiverId: viewerObjectId, status: { $ne: 'seen' } },
+        { status: 'seen', seenAt: new Date() }
+      ).exec();
     }
-    
+
     return messagesToUpdate.map(m => m._id.toString());
   }
 
@@ -124,16 +156,16 @@ export class ChatService {
 
   // NEW: Update User Status
   async updateUserStatus(userId: string, status: 'online' | 'offline'): Promise<UserDocument> {
-      const updateData: any = { status };
-      if (status === 'offline') {
-          updateData.lastSeen = new Date();
-      }
-      return this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
+    const updateData: any = { status };
+    if (status === 'offline') {
+      updateData.lastSeen = new Date();
+    }
+    return this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
   }
 
   // NEW: Get User Status for initial load
   async getUserStatus(userId: string): Promise<{ status: string, lastSeen: Date }> {
-      const user = await this.userModel.findById(userId, 'status lastSeen').exec();
-      return user ? { status: user.status, lastSeen: user.lastSeen } : { status: 'offline', lastSeen: null };
+    const user = await this.userModel.findById(userId, 'status lastSeen').exec();
+    return user ? { status: user.status, lastSeen: user.lastSeen } : { status: 'offline', lastSeen: null };
   }
 }
