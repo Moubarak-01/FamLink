@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, User, SharedOuting, SkillRequest, BookingRequest, ChatMessage } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { socketService } from '../services/socketService';
@@ -109,14 +110,32 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         const unsubMsg = socketService.onMessage(({ roomId, message }) => {
             if (roomId !== contextId) return;
             setHistoryMessages(prev => {
+                // Deduplication: Check for Real ID
                 if (prev.some(m => m.id === message.id)) return prev;
-                // If I am receiving a message in this active window, mark it as seen immediately
+
+                // Deduplication: If from me, check for Temp ID match (fuzzy match by text/time could be safer, but removing latest temp is easier)
+                // Actually, rely on the sendMessage callback to clean up.
+                // But we still don't want to show BOTH.
+                // If I receive a message from myself via socket, acts as confirmation.
+                if (message.senderId === currentUser.id) {
+                    // Check if we have a temp message that matches this content
+                    const tempMatchIndex = prev.findIndex(m => m.id.startsWith('temp-') && m.text === message.text);
+                    if (tempMatchIndex !== -1) {
+                        // Replace the temp message with the real one immediately
+                        const newHistory = [...prev];
+                        newHistory[tempMatchIndex] = message;
+                        return newHistory;
+                    }
+                }
+
+                // If I am receiving a message in this active window from SOMEONE ELSE, mark it as seen immediately
                 if (message.senderId !== currentUser.id) {
                     socketService.markMessagesAsSeen(roomId, currentUser.id);
                 }
                 return [...prev, message];
             });
-            // Auto-scroll logic as requested using scrollTop
+
+            // Auto-scroll
             if (scrollContainerRef.current) {
                 setTimeout(() => {
                     scrollContainerRef.current!.scrollTop = scrollContainerRef.current!.scrollHeight;
@@ -124,10 +143,69 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
             }
         });
 
-        // ... (rest of listeners) ...
+        // Add Status Update Listener for Blue Ticks
+        const unsubStatus = socketService.onStatusUpdate((data) => {
+            if (data.roomId === contextId) {
+                setHistoryMessages(prev => prev.map(msg => {
+                    // Normalize ID comparison (msg.id vs data.messageId)
+                    if (data.status === 'seen') {
+                        // If logic implies all messages are seen
+                        if (msg.senderId === data.userId && msg.status !== 'seen') {
+                            return { ...msg, status: 'seen' };
+                        }
+                    } else if (msg.id === data.messageId || (msg as any)._id === data.messageId) {
+                        return { ...msg, status: data.status };
+                    }
+                    return msg;
+                }));
+            }
+        });
+
+        const unsubReaction = socketService.onReaction((data) => {
+            if (data.roomId === contextId) {
+                setHistoryMessages(prev => prev.map(msg => {
+                    const msgId = msg.id || (msg as any)._id;
+                    if (msgId === data.messageId) {
+                        const currentReactions = msg.reactions || [];
+                        if (data.type === 'add') {
+                            // Avoid duplicates
+                            if (!currentReactions.some(r => r.userId === data.userId && r.emoji === data.emoji)) {
+                                return { ...msg, reactions: [...currentReactions, { userId: data.userId, emoji: data.emoji }] };
+                            }
+                        } else if (data.type === 'remove') {
+                            return { ...msg, reactions: currentReactions.filter(r => !(r.userId === data.userId && r.emoji === data.emoji)) };
+                        }
+                    }
+                    return msg;
+                }));
+            }
+        });
+
+        const unsubDelete = socketService.onMessageDeleted((data) => {
+            if (data.roomId === contextId) {
+                setHistoryMessages(prev => prev.filter(msg => {
+                    const msgId = msg.id || (msg as any)._id;
+                    return msgId !== data.messageId;
+                }));
+            }
+        });
+
+        const unsubTyping = socketService.onTyping((data) => {
+            if (data.roomId === contextId && data.userId !== currentUser.id) {
+                if (data.isTyping) {
+                    setTypingUsers(prev => !prev.includes(data.userName) ? [...prev, data.userName] : prev);
+                } else {
+                    setTypingUsers(prev => prev.filter(u => u !== data.userName));
+                }
+            }
+        });
 
         return () => {
             unsubMsg();
+            unsubStatus(); // Unsubscribe status
+            unsubReaction(); // Unsubscribe reactions
+            unsubDelete(); // Unsubscribe deletions
+            unsubTyping(); // Unsubscribe typing
             unsubPresence();
             if (contextId) {
                 socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName);
@@ -137,12 +215,15 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     }, [contextId, currentUser.id, bookingRequest, otherUserId]);
 
     // Initial scroll on open
+    // Initial scroll and Auto-scroll on Typing/Messages
     useEffect(() => {
-        if (allMessages.length > 0 && scrollContainerRef.current) {
-            // Auto-scroll logic as requested
-            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
         }
-    }, [contextId, allMessages.length]); // Re-run when messages load
+    }, [contextId, allMessages.length, typingUsers.length]); // Scroll when typing toggles/messages arrive
 
     // --- TYPING LOGIC ---
     const stopTyping = () => {
@@ -179,7 +260,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     };
 
     const handleBlur = () => {
-        stopTyping();
+        // Only stop typing if field is empty (preserve "typing" status if drafting)
+        if (!messageText.trim()) {
+            stopTyping();
+        }
     };
 
     const handleKeyDown = () => {
@@ -248,7 +332,16 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
             setHistoryMessages(prev => [...prev, newMessage]);
 
             socketService.sendMessage(contextId, newMessage, (savedMessage) => {
-                setHistoryMessages(prev => prev.map(m => m.id === tempId ? savedMessage : m));
+                setHistoryMessages(prev => {
+                    // Check if Real ID already exists (from socket event replacement)
+                    const realId = savedMessage.id || (savedMessage as any)._id?.toString();
+                    if (prev.some(m => m.id === realId)) {
+                        // Remove the temp message, as Real one is already there
+                        return prev.filter(m => m.id !== tempId);
+                    }
+                    // Otherwise update tempId to savedMessage
+                    return prev.map(m => m.id === tempId ? savedMessage : m);
+                });
             });
 
             setMessageText('');
@@ -337,29 +430,71 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                     ref={scrollContainerRef}
                     className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col"
                 >
-                    <div className="space-y-4 pt-2 pb-2">
-                        {allMessages.map((msg) => (
-                            <div id={`msg-${msg.id}`} key={msg.id} className="transition-colors duration-300 rounded-lg">
-                                <MessageBubble
-                                    message={msg}
-                                    currentUser={currentUser}
-                                    messages={allMessages}
-                                    onReaction={(id, emoji) => socketService.sendReaction(contextId, id, currentUser.id, emoji)}
-                                    onRemoveReaction={(id, emoji) => socketService.removeReaction(contextId, id, currentUser.id, emoji)}
-                                    onReply={(id) => setReplyToId(id)}
-                                    onDelete={(id) => handleDeleteClick(id, msg.senderId === currentUser.id)}
-                                    onScrollToMessage={scrollToMessage}
-                                />
-                            </div>
-                        ))}
+                    <div className="space-y-2 pt-2 pb-2">
+                        <AnimatePresence initial={false} mode='popLayout'>
+                            {allMessages.map((msg, index) => {
+                                const isSequence = index > 0 && allMessages[index - 1].senderId === msg.senderId;
+                                return (
+                                    <motion.div
+                                        id={`msg-${msg.id}`}
+                                        key={msg.id}
+                                        initial={{ opacity: 0, y: 20, scale: 0.95 }} // Start 20px below
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                                        transition={{
+                                            type: "spring",
+                                            stiffness: 500,
+                                            damping: 30,
+                                            mass: 1,
+                                            delay: isSequence ? 0 : 0.05 // Faster if sequential
+                                        }}
+                                        layout
+                                        className="origin-bottom"
+                                    >
+                                        <MessageBubble
+                                            message={msg}
+                                            currentUser={currentUser}
+                                            messages={allMessages}
+                                            onReaction={(id, emoji) => socketService.sendReaction(contextId, id, currentUser.id, emoji)}
+                                            onRemoveReaction={(id, emoji) => socketService.removeReaction(contextId, id, currentUser.id, emoji)}
+                                            onReply={(id) => setReplyToId(id)}
+                                            onDelete={(id) => handleDeleteClick(id, msg.senderId === currentUser.id)}
+                                            onScrollToMessage={scrollToMessage}
+                                        />
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
                     </div>
 
-                    {/* Typing Indicator */}
-                    {typingUsers.length > 0 && (
-                        <div className="text-xs text-gray-500 italic ml-2 mt-2 sticky bottom-0 transition-opacity duration-200 opacity-100">
-                            {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
-                        </div>
-                    )}
+                    {/* WhatsApp-Style Dancing Typing Bubble */}
+                    <AnimatePresence>
+                        {typingUsers.length > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                className="self-start ml-4 mb-2"
+                            >
+                                <div className="flex items-center gap-1 bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-none shadow-md border border-gray-100 dark:border-gray-700 w-fit">
+                                    {[0, 1, 2].map((i) => (
+                                        <motion.div
+                                            key={i}
+                                            className="w-1.5 h-1.5 bg-gray-400 rounded-full"
+                                            animate={{ y: [0, -5, 0] }}
+                                            transition={{
+                                                duration: 0.6,
+                                                repeat: Infinity,
+                                                ease: "easeInOut",
+                                                delay: i * 0.1 // Staggered wave
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Input Area - Sticky */}
@@ -368,7 +503,11 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                     <form onSubmit={handleSendMessage} className="p-3 flex gap-2 items-end">
                         <textarea
                             value={messageText}
-                            onChange={e => setMessageText(e.target.value)}
+                            onChange={e => {
+                                setMessageText(e.target.value);
+                                // Trigger typing status on any change (paste, voice, etc.)
+                                if (e.target.value.trim()) startTyping();
+                            }}
 
                             // --- EVENT HANDLERS FOR INSTANT UPDATES ---
                             onFocus={handleFocus} // Start typing immediately when focused
@@ -381,7 +520,11 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             }}
                             placeholder="💬 Type a message..."
                             rows={1}
-                            className="flex-1 px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:shadow-[0_0_10px_rgba(236,72,153,0.5)] transition-all duration-300 text-[var(--text-primary)] resize-none min-h-[45px] max-h-[100px]"
+                            className={`flex-1 px-4 py-3 bg-[var(--bg-input)] border rounded-full shadow-sm 
+                                transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[45px] max-h-[100px]
+                                focus:outline-none focus:bg-pink-50 dark:focus:bg-[#1a1a1a] 
+                                border-[var(--border-input)] focus:border-pink-300 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
+                            `}
                         />
                         <button
                             type="submit"

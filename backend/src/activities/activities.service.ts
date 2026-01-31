@@ -3,9 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Activity, ActivityDocument } from '../schemas/activity.schema';
 
+import { ChatGateway } from '../chat/chat.gateway';
+
 @Injectable()
 export class ActivitiesService {
-  constructor(@InjectModel(Activity.name) private activityModel: Model<ActivityDocument>) {}
+  constructor(
+    @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
+    private chatGateway: ChatGateway
+  ) { }
 
   async create(createActivityDto: any, userId: string): Promise<ActivityDocument> {
     const createdActivity = new this.activityModel({
@@ -13,7 +18,9 @@ export class ActivitiesService {
       hostId: userId,
       participants: [userId],
     });
-    return createdActivity.save();
+    const saved = await createdActivity.save();
+    this.chatGateway.server.emit('activity_update', { action: 'create' });
+    return saved;
   }
 
   async findAll(): Promise<ActivityDocument[]> {
@@ -25,18 +32,24 @@ export class ActivitiesService {
   }
 
   async join(activityId: string, userId: string): Promise<ActivityDocument> {
-    return this.activityModel.findByIdAndUpdate(
+    const updated = await this.activityModel.findByIdAndUpdate(
       activityId,
       { $addToSet: { participants: userId } },
       { new: true }
     ).exec();
+    this.chatGateway.server.emit('activity_update', { action: 'join' });
+    return updated;
   }
-  
+
   async delete(id: string): Promise<any> {
-      return this.activityModel.findByIdAndDelete(id).exec();
+    const deleted = await this.activityModel.findByIdAndDelete(id).exec();
+    this.chatGateway.server.emit('activity_update', { action: 'delete' });
+    return deleted;
   }
 
   async deleteAll(): Promise<any> {
-      return this.activityModel.deleteMany({}).exec();
+    const deleted = await this.activityModel.deleteMany({}).exec();
+    this.chatGateway.server.emit('activity_update', { action: 'delete_all' });
+    return deleted;
   }
 }

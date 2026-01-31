@@ -14,16 +14,17 @@ import { User, UserSchema } from '../schemas/user.schema'; // 1. Import User
 @Module({
   imports: [
     MongooseModule.forFeature([
-        { name: Message.name, schema: MessageSchema },
-        { name: Booking.name, schema: BookingSchema },
-        { name: Activity.name, schema: ActivitySchema },
-        { name: Outing.name, schema: OutingSchema },
-        { name: SkillTask.name, schema: SkillTaskSchema },
-        { name: User.name, schema: UserSchema }, // 2. Add User to imports
+      { name: Message.name, schema: MessageSchema },
+      { name: Booking.name, schema: BookingSchema },
+      { name: Activity.name, schema: ActivitySchema },
+      { name: Outing.name, schema: OutingSchema },
+      { name: SkillTask.name, schema: SkillTaskSchema },
+      { name: User.name, schema: UserSchema }, // 2. Add User to imports
     ]),
     NotificationsModule
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService],
+  exports: [ChatGateway],
 })
-export class ChatModule {}
+export class ChatModule { }

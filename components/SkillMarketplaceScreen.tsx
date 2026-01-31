@@ -32,16 +32,17 @@ const getRequesterName = (reqId: any, reqName?: string) => {
 };
 
 const getRequesterPhoto = (reqId: any, reqPhoto?: string) => {
-     if (typeof reqId === 'object' && reqId?.photo) return reqId.photo;
-     if (reqPhoto) return reqPhoto;
-     return 'https://i.pravatar.cc/150?u=default';
+    if (typeof reqId === 'object' && reqId?.photo) return reqId.photo;
+    if (reqPhoto) return reqPhoto;
+    return 'https://i.pravatar.cc/150?u=default';
 };
 
 const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string, onMakeOffer: (request: SkillRequest) => void, onUpdateOffer: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void, onOpenChat: (request: SkillRequest) => void, onDelete: (id: string) => void }> = ({ request, currentUserId, onMakeOffer, onUpdateOffer, onOpenChat, onDelete }) => {
     const { t } = useLanguage();
-    const reqIdStr = typeof request.requesterId === 'object' ? request.requesterId._id : request.requesterId;
+    // FIX: Safely handle null requesterId
+    const reqIdStr = (request.requesterId && typeof request.requesterId === 'object') ? request.requesterId._id : (request.requesterId as string || '');
     const isOwner = reqIdStr === currentUserId;
-    
+
     // CRITICAL FIX: Safe access to offers
     const offers = request.offers || [];
     const hasAcceptedOffer = offers.some(o => o.helperId === currentUserId && o.status === 'accepted');
@@ -53,7 +54,7 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
     return (
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
             {isOwner && (
-                 <button 
+                <button
                     onClick={(e) => { e.stopPropagation(); onDelete(request.id); }}
                     className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete Request"
@@ -80,17 +81,17 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
                                 <h3 className="font-bold text-lg text-[var(--text-primary)] mt-1">{request.title}</h3>
                                 <p className="text-xs text-[var(--text-light)] mb-2">{t('skill_card_requested_by', { name: displayName })}</p>
                             </div>
-                             <div className="text-right flex-shrink-0 ml-4">
+                            <div className="text-right flex-shrink-0 ml-4">
                                 <p className="text-lg font-bold text-[var(--text-primary)]">€{request.budget}</p>
                                 <p className="text-xs text-[var(--text-light)]">Budget</p>
                             </div>
                         </div>
                         <p className="text-[var(--text-secondary)] mt-1 text-sm">{request.description}</p>
-                        
+
                         <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-wrap justify-between items-center gap-2">
                             <p className="text-xs text-[var(--text-light)] font-medium">📍 {request.location}</p>
                             <div className="flex gap-2">
-                                <button 
+                                <button
                                     onClick={() => onOpenChat(request)}
                                     disabled={!canChat}
                                     className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 disabled:text-gray-400 disabled:cursor-not-allowed"
@@ -142,9 +143,9 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
 
 const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, requests, onBack, onCreateRequest, onMakeOffer, onUpdateOffer, onOpenChat, onDeleteSkillRequest, onDeleteAllSkillRequests }) => {
     const { t } = useLanguage();
-    
+
     const handleClearAll = () => {
-        if(window.confirm("Delete ALL requests? This cannot be undone.")) {
+        if (window.confirm("Delete ALL requests? This cannot be undone.")) {
             onDeleteAllSkillRequests();
         }
     };
@@ -162,24 +163,24 @@ const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, r
             </div>
 
             <div className="mb-6 text-center">
-                 <button 
+                <button
                     onClick={onCreateRequest}
                     className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform hover:scale-105"
                 >
                     {t('button_post_task')}
                 </button>
             </div>
-            
+
             <div className="space-y-6">
                 {requests.length > 0 ? (
                     requests.map(request => (
-                        <SkillRequestCard 
-                            key={request.id} 
-                            request={request} 
-                            currentUserId={user.id} 
-                            onMakeOffer={onMakeOffer} 
-                            onUpdateOffer={onUpdateOffer} 
-                            onOpenChat={onOpenChat} 
+                        <SkillRequestCard
+                            key={request.id}
+                            request={request}
+                            currentUserId={user.id}
+                            onMakeOffer={onMakeOffer}
+                            onUpdateOffer={onUpdateOffer}
+                            onOpenChat={onOpenChat}
                             onDelete={onDeleteSkillRequest}
                         />
                     ))

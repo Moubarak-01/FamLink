@@ -1,42 +1,56 @@
 // moubarak-01/famlink/FamLink-b923137ae4aaec857ed19fa053c6966af163c9b5/components/DashboardScreen.tsx
 import React from 'react';
+import { motion } from 'framer-motion';
 import { User, BookingRequest, Task, SharedOuting, SkillRequest, Activity } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.1 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+};
 
 type EnrichedBookingRequest = BookingRequest & { nanny?: User, parent?: User };
 
 interface DashboardScreenProps {
-  user: User;
-  addedNannies: User[];
-  bookingRequests: EnrichedBookingRequest[];
-  allTasks: Task[];
-  userTasks: Task[];
-  activities: Activity[]; // <-- ADDED
-  sharedOutings: SharedOuting[];
-  skillRequests?: SkillRequest[];
-  onCancelSubscription: () => void;
-  onLogout: () => void;
-  onSearchNannies: () => void;
-  onRemoveNanny: (nannyId: string) => void;
-  onContactNanny: (nanny: User) => void;
-  onViewNanny: (nannyId: string) => void;
-  onRateNanny: (nanny: User) => void;
-  onUpdateBookingStatus: (requestId: string, status: 'accepted' | 'declined') => void;
-  onOpenTaskModal: (nanny: User) => void;
-  onUpdateTaskStatus: (taskId: string, status: 'pending' | 'completed') => void;
-  onViewActivities: () => void;
-  onViewOutings: () => void;
-  onUpdateOutingRequestStatus: (outingId: string, parentId: string, status: 'accepted' | 'declined') => void;
-  onViewSkillMarketplace: () => void;
-  onEditProfile: () => void;
-  onOpenBookingChat: (request: BookingRequest) => void;
-  onCancelBooking: (id: string) => void;
-  onClearAllBookings: () => void;
-  onKeepTask?: (id: string) => void;
-  onDeleteTask?: (id: string) => void;
-  onDeleteActivities: () => void; // <-- ADDED
-  onDeleteOutings: () => void; // <-- ADDED
-  onDeleteSkillRequests: () => void; // <-- ADDED
+    user: User;
+    addedNannies: User[];
+    bookingRequests: EnrichedBookingRequest[];
+    allTasks: Task[];
+    userTasks: Task[];
+    activities: Activity[]; // <-- ADDED
+    sharedOutings: SharedOuting[];
+    skillRequests?: SkillRequest[];
+    onCancelSubscription: () => void;
+    onLogout: () => void;
+    onSearchNannies: () => void;
+    onRemoveNanny: (nannyId: string) => void;
+    onContactNanny: (nanny: User) => void;
+    onViewNanny: (nannyId: string) => void;
+    onRateNanny: (nanny: User) => void;
+    onUpdateBookingStatus: (requestId: string, status: 'accepted' | 'declined') => void;
+    onOpenTaskModal: (nanny: User) => void;
+    onUpdateTaskStatus: (taskId: string, status: 'pending' | 'completed') => void;
+    onViewActivities: () => void;
+    onViewOutings: () => void;
+    onUpdateOutingRequestStatus: (outingId: string, parentId: string, status: 'accepted' | 'declined') => void;
+    onViewSkillMarketplace: () => void;
+    onEditProfile: () => void;
+    onOpenBookingChat: (request: BookingRequest) => void;
+    onCancelBooking: (id: string) => void;
+    onClearAllBookings: () => void;
+    onKeepTask?: (id: string) => void;
+    onDeleteTask?: (id: string) => void;
+    onDeleteActivities: () => void; // <-- ADDED
+    onDeleteOutings: () => void; // <-- ADDED
+    onDeleteSkillRequests: () => void; // <-- ADDED
 }
 
 const formatDateSafe = (dateString: string) => {
@@ -48,12 +62,12 @@ const formatDateSafe = (dateString: string) => {
 // --- Helper Components ---
 
 const StatusTag: React.FC<{ status: string }> = ({ status }) => {
-     let styles = { bg: 'bg-gray-100', text: 'text-gray-700' };
-     if (status === 'accepted' || status === 'completed') styles = { bg: 'bg-[var(--bg-status-green)]', text: 'text-[var(--text-status-green)]' };
-     if (status === 'declined' || status === 'canceled') styles = { bg: 'bg-[var(--bg-status-red)]', text: 'text-[var(--text-status-red)]' };
-     if (status === 'pending' || status === 'open') styles = { bg: 'bg-[var(--bg-status-yellow)]', text: 'text-[var(--text-status-yellow)]' };
+    let styles = { bg: 'bg-gray-100', text: 'text-gray-700' };
+    if (status === 'accepted' || status === 'completed') styles = { bg: 'bg-[var(--bg-status-green)]', text: 'text-[var(--text-status-green)]' };
+    if (status === 'declined' || status === 'canceled') styles = { bg: 'bg-[var(--bg-status-red)]', text: 'text-[var(--text-status-red)]' };
+    if (status === 'pending' || status === 'open') styles = { bg: 'bg-[var(--bg-status-yellow)]', text: 'text-[var(--text-status-yellow)]' };
 
-     return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text} capitalize`}>{status}</span>;
+    return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text} capitalize`}>{status}</span>;
 }
 
 const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScreenProps['onUpdateTaskStatus'], onKeep?: (id: string) => void, onDelete?: (id: string) => void }> = ({ task, onUpdateStatus, onKeep, onDelete }) => {
@@ -64,7 +78,7 @@ const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScree
     today.setHours(0, 0, 0, 0);
     const isOverdue = dueDate < today && !isCompleted;
 
-     // Calculate expiration if completed
+    // Calculate expiration if completed
     let daysRemaining = 0;
     if (isCompleted && task.completedAt && !task.keepPermanently) {
         const completedDate = new Date(task.completedAt);
@@ -81,20 +95,20 @@ const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScree
 
     return (
         <div className="bg-[var(--bg-card)] p-3 rounded-lg shadow-sm border border-[var(--border-color)] flex items-start gap-4 group">
-            <input 
-                type="checkbox" 
-                checked={isCompleted} 
-                onChange={handleToggle} 
+            <input
+                type="checkbox"
+                checked={isCompleted}
+                onChange={handleToggle}
                 className="h-5 w-5 mt-1 rounded border-gray-300 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)] cursor-pointer flex-shrink-0"
             />
             <div className="flex-grow">
                 <div className="flex items-center justify-between">
-                     <p className={`${isCompleted ? 'line-through text-[var(--text-light)]' : 'text-[var(--text-primary)]'}`}>{task.description}</p>
-                     <div className="flex items-center gap-2">
+                    <p className={`${isCompleted ? 'line-through text-[var(--text-light)]' : 'text-[var(--text-primary)]'}`}>{task.description}</p>
+                    <div className="flex items-center gap-2">
                         <StatusTag status={task.status} />
                         {onDelete && (
-                            <button 
-                                onClick={() => { if(window.confirm("Delete this task?")) onDelete(task.id); }}
+                            <button
+                                onClick={() => { if (window.confirm("Delete this task?")) onDelete(task.id); }}
                                 className="text-gray-400 hover:text-red-500 transition-colors"
                                 title="Delete Task"
                             >
@@ -103,10 +117,10 @@ const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScree
                                 </svg>
                             </button>
                         )}
-                     </div>
+                    </div>
                 </div>
                 <p className={`text-xs font-medium mt-1 ${isOverdue ? 'text-[var(--accent-red)]' : 'text-[var(--text-light)]'}`}>
-                    {isOverdue ? t('task_overdue') + ': ' : t('task_due_on', {date: ''})} {formatDateSafe(task.dueDate)}
+                    {isOverdue ? t('task_overdue') + ': ' : t('task_due_on', { date: '' })} {formatDateSafe(task.dueDate)}
                 </p>
 
                 {/* Expiration Warning & Keep Button */}
@@ -125,7 +139,7 @@ const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScree
     );
 };
 
-const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], onRemove: (id: string) => void, onContact: (nanny: User) => void, onView: (id: string) => void, onRate: (nanny: User) => void, onAddTask: () => void}> = ({ nanny, currentUser, tasks, onRemove, onContact, onView, onRate, onAddTask }) => {
+const AddedNannyCard: React.FC<{ nanny: User, currentUser: User, tasks: Task[], onRemove: (id: string) => void, onContact: (nanny: User) => void, onView: (id: string) => void, onRate: (nanny: User) => void, onAddTask: () => void }> = ({ nanny, currentUser, tasks, onRemove, onContact, onView, onRate, onAddTask }) => {
     const { t } = useLanguage();
     if (!nanny.profile) return null;
 
@@ -137,13 +151,13 @@ const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], o
             <div className="flex-grow">
                 <h4 className="font-bold text-[var(--text-primary)]">{nanny.fullName}</h4>
                 <p className="text-sm text-[var(--text-light)]">{t('nanny_profile_experience')}: {nanny.profile.experience} {t('nanny_profile_years')}</p>
-                 <p className="text-xs text-[var(--text-light)] line-clamp-1">{nanny.profile.description}</p>
+                <p className="text-xs text-[var(--text-light)] line-clamp-1">{nanny.profile.description}</p>
             </div>
             <div className="flex flex-wrap gap-2">
                 <button onClick={() => onView(nanny.id)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_view_profile')}</button>
                 <button onClick={() => onContact(nanny)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_contact')}</button>
-                <button 
-                    onClick={() => onRate(nanny)} 
+                <button
+                    onClick={() => onRate(nanny)}
                     disabled={!!hasRated}
                     className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
                     {hasRated ? t('button_rated') : t('button_rate')}
@@ -154,14 +168,14 @@ const AddedNannyCard: React.FC<{nanny: User, currentUser: User, tasks: Task[], o
                 </button>
             </div>
             <div className="mt-3 pt-3 border-t border-[var(--border-color)] w-full">
-                <h5 className="text-sm font-semibold text-[var(--text-secondary)] mb-1">{t('dashboard_tasks_for_nanny', {name: nanny.fullName.split(' ')[0]})}</h5>
+                <h5 className="text-sm font-semibold text-[var(--text-secondary)] mb-1">{t('dashboard_tasks_for_nanny', { name: nanny.fullName.split(' ')[0] })}</h5>
                 {/* Note: This is a summary view, so we can keep it simple, or use InteractiveTaskItem here too but read-only if preferred. Keeping simple for compactness in card view. */}
                 {tasks.length > 0 ? (
                     <ul className="space-y-1 list-disc list-inside">
                         {tasks.map(task => (
-                             <li key={task.id} className={`text-xs ${task.status === 'completed' ? 'line-through text-[var(--text-light)]' : 'text-[var(--text-primary)]'}`}>
-                                 {task.description}
-                             </li>
+                            <li key={task.id} className={`text-xs ${task.status === 'completed' ? 'line-through text-[var(--text-light)]' : 'text-[var(--text-primary)]'}`}>
+                                {task.description}
+                            </li>
                         ))}
                     </ul>
                 ) : <p className="text-xs text-[var(--text-light)]">{t('dashboard_no_tasks')}</p>}
@@ -184,21 +198,21 @@ const ParentBookingCard: React.FC<{ request: EnrichedBookingRequest }> = ({ requ
     return (
         <div className="bg-[#1f2937] p-5 rounded-xl shadow-lg border border-gray-700 relative overflow-hidden text-white">
             <div className="flex justify-center mb-3">
-                 {nannyPhoto ? (
-                     <img 
-                        src={nannyPhoto} 
-                        alt={nannyName} 
-                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-600" 
-                     />
-                 ) : (
-                     <div className="w-16 h-16 rounded-full bg-gray-500 flex items-center justify-center border-2 border-gray-600">
-                         <span className="text-2xl">👤</span>
-                     </div>
-                 )}
+                {nannyPhoto ? (
+                    <img
+                        src={nannyPhoto}
+                        alt={nannyName}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+                    />
+                ) : (
+                    <div className="w-16 h-16 rounded-full bg-gray-500 flex items-center justify-center border-2 border-gray-600">
+                        <span className="text-2xl">👤</span>
+                    </div>
+                )}
             </div>
 
             <h4 className="text-xl font-bold mb-1 text-center">Request to {nannyName.split(' ')[0]}</h4>
-            
+
             <div className="text-gray-300 text-sm space-y-1 mb-4 text-center">
                 <p><span className="font-semibold">Date:</span> {formatDateSafe(request.date)}</p>
                 <p><span className="font-semibold">Time:</span> {request.startTime} - {request.endTime}</p>
@@ -217,7 +231,7 @@ const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: Da
     const { t } = useLanguage();
     const isPending = request.status === 'pending';
     const isAccepted = request.status === 'accepted';
-    
+
     const parentName = request.parentName || (request.parent ? request.parent.fullName : 'Parent');
 
     return (
@@ -260,19 +274,19 @@ const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: Da
     );
 };
 
-const ParentDashboard: React.FC<DashboardScreenProps> = ({ 
-    user, addedNannies, bookingRequests, allTasks, userTasks, 
+const ParentDashboard: React.FC<DashboardScreenProps> = ({
+    user, addedNannies, bookingRequests, allTasks, userTasks,
     sharedOutings, skillRequests, activities, // <-- ADDED ACTIVITIES PROP
-    onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny, 
-    onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus, 
-    onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking, 
+    onCancelSubscription, onSearchNannies, onRemoveNanny, onContactNanny, onViewNanny,
+    onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus,
+    onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking,
     onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus,
     onDeleteActivities, onDeleteOutings, onDeleteSkillRequests // <-- NEW DELETE HANDLERS
 }) => {
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
     const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
-    
+
     // Parent sees tasks they created
     const myTasks = allTasks.filter(t => t.parentId === user.id);
 
@@ -282,144 +296,154 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     const hasCreatedSkillRequests = skillRequests?.some(s => s.requesterId === user.id);
 
     return (
-      <>
-        {!user.location && (
-             <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4" role="alert">
-                <div>
-                    <p className="font-bold">{t('parent_profile_form_title')}</p>
-                    <p>{t('profile_form_mandatory_prompt')}</p>
-                </div>
-                <button onClick={onEditProfile} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">{t('button_edit_profile')}</button>
-            </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
-                <div><h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4><p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
-            </div>
-             {/* Connect with Parents (Activities) Card */}
-             <div className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between relative">
-                 {hasHostedActivities && (
-                     <button 
-                         onClick={onDeleteActivities} 
-                         className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
-                         title="Delete all hosted activities"
-                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
-                     </button>
-                 )}
-                <div><h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4><p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
-            </div>
-             {/* Child Outing Sharing Card */}
-             <div className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between relative">
-                  {hasHostedOutings && (
-                     <button 
-                         onClick={onDeleteOutings} 
-                         className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
-                         title="Delete all hosted outings"
-                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
-                     </button>
-                 )}
-                <div><h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4><p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
-            </div>
-             {/* Skill Sharing & Help Card */}
-             <div className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between relative">
-                {hasCreatedSkillRequests && (
-                     <button 
-                         onClick={onDeleteSkillRequests} 
-                         className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
-                         title="Delete all created skill requests"
-                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
-                     </button>
-                )}
-                <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
-            </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-             <div>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
-                    {bookingRequests.length > 0 && <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">Clear All History</button>}
-                </div>
-                {bookingRequests.length > 0 ? (
-                    <div className="space-y-4">
-                        {bookingRequests.map(req => <ParentBookingCard key={req.id} request={req} />)}
+        <>
+            {!user.location && (
+                <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md flex flex-col sm:flex-row justify-between items-center gap-4" role="alert">
+                    <div>
+                        <p className="font-bold">{t('parent_profile_form_title')}</p>
+                        <p>{t('profile_form_mandatory_prompt')}</p>
                     </div>
-                ) : (
-                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)]">{t('dashboard_no_booking_requests')}</p>
-                    </div>
-                )}
-            </div>
-
-            <div>
-                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_added_nannies')}</h3>
-                {addedNannies.length > 0 ? (
-                    <div className="space-y-4">
-                        {addedNannies.map(nanny => (
-                            <AddedNannyCard key={nanny.id} nanny={nanny} currentUser={user} tasks={allTasks.filter(t => t.nannyId === nanny.id)} onRemove={onRemoveNanny} onContact={onContactNanny} onView={onViewNanny} onRate={onRateNanny} onAddTask={() => onOpenTaskModal(nanny)} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)]">{t('dashboard_no_added_nannies')}</p>
-                    </div>
-                )}
-            </div>
-        </div>
-
-        {/* Task Management for Parents (Enhanced) */}
-        <div className="mt-8">
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_tasks')}</h3>
-            {myTasks.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                    {myTasks.map(task => (
-                         <InteractiveTaskItem 
-                            key={task.id} 
-                            task={task} 
-                            onUpdateStatus={onUpdateTaskStatus} 
-                            onKeep={onKeepTask} 
-                            onDelete={onDeleteTask}
-                        />
-                    ))}
-                </div>
-            ) : (
-                 <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                    <p className="text-[var(--text-light)]">You haven't assigned any tasks yet.</p>
+                    <button onClick={onEditProfile} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">{t('button_edit_profile')}</button>
                 </div>
             )}
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-             <div>
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
-                {myOutingRequests.length > 0 ? (
-                    <div className="space-y-4">
-                        {myOutingRequests.map((req, idx) => (
-                            <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                                <div><h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4><p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p></div><StatusTag status={req.status} />
-                            </div>
+            <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.div variants={itemVariants} className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
+                    <div><h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4><p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
+                </motion.div>
+                {/* Connect with Parents (Activities) Card */}
+                <motion.div variants={itemVariants} className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between relative">
+                    {hasHostedActivities && (
+                        <button
+                            onClick={onDeleteActivities}
+                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                            title="Delete all hosted activities"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                        </button>
+                    )}
+                    <div><h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4><p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
+                </motion.div>
+                {/* Child Outing Sharing Card */}
+                <motion.div variants={itemVariants} className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between relative">
+                    {hasHostedOutings && (
+                        <button
+                            onClick={onDeleteOutings}
+                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                            title="Delete all hosted outings"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                        </button>
+                    )}
+                    <div><h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4><p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
+                </motion.div>
+                {/* Skill Sharing & Help Card */}
+                <motion.div variants={itemVariants} className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between relative">
+                    {hasCreatedSkillRequests && (
+                        <button
+                            onClick={onDeleteSkillRequests}
+                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                            title="Delete all created skill requests"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                        </button>
+                    )}
+                    <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
+                </motion.div>
+            </motion.div>
+
+            <motion.div
+                className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.div variants={itemVariants}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
+                        {bookingRequests.length > 0 && <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">Clear All History</button>}
+                    </div>
+                    {bookingRequests.length > 0 ? (
+                        <div className="space-y-4">
+                            {bookingRequests.map(req => <ParentBookingCard key={req.id} request={req} />)}
+                        </div>
+                    ) : (
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                            <p className="text-[var(--text-light)]">{t('dashboard_no_booking_requests')}</p>
+                        </div>
+                    )}
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_added_nannies')}</h3>
+                    {addedNannies.length > 0 ? (
+                        <div className="space-y-4">
+                            {addedNannies.map(nanny => (
+                                <AddedNannyCard key={nanny.id} nanny={nanny} currentUser={user} tasks={allTasks.filter(t => t.nannyId === nanny.id)} onRemove={onRemoveNanny} onContact={onContactNanny} onView={onViewNanny} onRate={onRateNanny} onAddTask={() => onOpenTaskModal(nanny)} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                            <p className="text-[var(--text-light)]">{t('dashboard_no_added_nannies')}</p>
+                        </div>
+                    )}
+                </motion.div>
+            </motion.div>
+
+            {/* Task Management for Parents (Enhanced) */}
+            <div className="mt-8">
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_tasks')}</h3>
+                {myTasks.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                        {myTasks.map(task => (
+                            <InteractiveTaskItem
+                                key={task.id}
+                                task={task}
+                                onUpdateStatus={onUpdateTaskStatus}
+                                onKeep={onKeepTask}
+                                onDelete={onDeleteTask}
+                            />
                         ))}
                     </div>
-                ) : <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8"><p className="text-[var(--text-light)]">{t('dashboard_no_outing_requests')}</p></div>}
-             </div>
-            <div>
-                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_skill_requests')}</h3>
-                 {mySkillRequests.length > 0 ? (
-                    <div className="space-y-4">
-                        {mySkillRequests.map(req => (
-                             <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
-                                 <div><h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4><p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p></div><div className="flex gap-2"><button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button><StatusTag status={req.status} /></div>
-                             </div>
-                        ))}
+                ) : (
+                    <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <p className="text-[var(--text-light)]">You haven't assigned any tasks yet.</p>
                     </div>
-                ) : <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8"><p className="text-[var(--text-light)]">{t('dashboard_no_skill_requests')}</p></div>}
+                )}
             </div>
-        </div>
-      </>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                <div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
+                    {myOutingRequests.length > 0 ? (
+                        <div className="space-y-4">
+                            {myOutingRequests.map((req, idx) => (
+                                <div key={idx} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
+                                    <div><h4 className="font-bold text-[var(--text-primary)]">{req.outingTitle}</h4><p className="text-sm text-[var(--text-secondary)]">{formatDateSafe(req.date)} • {req.childName}</p></div><StatusTag status={req.status} />
+                                </div>
+                            ))}
+                        </div>
+                    ) : <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8"><p className="text-[var(--text-light)]">{t('dashboard_no_outing_requests')}</p></div>}
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_skill_requests')}</h3>
+                    {mySkillRequests.length > 0 ? (
+                        <div className="space-y-4">
+                            {mySkillRequests.map(req => (
+                                <div key={req.id} className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex justify-between items-center">
+                                    <div><h4 className="font-bold text-[var(--text-primary)]">{req.title}</h4><p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p></div><div className="flex gap-2"><button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button><StatusTag status={req.status} /></div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8"><p className="text-[var(--text-light)]">{t('dashboard_no_skill_requests')}</p></div>}
+                </div>
+            </div>
+        </>
     );
 };
 
@@ -428,15 +452,15 @@ const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests,
     const profileComplete = !!user.profile;
     const pendingRequests = bookingRequests.filter(req => req.status === 'pending');
     const pastRequests = bookingRequests.filter(req => req.status !== 'pending');
-    
+
     return (
         <>
             <div className="bg-[var(--bg-card-subtle)] rounded-xl border border-[var(--border-color)] p-6 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-                 <div>
+                <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)]">{profileComplete ? t('dashboard_nanny_profile_live') : t('dashboard_nanny_complete_profile')}</h3>
                     <p className="text-sm text-[var(--text-secondary)]">{profileComplete ? t('dashboard_nanny_profile_live_desc') : t('dashboard_nanny_complete_profile_desc')}</p>
-                 </div>
-                 {!profileComplete && <span className="text-xs text-[var(--text-light)] bg-yellow-100 px-3 py-1 rounded-full">{t('dashboard_status')}: {t('dashboard_user')}</span>}
+                </div>
+                {!profileComplete && <span className="text-xs text-[var(--text-light)] bg-yellow-100 px-3 py-1 rounded-full">{t('dashboard_status')}: {t('dashboard_user')}</span>}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -447,40 +471,40 @@ const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests,
                             {pendingRequests.map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateBookingStatus} onOpenChat={onOpenBookingChat} />)}
                         </div>
                     ) : (
-                         <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                             <p className="text-[var(--text-light)]">{t('dashboard_no_pending_requests')}</p>
                         </div>
                     )}
 
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] mt-8 mb-4">{t('dashboard_booking_history')}</h3>
-                     {pastRequests.length > 0 ? (
+                    {pastRequests.length > 0 ? (
                         <div className="space-y-4">
                             {pastRequests.map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateBookingStatus} onOpenChat={onOpenBookingChat} onClear={onCancelBooking} />)}
                         </div>
                     ) : (
-                         <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                             <p className="text-[var(--text-light)]">{t('dashboard_no_booking_history')}</p>
                         </div>
                     )}
                 </div>
-                
+
                 <div>
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_tasks')}</h3>
-                     {userTasks.length > 0 ? (
+                    {userTasks.length > 0 ? (
                         <div className="space-y-4">
                             {/* Use InteractiveTaskItem here too for consistency */}
                             {userTasks.map(task => (
-                                <InteractiveTaskItem 
-                                    key={task.id} 
-                                    task={task} 
-                                    onUpdateStatus={onUpdateTaskStatus} 
+                                <InteractiveTaskItem
+                                    key={task.id}
+                                    task={task}
+                                    onUpdateStatus={onUpdateTaskStatus}
                                     onKeep={onKeepTask}
                                     onDelete={onDeleteTask}
                                 />
                             ))}
                         </div>
                     ) : (
-                         <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                             <p className="text-[var(--text-light)]">{t('dashboard_no_tasks')}</p>
                         </div>
                     )}
@@ -491,27 +515,27 @@ const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests,
 };
 
 const DashboardScreen: React.FC<DashboardScreenProps> = (props) => {
-  const { t } = useLanguage();
-  const { user, onLogout } = props;
+    const { t } = useLanguage();
+    const { user, onLogout } = props;
 
-  return (
-    <div className="p-4 sm:p-8 relative">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-        <div>
-            <h2 className="text-3xl font-bold text-[var(--text-primary)]">{t('dashboard_title')}</h2>
-            <p className="text-[var(--text-secondary)]">{t('dashboard_welcome')}, {user.fullName}!</p>
-        </div>
-        <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-[var(--bg-card-subtle)] px-4 py-2 rounded-full border border-[var(--border-color)]">
-                <span className="text-sm font-semibold text-[var(--text-primary)]">{user.subscription?.status === 'active' ? t('dashboard_premium') : t('dashboard_user')}</span>
-                {user.subscription?.status === 'active' && <span className="text-yellow-500">👑</span>}
+    return (
+        <div className="p-4 sm:p-8 relative">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold text-[var(--text-primary)]">{t('dashboard_title')}</h2>
+                    <p className="text-[var(--text-secondary)]">{t('dashboard_welcome')}, {user.fullName}!</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-[var(--bg-card-subtle)] px-4 py-2 rounded-full border border-[var(--border-color)]">
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">{user.subscription?.status === 'active' ? t('dashboard_premium') : t('dashboard_user')}</span>
+                        {user.subscription?.status === 'active' && <span className="text-yellow-500">👑</span>}
+                    </div>
+                </div>
             </div>
+            {user.userType === 'parent' ? <ParentDashboard {...props} /> : <NannyDashboard {...props} />}
+            <div className="mt-12 pt-6 border-t border-[var(--border-color)] flex justify-center"><button onClick={onLogout} className="text-red-500 hover:text-red-700 font-medium transition-colors">{t('button_logout')}</button></div>
         </div>
-      </div>
-      {user.userType === 'parent' ? <ParentDashboard {...props} /> : <NannyDashboard {...props} />}
-      <div className="mt-12 pt-6 border-t border-[var(--border-color)] flex justify-center"><button onClick={onLogout} className="text-red-500 hover:text-red-700 font-medium transition-colors">{t('button_logout')}</button></div>
-    </div>
-  );
+    );
 };
 
 export default DashboardScreen;

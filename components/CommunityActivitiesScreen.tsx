@@ -21,15 +21,16 @@ const getHostName = (hostId: any, hostName?: string) => {
 };
 
 const getHostPhoto = (hostId: any, hostPhoto?: string) => {
-     if (typeof hostId === 'object' && hostId?.photo) return hostId.photo;
-     if (hostPhoto) return hostPhoto;
-     return 'https://i.pravatar.cc/150?u=default';
+    if (typeof hostId === 'object' && hostId?.photo) return hostId.photo;
+    if (hostPhoto) return hostPhoto;
+    return 'https://i.pravatar.cc/150?u=default';
 };
 
 const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin: (id: string) => void, onChat: (activity: Activity) => void, onDelete: (id: string) => void }> = ({ activity, currentUserId, onJoin, onChat, onDelete }) => {
     const { t } = useLanguage();
     const isParticipant = activity.participants.includes(currentUserId);
-    const hostIdStr = typeof activity.hostId === 'object' ? activity.hostId._id : activity.hostId;
+    // FIX: Safely handle null hostId (e.g. deleted user)
+    const hostIdStr = (activity.hostId && typeof activity.hostId === 'object') ? activity.hostId._id : (activity.hostId as string || '');
     const isHost = hostIdStr === currentUserId;
 
     const displayHostName = getHostName(activity.hostId, activity.hostName);
@@ -38,7 +39,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
     return (
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
             {isHost && (
-                <button 
+                <button
                     onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
                     className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete Activity"
@@ -75,10 +76,10 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                                 <p className="text-xs text-[var(--text-light)] font-medium">📍 {activity.location}</p>
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-auto">
-                                <button 
-                                  onClick={() => onChat(activity)}
-                                  disabled={!isParticipant}
-                                  className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:text-gray-400 disabled:cursor-not-allowed mr-2"
+                                <button
+                                    onClick={() => onChat(activity)}
+                                    disabled={!isParticipant}
+                                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:text-gray-400 disabled:cursor-not-allowed mr-2"
                                 >
                                     {t('activity_card_chat')} {activity.participants.length > 1 && `(${activity.participants.length})`}
                                 </button>
@@ -100,9 +101,9 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
     const { t } = useLanguage();
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    
+
     const handleClearAll = () => {
-        if(window.confirm("Delete ALL activities? This cannot be undone.")) {
+        if (window.confirm("Delete ALL activities? This cannot be undone.")) {
             onDeleteAllActivities();
         }
     };
@@ -113,7 +114,7 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
         }
         return activities;
     }, [activities, viewMode, selectedDate]);
-    
+
     const activityDates = useMemo(() => activities.map(a => a.date), [activities]);
 
     return (
@@ -129,7 +130,7 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
             </div>
 
             <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-4">
-                 <button 
+                <button
                     onClick={onCreateActivity}
                     className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform hover:scale-105"
                 >
@@ -140,11 +141,11 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
                     <button onClick={() => setViewMode('calendar')} className={`px-4 py-1 text-sm font-semibold rounded-md ${viewMode === 'calendar' ? 'bg-[var(--bg-card)] shadow text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>{t('community_view_calendar')}</button>
                 </div>
             </div>
-            
+
             {viewMode === 'calendar' && (
                 <div className="mb-8">
-                    <Calendar 
-                        availableDates={activityDates} 
+                    <Calendar
+                        availableDates={activityDates}
                         isEditable={false}
                         onDateChange={(date) => setSelectedDate(prev => prev === date ? null : date)}
                     />
@@ -154,12 +155,12 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
             <div className="space-y-6">
                 {displayedActivities.length > 0 ? (
                     displayedActivities.map(activity => (
-                        <ActivityCard 
-                            key={activity.id} 
-                            activity={activity} 
-                            currentUserId={user.id} 
-                            onJoin={onJoinActivity} 
-                            onChat={onOpenChat} 
+                        <ActivityCard
+                            key={activity.id}
+                            activity={activity}
+                            currentUserId={user.id}
+                            onJoin={onJoinActivity}
+                            onChat={onOpenChat}
                             onDelete={onDeleteActivity}
                         />
                     ))

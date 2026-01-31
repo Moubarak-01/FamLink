@@ -43,6 +43,8 @@ import { notificationService } from './services/notificationService';
 import { reviewService } from './services/reviewService';
 import { taskService } from './services/taskService';
 import { chatService } from './services/chatService';
+import { useQueryClient } from '@tanstack/react-query';
+import { useActivities, useSkillRequests, useTasks, useNotifications, useBookings, useSharedOutings } from './hooks/useFamLinkQueries';
 
 const getAvatarId = (id?: string) => {
   if (!id || typeof id !== 'string') return 0;
@@ -103,14 +105,21 @@ const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Welcome);
   const [screenHistory, setScreenHistory] = useState<Screen[]>([]);
   const [approvedNannies, setApprovedNannies] = useState<User[]>([]);
-  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [sharedOutings, setSharedOutings] = useState<SharedOuting[]>([]);
-  const [skillRequests, setSkillRequests] = useState<SkillRequest[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [hiddenBookingIds, setHiddenBookingIds] = useState<string[]>([]);
+
+  // React Query Setup
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Data Hooks
+  const { data: activities = [] } = useActivities();
+  const { data: skillRequests = [] } = useSkillRequests();
+  const { data: sharedOutings = [] } = useSharedOutings();
+  const { data: tasks = [] } = useTasks(currentUser?.id || '');
+  const { data: notifications = [] } = useNotifications(currentUser?.id || '');
+  const { data: bookingRequests = [] } = useBookings(currentUser?.id || '');
+
+  // UI State
+  const [hiddenBookingIds, setHiddenBookingIds] = useState<string[]>([]);
   const [userTypeForSignup, setUserTypeForSignup] = useState<UserType>('parent');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +136,8 @@ const App: React.FC = () => {
   const [isCreateSkillRequestModalOpen, setIsCreateSkillRequestModalOpen] = useState(false);
   const [makeOfferSkillRequestInfo, setMakeOfferSkillRequestInfo] = useState<SkillRequest | null>(null);
   const [activeChat, setActiveChat] = useState<{ type: 'activity' | 'outing' | 'skill' | 'booking', item: Activity | SharedOuting | SkillRequest | BookingRequest } | null>(null);
+  const activeChatRef = useRef(activeChat);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
   const [noiseReductionEnabled, setNoiseReductionEnabled] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
@@ -139,47 +150,60 @@ const App: React.FC = () => {
       socketService.disconnect();
     }
 
+    // Setup Invalidation Listeners
+    const unsubMarketplace = socketService.onMarketplaceUpdate(() => {
+      queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
+    });
+
+    const unsubActivity = socketService.onActivityUpdate(() => {
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    });
+
     const unsubscribe = socketService.onMessage(({ roomId, message }) => {
       // 1. Process message (toast, etc.)
       processIncomingMessage(roomId, message);
 
-      // 2. WhatsApp-style "Delivered" tick:
-      // If we received it via socket, we are "online" enough to acknowledge delivery
+      // 2. WhatsApp-style "Blue Ticks" & "Delivered":
       if (currentUser && message.senderId !== currentUser.id) {
-        socketService.sendMarkDelivered(roomId, message.id);
+        if (activeChatRef.current && activeChatRef.current.item.id === roomId) {
+          socketService.sendMarkSeen(roomId, message.id);
+        } else {
+          socketService.sendMarkDelivered(roomId, message.id);
+        }
       }
+
     });
 
     // FIX: Strict de-duplication for notifications
     const unsubNotif = socketService.onNotification((notif) => {
-      setNotifications(prev => {
-        // Check if notification ID already exists to prevent doubles
-        if (prev.some(n => n.id === notif.id)) {
-          return prev;
-        }
-        return [notif, ...prev];
+      // Optimistic update for notifications using React Query
+      queryClient.setQueryData(['notifications', currentUser?.id], (old: Notification[] = []) => {
+        if (old.some(n => n.id === notif.id)) return old;
+        return [notif, ...old];
       });
     });
 
     return () => {
       unsubscribe();
       unsubNotif();
+      unsubMarketplace();
+      unsubActivity();
     };
-  }, [currentUser]);
+  }, [currentUser, queryClient]);
 
   // NEW: Auto-clear notifications when entering a Chat or Screen
   useEffect(() => {
-    if (activeChat && activeChat.item.id) {
+    if (activeChat && activeChat.item.id && currentUser) {
       const contextId = activeChat.item.id;
 
       // 1. Identify notifications related to this chat
       const relevantNotifs = notifications.filter(n => n.relatedId === contextId && !n.read);
 
       if (relevantNotifs.length > 0) {
-        // 2. Mark local state as read immediately
-        setNotifications(prev => prev.map(n =>
-          n.relatedId === contextId ? { ...n, read: true } : n
-        ));
+        // 2. Mark local state as read immediately via Cache
+        queryClient.setQueryData(['notifications', currentUser.id], (old: Notification[] = []) => {
+          return old.map(n => n.relatedId === contextId ? { ...n, read: true } : n);
+        });
 
         // 3. Tell backend to mark them read
         relevantNotifs.forEach(n => {
@@ -187,7 +211,7 @@ const App: React.FC = () => {
         });
       }
     }
-  }, [activeChat, notifications]);
+  }, [activeChat, notifications, currentUser, queryClient]);
 
   useEffect(() => {
     const unsubscribe = socketService.onStatusUpdate((data) => {
@@ -277,30 +301,13 @@ const App: React.FC = () => {
   const refreshData = useCallback(async () => {
     if (!currentUser) return;
     try {
-      const [nanniesRes, activitiesRes, outingsRes, skillsRes, bookingsRes, notificationsRes, tasksRes] = await Promise.all([
-        userService.getNannies(),
-        activityService.getAll(),
-        outingService.getAll(),
-        marketplaceService.getAll(),
-        bookingService.getAll(),
-        notificationService.getAll(),
-        taskService.getAll()
-      ]);
-      setApprovedNannies(nanniesRes.filter(n => n.profile));
-      setActivities(activitiesRes);
-      setSharedOutings(outingsRes);
-      setSkillRequests(skillsRes);
-      setBookingRequests(bookingsRes);
-
-      // When refreshing all data, simply set notifications. 
-      // The de-duplication happens on the real-time listener side.
-      setNotifications(notificationsRes);
-
-      setTasks(tasksRes);
+      await queryClient.invalidateQueries();
     } catch (e) { }
-  }, [currentUser]);
+  }, [currentUser, queryClient]);
 
-  useEffect(() => { refreshData(); }, [refreshData]);
+  useEffect(() => {
+    if (currentUser) refreshData();
+  }, [currentUser, refreshData]);
 
   const processIncomingMessage = useCallback((id: string, message: ChatMessage) => {
     // Intentionally empty - notifications handled by 'notification' event
@@ -308,7 +315,17 @@ const App: React.FC = () => {
 
   const navigateTo = (screen: Screen, replace = false) => { setError(null); if (replace) setScreenHistory([]); else setScreenHistory([...screenHistory, currentScreen]); setCurrentScreen(screen); };
   const goBack = () => { setError(null); setViewingNannyId(null); const previousScreen = screenHistory.pop(); if (previousScreen !== undefined) { setScreenHistory([...screenHistory]); setCurrentScreen(previousScreen); } else { setCurrentScreen(Screen.Welcome); } };
-  const handleLogout = () => { localStorage.removeItem('authToken'); localStorage.removeItem('rememberedUser'); setCurrentScreen(Screen.Welcome); setScreenHistory([]); setCurrentUser(null); setError(null); setViewingNannyId(null); setActivities([]); setSharedOutings([]); setBookingRequests([]); setTasks([]); };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('rememberedUser');
+    setCurrentScreen(Screen.Welcome);
+    setScreenHistory([]);
+    setCurrentUser(null);
+    setError(null);
+    setViewingNannyId(null);
+    queryClient.clear();
+  };
   const handleDeleteAccount = async () => {
     if (!currentUser) return;
     try {
@@ -388,31 +405,79 @@ const App: React.FC = () => {
         parentId: currentUser.id,
         parent: currentUser
       };
-      setBookingRequests(prev => [...prev, populatedBooking]);
+      queryClient.setQueryData(['bookings', currentUser.id], (old: BookingRequest[] = []) => [...old, populatedBooking]);
       setBookingNannyInfo(null);
       alert(t('alert_booking_request_sent'));
+      queryClient.invalidateQueries({ queryKey: ['bookings', currentUser.id] });
     } catch (e) { alert("Error creating booking"); }
   };
 
-  const handleUpdateBookingStatus = async (requestId: string, status: 'accepted' | 'declined') => { try { await bookingService.updateStatus(requestId, status); refreshData(); } catch (e) { alert("Error updating booking"); } };
+  const handleUpdateBookingStatus = async (requestId: string, status: 'accepted' | 'declined') => { try { await bookingService.updateStatus(requestId, status); queryClient.invalidateQueries({ queryKey: ['bookings'] }); } catch (e) { alert("Error updating booking"); } };
   const handleNannyHideBooking = (id: string) => { if (window.confirm("Remove this from your history?")) { setHiddenBookingIds(prev => [...prev, id]); } };
-  const handleCancelBooking = async (id: string) => { if (window.confirm("Cancel this request?")) { try { await bookingService.delete(id); setBookingRequests(prev => prev.filter(b => b.id !== id)); } catch (e) { alert("Failed to cancel"); } } };
-  const handleClearAllBookings = async () => { if (window.confirm("Clear all history?")) { try { await bookingService.deleteAll(); setBookingRequests([]); } catch (e) { alert("Failed to clear history"); } } };
+  const handleCancelBooking = async (id: string) => {
+    if (window.confirm("Cancel this request?")) {
+      try {
+        await bookingService.delete(id);
+        queryClient.setQueryData(['bookings', currentUser?.id], (old: BookingRequest[] = []) => old.filter(b => b.id !== id));
+        queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      } catch (e) { alert("Failed to cancel"); }
+    }
+  };
+  const handleClearAllBookings = async () => {
+    if (!currentUser) return;
+    if (window.confirm(t('confirm_clear_history') || "Clear all history?")) {
+      // Optimistic Update
+      queryClient.setQueryData(['bookings', currentUser.id], []);
+
+      try {
+        await bookingService.deleteAll();
+      } catch (e) {
+        // Revert on failure (or just alert and re-fetch)
+        alert("Failed to clear history");
+      } finally {
+        queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      }
+    }
+  };
+
   const handleOpenTaskModal = (nanny: User) => setTaskModalNanny(nanny);
-  const handleAddTask = async (nannyId: string, description: string, dueDate: string) => { if (!currentUser) return; try { const newTask = await taskService.create({ nannyId, description, dueDate }); setTasks(prev => [...prev, newTask]); setTaskModalNanny(null); alert(t('alert_task_added')); } catch (e) { alert("Error adding task"); } };
+  const handleAddTask = async (nannyId: string, description: string, dueDate: string) => {
+    if (!currentUser) return;
+    try {
+      const newTask = await taskService.create({ nannyId, description, dueDate });
+      queryClient.setQueryData(['tasks', currentUser.id], (old: Task[] = []) => [...old, newTask]);
+      setTaskModalNanny(null);
+      alert(t('alert_task_added'));
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } catch (e) { alert("Error adding task"); }
+  };
 
   const handleDeleteTask = async (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+    queryClient.setQueryData(['tasks', currentUser?.id], (old: Task[] = []) => old.filter(t => t.id !== id));
     try {
       await taskService.delete(id);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     } catch (e) {
       refreshData();
       alert("Failed to delete task");
     }
   };
 
-  const handleUpdateTaskStatus = async (taskId: string, status: 'pending' | 'completed') => { try { const updatedTask = await taskService.updateStatus(taskId, status); setTasks(prev => prev.map(task => task.id === taskId ? updatedTask : task)); } catch (e) { alert("Error updating task status"); } };
-  const handleKeepTask = async (id: string) => { try { await taskService.keepTask(id); setTasks(prev => prev.map(t => t.id === id ? { ...t, keepPermanently: true } : t)); } catch (e) { alert("Failed to update task"); } };
+  const handleUpdateTaskStatus = async (taskId: string, status: 'pending' | 'completed') => {
+    try {
+      const updatedTask = await taskService.updateStatus(taskId, status);
+      queryClient.setQueryData(['tasks', currentUser?.id], (old: Task[] = []) => old.map(task => task.id === taskId ? updatedTask : task));
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } catch (e) { alert("Error updating task status"); }
+  };
+
+  const handleKeepTask = async (id: string) => {
+    try {
+      await taskService.keepTask(id);
+      queryClient.setQueryData(['tasks', currentUser?.id], (old: Task[] = []) => old.map(t => t.id === id ? { ...t, keepPermanently: true } : t));
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } catch (e) { alert("Failed to update task"); }
+  };
 
   const handleOpenCreateActivityModal = () => setIsCreateActivityModalOpen(true);
   const handleCloseCreateActivityModal = () => setIsCreateActivityModalOpen(false);
@@ -429,27 +494,108 @@ const App: React.FC = () => {
         participants: [currentUser.id],
         messages: []
       };
-      setActivities(prev => [populatedActivity, ...prev]);
+      queryClient.setQueryData(['activities'], (old: Activity[] = []) => [populatedActivity, ...old]);
       handleCloseCreateActivityModal();
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     } catch (e) { alert("Error creating activity"); }
   };
 
   const handleDeleteActivity = async (id: string) => {
     if (!window.confirm("Delete this activity?")) return;
-    setActivities(prev => prev.filter(a => a.id !== id));
-    try { await activityService.delete(id); } catch (e) { refreshData(); alert("Delete failed"); }
+    queryClient.setQueryData(['activities'], (old: Activity[] = []) => old.filter(a => a.id !== id));
+    try { await activityService.delete(id); queryClient.invalidateQueries({ queryKey: ['activities'] }); } catch (e) { refreshData(); alert("Delete failed"); }
   };
 
   const handleDeleteAllActivities = async () => {
     if (!window.confirm("Delete all activities?")) return;
-    setActivities([]);
-    try { await activityService.deleteAll(); } catch (e) { refreshData(); alert("Delete all failed"); }
+    queryClient.setQueryData(['activities'], []);
+    try { await activityService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['activities'] }); } catch (e) { refreshData(); alert("Delete all failed"); }
   };
 
-  const handleJoinActivity = async (activityId: string) => { if (!currentUser) return; try { const updatedActivity = await activityService.join(activityId); setActivities(prev => prev.map(act => act.id === activityId ? updatedActivity : act)); } catch (e) { alert("Error joining activity"); } };
-  const handleSendMessage = (id: string, messageText: string) => { if (!currentUser) return; const tempId = `msg-${Date.now()}`; const newMessage: ChatMessage = { id: tempId, senderId: currentUser.id, senderName: currentUser.fullName, senderPhoto: currentUser.photo || `https://i.pravatar.cc/150?img=${getAvatarId(currentUser.id)}`, text: messageText, timestamp: Date.now(), status: 'sent' }; setActiveChat(prev => { if (prev && prev.item.id === id) { return { ...prev, item: { ...prev.item, messages: [...(prev.item.messages || []), newMessage] } }; } return prev; }); socketService.sendMessage(id, newMessage, (savedMessage) => { setActiveChat(prev => { if (prev && prev.item.id === id) { const updatedMessages = (prev.item.messages || []).map(msg => msg.id === tempId ? savedMessage : msg); return { ...prev, item: { ...prev.item, messages: updatedMessages } }; } return prev; }); }); };
-  const handleDeleteMessage = async (contextId: string, messageId: string) => { const filterMsgs = (item: any) => ({ ...item, messages: (item.messages || []).filter((m: ChatMessage) => m.id !== messageId) }); if (activities.some(a => a.id === contextId)) setActivities(prev => prev.map(a => a.id === contextId ? filterMsgs(a) : a)); else if (sharedOutings.some(o => o.id === contextId)) setSharedOutings(prev => prev.map(o => o.id === contextId ? filterMsgs(o) : o)); else if (skillRequests.some(s => s.id === contextId)) setSkillRequests(prev => prev.map(s => s.id === contextId ? filterMsgs(s) : s)); else if (bookingRequests.some(b => b.id === contextId)) setBookingRequests(prev => prev.map(b => b.id === contextId ? filterMsgs(b) : b)); setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: filterMsgs(prev.item) }; return prev; }); try { await chatService.deleteMessage(messageId); } catch (e) { alert("Failed to delete message"); } };
-  const handleDeleteAllMessages = async (contextId: string) => { const clearMsgs = (item: any) => ({ ...item, messages: [] }); if (activities.some(a => a.id === contextId)) setActivities(prev => prev.map(a => a.id === contextId ? clearMsgs(a) : a)); else if (sharedOutings.some(o => o.id === contextId)) setSharedOutings(prev => prev.map(o => o.id === contextId ? clearMsgs(o) : o)); else if (skillRequests.some(s => s.id === contextId)) setSkillRequests(prev => prev.map(s => s.id === contextId ? clearMsgs(s) : s)); else if (bookingRequests.some(b => b.id === contextId)) setBookingRequests(prev => prev.map(b => b.id === contextId ? clearMsgs(b) : b)); setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: clearMsgs(prev.item) }; return prev; }); try { await chatService.deleteAllMessages(contextId); } catch (e) { alert("Failed to delete messages"); } };
+  const handleJoinActivity = async (activityId: string) => {
+    if (!currentUser) return;
+    try {
+      const updatedActivity = await activityService.join(activityId);
+      queryClient.setQueryData(['activities'], (old: Activity[] = []) => old.map(act => act.id === activityId ? updatedActivity : act));
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    } catch (e) { alert("Error joining activity"); }
+  };
+
+  const handleSendMessage = (id: string, messageText: string) => {
+    if (!currentUser) return;
+    const tempId = `msg-${Date.now()}`;
+    const newMessage: ChatMessage = { id: tempId, senderId: currentUser.id, senderName: currentUser.fullName, senderPhoto: currentUser.photo || `https://i.pravatar.cc/150?img=${getAvatarId(currentUser.id)}`, text: messageText, timestamp: Date.now(), status: 'sent' };
+
+    // Optimistic UI Update for Active Chat
+    setActiveChat(prev => {
+      if (prev && prev.item.id === id) { return { ...prev, item: { ...prev.item, messages: [...(prev.item.messages || []), newMessage] } }; }
+      return prev;
+    });
+
+    // Optimistic Cache Update
+    const updateCacheCallback = (old: any[] = []) => old.map(item => item.id === id ? { ...item, messages: [...(item.messages || []), newMessage] } : item);
+    queryClient.setQueryData(['activities'], (old: Activity[] = []) => updateCacheCallback(old));
+    queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => updateCacheCallback(old));
+    queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => updateCacheCallback(old));
+    queryClient.setQueryData(['bookings', currentUser.id], (old: BookingRequest[] = []) => updateCacheCallback(old));
+
+    socketService.sendMessage(id, newMessage, (savedMessage) => {
+      const finalUpdateCallback = (old: any[] = []) => old.map(item => item.id === id ? { ...item, messages: (item.messages || []).map((m: any) => m.id === tempId ? savedMessage : m) } : item);
+      queryClient.setQueryData(['activities'], (old: Activity[] = []) => finalUpdateCallback(old));
+      queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => finalUpdateCallback(old));
+      queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => finalUpdateCallback(old));
+      queryClient.setQueryData(['bookings', currentUser.id], (old: BookingRequest[] = []) => finalUpdateCallback(old));
+
+      queryClient.invalidateQueries(); // Ensure eventual consistency
+
+      setActiveChat(prev => {
+        if (prev && prev.item.id === id) {
+          const updatedMessages = (prev.item.messages || []).map(msg => msg.id === tempId ? savedMessage : msg);
+          return { ...prev, item: { ...prev.item, messages: updatedMessages } };
+        }
+        return prev;
+      });
+    });
+  };
+
+  const handleDeleteMessage = async (contextId: string, messageId: string) => {
+    const filterMsgs = (item: any) => ({ ...item, messages: (item.messages || []).filter((m: ChatMessage) => m.id !== messageId) });
+
+    // Optimistic Update
+    const cacheUpdate = (old: any[] = []) => old.map(i => i.id === contextId ? filterMsgs(i) : i);
+    queryClient.setQueryData(['activities'], (old: Activity[]) => cacheUpdate(old));
+    queryClient.setQueryData(['outings'], (old: SharedOuting[]) => cacheUpdate(old));
+    queryClient.setQueryData(['skillRequests'], (old: SkillRequest[]) => cacheUpdate(old));
+    queryClient.setQueryData(['bookings', currentUser?.id], (old: BookingRequest[]) => cacheUpdate(old));
+
+    setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: filterMsgs(prev.item) }; return prev; });
+    try { await chatService.deleteMessage(messageId); queryClient.invalidateQueries(); } catch (e) { alert("Failed to delete message"); }
+  };
+
+  const handleDeleteAllMessages = async (contextId: string) => {
+    const clearMsgs = (item: any) => ({ ...item, messages: [] });
+
+    // Optimistic Cache Updates
+    const cacheUpdate = (old: any[] = []) => old.map(i => i.id === contextId ? clearMsgs(i) : i);
+
+    queryClient.setQueryData(['activities'], (old: Activity[] = []) => cacheUpdate(old));
+    queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => cacheUpdate(old));
+    queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => cacheUpdate(old));
+    // Important: Also update bookings cache specifically
+    if (currentUser) {
+      queryClient.setQueryData(['bookings', currentUser.id], (old: BookingRequest[] = []) => cacheUpdate(old));
+    }
+
+    setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: clearMsgs(prev.item) }; return prev; });
+
+    try {
+      await chatService.deleteAllMessages(contextId);
+    } catch (e) {
+      alert("Failed to delete messages");
+    } finally {
+      queryClient.invalidateQueries();
+    }
+  };
 
   const handleOpenCreateOutingModal = () => setIsCreateOutingModalOpen(true);
   const handleCloseCreateOutingModal = () => setIsCreateOutingModalOpen(false);
@@ -465,25 +611,39 @@ const App: React.FC = () => {
         hostPhoto: currentUser.photo,
         requests: []
       };
-      setSharedOutings(prev => [populatedOuting, ...prev]);
+      queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => [populatedOuting, ...old]);
       handleCloseCreateOutingModal();
     } catch (e) { alert("Error creating outing"); }
   };
 
   const handleDeleteOuting = async (id: string) => {
     if (!window.confirm("Delete this outing?")) return;
-    setSharedOutings(prev => prev.filter(o => o.id !== id));
-    try { await outingService.delete(id); } catch (e) { refreshData(); alert("Delete failed"); }
+    queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => old.filter(o => o.id !== id));
+    try { await outingService.delete(id); queryClient.invalidateQueries({ queryKey: ['outings'] }); } catch (e) { refreshData(); alert("Delete failed"); }
   };
 
   const handleDeleteAllOutings = async () => {
     if (!window.confirm("Delete ALL outings?")) return;
-    setSharedOutings([]);
-    try { await outingService.deleteAll(); } catch (e) { refreshData(); alert("Delete all failed"); }
+    queryClient.setQueryData(['outings'], []);
+    try { await outingService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['outings'] }); } catch (e) { refreshData(); alert("Delete all failed"); }
   };
 
-  const handleRequestOutingJoin = async (outing: SharedOuting, childName: string, childAge: number, emergencyContactName: string, emergencyContactPhone: string) => { if (!currentUser) return; try { const updatedOuting = await outingService.requestJoin(outing.id, { childName, childAge, emergencyContactName, emergencyContactPhone }); setSharedOutings(prev => prev.map(o => o.id === outing.id ? updatedOuting : o)); setRequestOutingInfo(null); alert(t('alert_outing_request_sent')); } catch (e) { alert("Error requesting join"); } };
-  const handleUpdateOutingRequestStatus = async (outingId: string, parentId: string, status: 'accepted' | 'declined') => { try { const updatedOuting = await outingService.updateRequestStatus(outingId, parentId, status); setSharedOutings(prev => prev.map(o => o.id === outingId ? updatedOuting : o)); } catch (e) { alert("Error updating status"); } };
+  const handleRequestOutingJoin = async (outing: SharedOuting, childName: string, childAge: number, emergencyContactName: string, emergencyContactPhone: string) => {
+    if (!currentUser) return;
+    try {
+      const updatedOuting = await outingService.requestJoin(outing.id, { childName, childAge, emergencyContactName, emergencyContactPhone });
+      queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => old.map(o => o.id === outing.id ? updatedOuting : o));
+      setRequestOutingInfo(null);
+      alert(t('alert_outing_request_sent'));
+    } catch (e) { alert("Error requesting join"); }
+  };
+  const handleUpdateOutingRequestStatus = async (outingId: string, parentId: string, status: 'accepted' | 'declined') => {
+    try {
+      const updatedOuting = await outingService.updateRequestStatus(outingId, parentId, status);
+      queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => old.map(o => o.id === outingId ? updatedOuting : o));
+      queryClient.invalidateQueries({ queryKey: ['outings'] });
+    } catch (e) { alert("Error updating status"); }
+  };
 
   const handleCreateSkillRequest = async (requestData: any) => {
     if (!currentUser) return;
@@ -496,30 +656,78 @@ const App: React.FC = () => {
         requesterPhoto: currentUser.photo,
         offers: []
       };
-      setSkillRequests(prev => [populatedSkill, ...prev]);
+      queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => [populatedSkill, ...old]);
       setIsCreateSkillRequestModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
     } catch (e) { alert("Error creating skill request"); }
   };
 
   const handleDeleteSkillRequest = async (id: string) => {
     if (!window.confirm("Delete this skill request?")) return;
-    setSkillRequests(prev => prev.filter(r => r.id !== id));
-    try { await marketplaceService.delete(id); } catch (e) { refreshData(); alert("Delete failed"); }
+    queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => old.filter(r => r.id !== id));
+    try { await marketplaceService.delete(id); queryClient.invalidateQueries({ queryKey: ['skillRequests'] }); } catch (e) { refreshData(); alert("Delete failed"); }
   };
 
   const handleDeleteAllSkillRequests = async () => {
     if (!window.confirm("Delete ALL skill requests?")) return;
-    setSkillRequests([]);
-    try { await marketplaceService.deleteAll(); } catch (e) { refreshData(); alert("Delete all failed"); }
+    queryClient.setQueryData(['skillRequests'], []);
+    try { await marketplaceService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['skillRequests'] }); } catch (e) { refreshData(); alert("Delete all failed"); }
   };
 
-  const handleMakeSkillOffer = async (request: SkillRequest, offerAmount: number, message: string) => { if (!currentUser) return; try { const updatedSkill = await marketplaceService.makeOffer(request.id, { offerAmount, message }); setSkillRequests(prev => prev.map(r => r.id === request.id ? updatedSkill : r)); setMakeOfferSkillRequestInfo(null); } catch (e) { alert("Error making offer"); } };
-  const handleUpdateSkillOfferStatus = async (requestId: string, helperId: string, status: 'accepted' | 'declined') => { try { const updatedSkill = await marketplaceService.updateOfferStatus(requestId, helperId, status); setSkillRequests(prev => prev.map(r => r.id === requestId ? updatedSkill : r)); } catch (e) { alert("Error updating offer"); } };
+  const handleMakeSkillOffer = async (request: SkillRequest, offerAmount: number, message: string) => {
+    if (!currentUser) return;
+    try {
+      const updatedSkill = await marketplaceService.makeOffer(request.id, { offerAmount, message });
+      queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => old.map(r => r.id === request.id ? updatedSkill : r));
+      setMakeOfferSkillRequestInfo(null);
+      queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
+    } catch (e) { alert("Error making offer"); }
+  };
+  const handleUpdateSkillOfferStatus = async (requestId: string, helperId: string, status: 'accepted' | 'declined') => {
+    try {
+      const updatedSkill = await marketplaceService.updateOfferStatus(requestId, helperId, status);
+      queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => old.map(r => r.id === requestId ? updatedSkill : r));
+      queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
+    } catch (e) { alert("Error updating offer"); }
+  };
   const handleReportUser = (userId: string) => alert("User reported. Our team will review the case.");
 
-  const handleNotificationClick = async (notification: Notification) => { try { await notificationService.markRead(notification.id); } catch (e) { } setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n).filter(n => !n.read)); await refreshData(); if (notification.type === 'chat' && notification.relatedId) { const act = activities.find(a => a.id === notification.relatedId); if (act) { setActiveChat({ type: 'activity', item: act }); return; } const out = sharedOutings.find(o => o.id === notification.relatedId); if (out) { setActiveChat({ type: 'outing', item: out }); return; } const skill = skillRequests.find(s => s.id === notification.relatedId); if (skill) { setActiveChat({ type: 'skill', item: skill }); return; } const booking = bookingRequests.find(b => b.id === notification.relatedId); if (booking) { setActiveChat({ type: 'booking', item: booking }); return; } } else if (notification.type === 'booking') { navigateTo(Screen.Dashboard); if (notification.relatedId) { const booking = bookingRequests.find(b => b.id === notification.relatedId); if (booking && booking.status === 'accepted') setActiveChat({ type: 'booking', item: booking }); } } else if (notification.type === 'outing') navigateTo(Screen.ChildOutings); else if (notification.type === 'skill') navigateTo(Screen.SkillMarketplace); else if (notification.type === 'task') navigateTo(Screen.Dashboard); };
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      await notificationService.markRead(notification.id);
+      queryClient.setQueryData(['notifications', currentUser?.id], (old: Notification[] = []) => old.map(n => n.id === notification.id ? { ...n, read: true } : n));
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    } catch (e) { }
 
-  const handleClearNotifications = async () => { if (currentUser) { try { await notificationService.markAllRead(); setNotifications([]); } catch (e) { } } };
+    if (notification.type === 'chat' && notification.relatedId) {
+      const act = activities.find(a => a.id === notification.relatedId);
+      if (act) { setActiveChat({ type: 'activity', item: act }); return; }
+      const out = sharedOutings.find(o => o.id === notification.relatedId);
+      if (out) { setActiveChat({ type: 'outing', item: out }); return; }
+      const skill = skillRequests.find(s => s.id === notification.relatedId);
+      if (skill) { setActiveChat({ type: 'skill', item: skill }); return; }
+      const booking = bookingRequests.find(b => b.id === notification.relatedId);
+      if (booking) { setActiveChat({ type: 'booking', item: booking }); return; }
+    } else if (notification.type === 'booking') {
+      navigateTo(Screen.Dashboard);
+      if (notification.relatedId) {
+        const booking = bookingRequests.find(b => b.id === notification.relatedId);
+        if (booking && booking.status === 'accepted') setActiveChat({ type: 'booking', item: booking });
+      }
+    } else if (notification.type === 'outing') navigateTo(Screen.ChildOutings);
+    else if (notification.type === 'skill') navigateTo(Screen.SkillMarketplace);
+    else if (notification.type === 'task') navigateTo(Screen.Dashboard);
+  };
+
+  const handleClearNotifications = async () => {
+    if (currentUser) {
+      try {
+        await notificationService.markAllRead();
+        queryClient.setQueryData(['notifications', currentUser.id], (old: Notification[] = []) => old.map(n => ({ ...n, read: true })));
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      } catch (e) { }
+    }
+  };
 
   const currentUserAddedNannies = useMemo(() => {
     if (currentUser?.userType !== 'parent') return [];

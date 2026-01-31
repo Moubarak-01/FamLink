@@ -382,8 +382,11 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
                         },
                     });
 
-                    if (response?.response?.text) {
-                        const jsonString = response.response.text.trim();
+                    const anyResponse = response as any;
+                    const responseText = typeof anyResponse.text === 'function' ? anyResponse.text() : (anyResponse.text || (anyResponse.response?.text ? anyResponse.response.text() : null));
+
+                    if (responseText) {
+                        const jsonString = responseText.trim();
                         const result = JSON.parse(jsonString) as { score: number; feedback: string; decision: Decision };
 
                         if (!['Approved', 'Rejected'].includes(result.decision)) {

@@ -15,6 +15,8 @@ class SocketService {
     private deleteHandlers: ((data: { roomId: string, messageId: string, isLocalDelete?: boolean }) => void)[] = [];
     private clearHandlers: ((data: { roomId: string }) => void)[] = [];
     private typingHandlers: ((data: { roomId: string, userId: string, userName: string, isTyping: boolean }) => void)[] = [];
+    private marketplaceHandlers: ((data: any) => void)[] = [];
+    private activityHandlers: ((data: any) => void)[] = [];
 
     async connect(userId?: string) {
         let currentUserId = userId;
@@ -71,7 +73,17 @@ class SocketService {
         this.socket.on('user_presence', (data) => this.presenceHandlers.forEach(h => h(data)));
         this.socket.on('notification', (data) => this.notificationHandlers.forEach(h => h(data)));
         this.socket.on('reaction_added', (data) => this.reactionHandlers.forEach(h => h({ ...data, type: 'add' })));
-        this.socket.on('reaction_removed', (data) => this.reactionHandlers.forEach(h => h({ ...data, type: 'remove' })));
+        this.socket.on('reaction_removed', (data) => {
+            this.reactionHandlers.forEach(h => h({ ...data, type: 'remove' }));
+        });
+
+        this.socket.on('marketplace_update', (data) => {
+            this.marketplaceHandlers.forEach(h => h(data));
+        });
+
+        this.socket.on('activity_update', (data) => {
+            this.activityHandlers.forEach(h => h(data));
+        });
         this.socket.on('message_deleted', (data) => this.deleteHandlers.forEach(h => h(data)));
         this.socket.on('message_deleted_for_me', (data) => this.deleteHandlers.forEach(h => h({ ...data, isLocalDelete: true })));
         this.socket.on('chat_cleared', (data) => this.clearHandlers.forEach(h => h(data)));
@@ -106,6 +118,12 @@ class SocketService {
     sendMarkDelivered(roomId: string, messageId: string) {
         if (this.socket && this.connected) {
             this.socket.emit('mark_delivered', { messageId, roomId });
+        }
+    }
+
+    sendMarkSeen(roomId: string, messageId: string) {
+        if (this.socket && this.connected) {
+            this.socket.emit('mark_seen', { messageId, roomId });
         }
     }
 
@@ -236,6 +254,20 @@ class SocketService {
     onChatCleared(handler: (data: any) => void) {
         this.clearHandlers.push(handler);
         return () => { this.clearHandlers = this.clearHandlers.filter(h => h !== handler); };
+    }
+
+    onMarketplaceUpdate(callback: (data: any) => void) {
+        this.marketplaceHandlers.push(callback);
+        return () => {
+            this.marketplaceHandlers = this.marketplaceHandlers.filter(h => h !== callback);
+        };
+    }
+
+    onActivityUpdate(callback: (data: any) => void) {
+        this.activityHandlers.push(callback);
+        return () => {
+            this.activityHandlers = this.activityHandlers.filter(h => h !== callback);
+        };
     }
 
     onTyping(handler: (data: { roomId: string, userId: string, userName: string, isTyping: boolean }) => void) {

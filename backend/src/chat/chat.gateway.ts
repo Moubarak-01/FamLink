@@ -165,6 +165,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.notificationsService.create(receiverIdStr, `New message from ${payload.senderName}`, 'chat', data.roomId);
       }
 
+      // SYNC: Also emit to the sender's personal channel to sync other open tabs/devices
+      this.server.to(`user_${senderId}`).emit('receive_message', { roomId: data.roomId, message: payload });
+
       console.log(`✅ [Gateway] Message processed successfully, returning payload`);
       return payload;
     } catch (error) {

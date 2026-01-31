@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.8-pink?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.0-pink?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 ![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs)
 ![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?style=for-the-badge&logo=mongodb)
@@ -30,7 +30,7 @@ FamLink is a comprehensive, community-driven mobile web application designed to 
 
 ---
 
-## ✅ Project Status: Core Implementation Complete (v1.8)
+## ✅ Project Status: Core Implementation Complete (v2.0)
 
 The application is fully architected and implemented with a **React Frontend** and **NestJS Backend**.
 
@@ -43,9 +43,22 @@ The application is fully architected and implemented with a **React Frontend** a
 
 ---
 
-## 🆕 Latest Updates (v1.8)
+## 🆕 Latest Updates (v2.0: The "Ultra-Reactivity" Upgrade)
 
-### 1. Three-Tier AI Stability Architecture
+### 1. ⚡ "Ultra-Reactivity" Engine (React Query Migration)
+Moved the entire data layer from legacy `useState`/`useEffect` to **TanStack React Query**.
+*   **Instant Feedback:** Actions like booking requests, message sending, and history deletion are now reflected immediately via **Optimistic Updates**.
+*   **Smart Caching:** Data is cached and automatically invalidated when backend events occur (via Socket.io).
+*   **No More Manual Refreshing:** Fixed the "Status Lag" where users had to refresh to see new bookings or cleared history.
+
+### 2. 💬 WhatsApp-Grade Messaging Experience
+A complete overhaul of the chat interface to match premium standards:
+*   **dancing Typing Bubbles:** A smooth, 3-dot animation appears at the bottom when the other person is typing (or drafting a message).
+*   **Blue Ticks (Read Receipts):** Ticks turn blue *instantly* when the recipient is viewing the chat, triggered by real-time `mark_seen` events.
+*   **Spring Animations:** Messages slide up with a physical "spring" feel (stiffness: 500, damping: 30) instead of just popping in.
+*   **Smart Typing Logic:** Typing status persists even if the user loses focus but has text in the input bar (drafting mode).
+
+### 3. Three-Tier AI Stability Architecture
 The application now uses a robust multi-provider AI fallback system:
 
 | Tier | Provider | Models | Purpose |
@@ -54,22 +67,34 @@ The application now uses a robust multi-provider AI fallback system:
 | **2** | Google Gemini | gemini-2.5-flash, gemma-3-* variants | Secondary - High-quality fallback |
 | **3** | Perplexity | sonar, sonar-reasoning-pro, sonar-deep-research | Tertiary - Research-focused backup |
 
-### 2. Enhanced AI Assistant
-- **Smart Thinking Loader** - Only displays if response takes >2 seconds
-- **Draggable Modal** - Fully repositionable chat window
-- **Custom Styling** - Pink/white branding with WhatsApp-style send icon
-
-### 3. Global Keyboard Shortcuts
+### 4. Global Keyboard Shortcuts
 | Shortcut | Action |
 |:---------|:-------|
 | `Shift + N` | Toggle AI Chat Open/Close |
 | `Shift + A` | Toggle AI Assistant Visibility |
 | `Ctrl + D` | Clear AI Chat History |
 
-### 4. Advanced Chat Features
-- **Asymmetrical Message Layout** - User messages (85% width), AI messages (95% width)
-- **Message Reactions** - Quick reaction picker with emoji support
-- **Reply Threading** - Reference and reply to specific messages
+---
+
+## 🔧 Challenges Faced & Solutions
+
+### 🔴 The Reactivity Problem
+**The Issue:**
+In v1.8, deleting chat history or clearing bookings required a page refresh. The UI state was disconnected from the server state.
+**The Solution:**
+Implemented **TanStack React Query** with aggressive invalidation strategies. Now, `queryClient.setQueryData` updates the UI *instantly* (optimistic), while `invalidateQueries` ensures the server data is synced in the background.
+
+### 🔴 The "Static" Chat Feel
+**The Issue:**
+Messages appeared instantly with no weight, and typing indicators were just plain text ("User is typing..."). It felt "cheap."
+**The Solution:**
+Integrated **Framer Motion** `AnimatePresence`. Added a custom "Dancing Dots" component for typing, and applied "Spring" physics to every message bubble. Also enforced strict input contrast modes for readability.
+
+### 🔴 Stale Read Receipts
+**The Issue:**
+Blue ticks would only update if you re-entered the room.
+**The Solution:**
+Added a live `onMessage` listener that checks if the user is currently viewing the room. If yes, it fires a `mark_seen` event immediately, turning the sender's ticks blue in real-time.
 
 ---
 

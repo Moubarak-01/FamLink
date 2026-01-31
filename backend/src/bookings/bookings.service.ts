@@ -10,52 +10,53 @@ export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private notificationsService: NotificationsService
-  ) {}
+  ) { }
 
   // Helper to flatten the Mongoose object for the frontend
   private mapBooking(booking: any) {
-      const obj = booking.toObject ? booking.toObject() : booking;
-      
-      // Handle populated fields safely
-      const nanny = (obj.nannyId && typeof obj.nannyId === 'object') ? obj.nannyId : { _id: obj.nannyId, fullName: 'Unknown', photo: '' };
-      const parent = (obj.parentId && typeof obj.parentId === 'object') ? obj.parentId : { _id: obj.parentId, fullName: 'Unknown', photo: '' };
+    if (!booking) return null;
+    const obj = booking.toObject ? booking.toObject() : booking;
 
-      return {
-          ...obj,
-          id: obj._id.toString(),
-          // Flattened fields expected by frontend types
-          nannyId: nanny._id.toString(),
-          nannyName: nanny.fullName,
-          nannyPhoto: nanny.photo,
-          parentId: parent._id.toString(),
-          parentName: parent.fullName,
-          parentPhoto: parent.photo,
-      };
+    // Handle populated fields safely with robust null checks
+    const nanny = (obj.nannyId && typeof obj.nannyId === 'object') ? obj.nannyId : { _id: obj.nannyId || 'unknown', fullName: 'Unknown Nanny', photo: '' };
+    const parent = (obj.parentId && typeof obj.parentId === 'object') ? obj.parentId : { _id: obj.parentId || 'unknown', fullName: 'Unknown Parent', photo: '' };
+
+    return {
+      ...obj,
+      id: obj._id ? obj._id.toString() : 'unknown',
+      // Flattened fields expected by frontend types
+      nannyId: nanny._id ? nanny._id.toString() : 'unknown',
+      nannyName: nanny.fullName || 'Unknown',
+      nannyPhoto: nanny.photo || '',
+      parentId: parent._id ? parent._id.toString() : 'unknown',
+      parentName: parent.fullName || 'Unknown',
+      parentPhoto: parent.photo || '',
+    };
   }
 
   async create(createBookingDto: any, parentId: string): Promise<any> {
     // 1. Check for Double Booking (Status: Accepted)
     const existingBooking = await this.bookingModel.findOne({
-        nannyId: createBookingDto.nannyId,
-        parentId: parentId,
-        date: createBookingDto.date,
-        status: 'accepted'
+      nannyId: createBookingDto.nannyId,
+      parentId: parentId,
+      date: createBookingDto.date,
+      status: 'accepted'
     }).exec();
 
     if (existingBooking) {
-        throw new BadRequestException('You already have a confirmed booking with this nanny for this date.');
+      throw new BadRequestException('You already have a confirmed booking with this nanny for this date.');
     }
 
     // 2. Check for Duplicate Pending Request
     const duplicateRequest = await this.bookingModel.findOne({
-        nannyId: createBookingDto.nannyId,
-        parentId: parentId,
-        date: createBookingDto.date,
-        status: 'pending'
+      nannyId: createBookingDto.nannyId,
+      parentId: parentId,
+      date: createBookingDto.date,
+      status: 'pending'
     }).exec();
 
     if (duplicateRequest) {
-        throw new BadRequestException('You already have a pending request for this date.');
+      throw new BadRequestException('You already have a pending request for this date.');
     }
 
     // 3. Create Booking
@@ -67,8 +68,8 @@ export class BookingsService {
 
     // 4. Populate immediately for the return value
     await savedBooking.populate([
-        { path: 'nannyId', select: 'fullName photo' },
-        { path: 'parentId', select: 'fullName photo' }
+      { path: 'nannyId', select: 'fullName photo' },
+      { path: 'parentId', select: 'fullName photo' }
     ]);
 
     // 5. Send Notification
@@ -85,43 +86,43 @@ export class BookingsService {
 
   async findAllForUser(userId: string): Promise<any[]> {
     const bookings = await this.bookingModel.find({
-        $or: [{ parentId: userId }, { nannyId: userId }]
+      $or: [{ parentId: userId }, { nannyId: userId }]
     })
-    .populate('nannyId', 'fullName photo')
-    .populate('parentId', 'fullName photo')
-    .sort({ createdAt: -1 })
-    .exec();
+      .populate('nannyId', 'fullName photo')
+      .populate('parentId', 'fullName photo')
+      .sort({ createdAt: -1 })
+      .exec();
 
     return bookings.map(b => this.mapBooking(b));
   }
 
   async updateStatus(bookingId: string, status: string): Promise<any> {
-      const originalBooking = await this.bookingModel.findById(bookingId)
-        .populate('nannyId', 'fullName')
-        .exec();
-      
-      if (!originalBooking) throw new NotFoundException('Booking not found');
+    const originalBooking = await this.bookingModel.findById(bookingId)
+      .populate('nannyId', 'fullName')
+      .exec();
 
-      const updatedBooking = await this.bookingModel.findByIdAndUpdate(
-          bookingId,
-          { status },
-          { new: true }
-      )
+    if (!originalBooking) throw new NotFoundException('Booking not found');
+
+    const updatedBooking = await this.bookingModel.findByIdAndUpdate(
+      bookingId,
+      { status },
+      { new: true }
+    )
       .populate('nannyId', 'fullName photo')
       .populate('parentId', 'fullName photo')
       .exec();
 
-      if (status === 'accepted' || status === 'declined') {
-           const nannyName = originalBooking['nannyId']['fullName'] || 'The Nanny';
-           await this.notificationsService.create(
-               originalBooking.parentId.toString(),
-               `${nannyName} ${status} your booking request!`,
-               'booking',
-               originalBooking._id.toString()
-           );
-      }
+    if (status === 'accepted' || status === 'declined') {
+      const nannyName = originalBooking['nannyId']['fullName'] || 'The Nanny';
+      await this.notificationsService.create(
+        originalBooking.parentId.toString(),
+        `${nannyName} ${status} your booking request!`,
+        'booking',
+        originalBooking._id.toString()
+      );
+    }
 
-      return this.mapBooking(updatedBooking);
+    return this.mapBooking(updatedBooking);
   }
 
   async remove(id: string): Promise<any> {

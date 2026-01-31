@@ -4,7 +4,9 @@ import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from '../schemas/message.schema';
 import { BookingDocument } from '../schemas/booking.schema';
 import { SkillTaskDocument } from '../schemas/task.schema';
-import { User, UserDocument } from '../schemas/user.schema'; // Import User
+import { User, UserDocument } from '../schemas/user.schema';
+import { OutingDocument } from '../schemas/outing.schema';
+import { ActivityDocument } from '../schemas/activity.schema';
 
 @Injectable()
 export class ChatService {
@@ -12,7 +14,9 @@ export class ChatService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
     @InjectModel('Booking') private bookingModel: Model<BookingDocument>,
     @InjectModel('SkillTask') private skillTaskModel: Model<SkillTaskDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>, // Inject User Model
+    @InjectModel('Outing') private outingModel: Model<OutingDocument>,
+    @InjectModel('Activity') private activityModel: Model<ActivityDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) { }
 
   async saveMessage(roomId: string, senderId: string, text: string, mac: string, replyTo?: string): Promise<MessageDocument> {
@@ -43,13 +47,57 @@ export class ChatService {
         console.log(`📊 [SkillTask] requesterId: "${requesterIdStr}", senderId: "${senderIdStr}"`);
 
         // FIX: For skill tasks, if sender is requester, we need to find the OTHER participant
-        // The issue: skill.requesterId only stores ONE user. Who is the other?
-        // We need to check if there's an "assignedTo" or "acceptedBy" field
-        // For now, if requester is sender, receiverId is null (group chat behavior)
-        receiverId = requesterIdStr === senderIdStr ? null : requesterIdStr;
+        if (senderIdStr === requesterIdStr) {
+          const acceptedOffer = skill.offers.find(o => o.status === 'accepted');
+          if (acceptedOffer) {
+            receiverId = acceptedOffer.helperId.toString();
+          } else {
+            console.log(`📊 [SkillTask] No accepted offer found.`);
+          }
+        } else {
+          receiverId = requesterIdStr;
+        }
         console.log(`📊 [SkillTask] Calculated receiverId: "${receiverId}"`);
       } else {
-        console.log(`⚠️ [saveMessage] Room ${roomId} not found in Bookings or SkillTasks`);
+        // Check Outing
+        const outing = await this.outingModel.findById(roomId).exec();
+        if (outing) {
+          const hostIdStr = outing.hostId.toString();
+          const senderIdStr = senderId.toString();
+
+          if (senderIdStr === hostIdStr) {
+            const acceptedReq = outing.requests.find(r => r.status === 'accepted');
+            if (acceptedReq) {
+              receiverId = acceptedReq.parentId.toString();
+            }
+          } else {
+            receiverId = hostIdStr;
+          }
+          console.log(`📊 [Outing] Calculated receiverId: "${receiverId}"`);
+        } else {
+          // Check Activity
+          const activity = await this.activityModel.findById(roomId).exec();
+          if (activity) {
+            const hostIdStr = activity.hostId.toString();
+            const senderIdStr = senderId.toString();
+
+            if (senderIdStr === hostIdStr) {
+              // Activity participants are array of IDs. 
+              // FIX: Find the participant that is NOT the host (sender)
+              // This assumes 1-on-1 chat behavior for now.
+              const other = activity.participants.find(p => p.toString() !== senderIdStr);
+              if (other) {
+                receiverId = other.toString();
+              }
+            } else {
+              // Sender is Participant. Target is Host.
+              receiverId = hostIdStr;
+            }
+            console.log(`📊 [Activity] Calculated receiverId: "${receiverId}"`);
+          } else {
+            console.log(`⚠️ [saveMessage] Room ${roomId} not found in Bookings, Skills, Outings, or Activities`);
+          }
+        }
       }
     }
 
@@ -168,4 +216,6 @@ export class ChatService {
     const user = await this.userModel.findById(userId, 'status lastSeen').exec();
     return user ? { status: user.status, lastSeen: user.lastSeen } : { status: 'offline', lastSeen: null };
   }
+
+
 }
