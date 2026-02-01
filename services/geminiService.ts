@@ -35,6 +35,27 @@ const openrouterApiKey = getApiKey(OPENROUTER_API_KEY_ENV);
 
 const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
+// --- TELEMETRY HELPER ---
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+const logTelemetry = async (event: string, model: string | undefined, success: boolean, error?: string) => {
+    try {
+        await fetch(`${API_URL}/telemetry/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                service: 'AiAssistant',
+                event,
+                model,
+                success,
+                error
+            })
+        });
+    } catch (e) {
+        console.warn('Telemetry log failed', e);
+    }
+};
+
 // --- RESPONSE SCHEMA ---
 
 const responseSchema = {
@@ -62,6 +83,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
         for (const openrouterModel of OPENROUTER_FREE_MODELS) {
             try {
                 console.log(`[LLM] 🔄 Waterfall: Trying ${openrouterModel}...`);
+                logTelemetry('ai_attempt', openrouterModel, true);
 
                 const openrouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
@@ -86,12 +108,14 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
                 });
 
                 // Handle waterfall triggers: 402 (insufficient credits), 429 (rate limit), 500+ (server error)
+                // Handle waterfall triggers: 402 (insufficient credits), 429 (rate limit), 500+ (server error)
                 if (!openrouterResponse.ok) {
                     const status = openrouterResponse.status;
-                    if (status === 402 || status === 429 || status >= 500) {
-                        console.warn(`[LLM] ⚠️ OpenRouter model ${openrouterModel} failed with status ${status}. Waterfalling to next model...`);
-                        continue; // Try next model
-                    }
+                    const errorBody = await openrouterResponse.text();
+                    console.warn(`[LLM] ⚠️ OpenRouter model ${openrouterModel} failed with status ${status}. Body:`, errorBody);
+
+                    logTelemetry('ai_failure', openrouterModel, false, `Status ${status}: ${errorBody.substring(0, 100)}`);
+                    continue; // Try next model
                 }
 
                 if (openrouterResponse.ok && openrouterResponse.body) {
@@ -129,12 +153,14 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
 
                     if (hasContent) {
                         console.log(`[LLM] ✅ Success with ${openrouterModel}`);
+                        logTelemetry('ai_generation', openrouterModel, true);
                         return; // Success: generator completes
                     }
                 }
 
             } catch (error) {
                 console.warn(`[LLM] ⚠️ OpenRouter model ${openrouterModel} failed. Error:`, error);
+                logTelemetry('ai_failure', openrouterModel, false, String(error));
                 // Continue to the next model
             }
         }
@@ -149,6 +175,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
         for (const currentModel of modelsToTry) {
             try {
                 console.log(`[LLM] 🔄 Waterfall: Trying Gemini ${currentModel}...`);
+                logTelemetry('ai_attempt', currentModel, true);
 
                 const responseStream = await ai.models.generateContentStream({
                     model: currentModel as any, // Cast to any to accept string models
@@ -171,11 +198,13 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
 
                 if (fullResponse.length > 0) {
                     console.log(`[LLM] ✅ Success with Gemini ${currentModel}`);
+                    logTelemetry('ai_generation', currentModel, true);
                     return; // Success: generator completes
                 }
 
             } catch (error) {
                 console.warn(`[LLM] ⚠️ Gemini model ${currentModel} failed. Error:`, (error as any)?.error?.message || error);
+                logTelemetry('ai_failure', currentModel, false, String((error as any)?.error?.message || error));
                 // Continue to the next model in the list
             }
         }
@@ -188,6 +217,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
         for (const pplxModel of PPLX_FALLBACK_MODELS) {
             try {
                 console.log(`[LLM] 🔄 Waterfall: Trying Perplexity ${pplxModel}...`);
+                logTelemetry('ai_attempt', pplxModel, true);
 
                 const pplxResponse = await fetch('https://api.perplexity.ai/chat/completions', {
                     method: 'POST',
@@ -238,6 +268,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
 
                     if (hasContent) {
                         console.log(`[LLM] ✅ Success with Perplexity ${pplxModel}`);
+                        logTelemetry('ai_generation', pplxModel, true);
                         return; // Success: generator completes
                     }
                 } else {
@@ -246,6 +277,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
 
             } catch (error) {
                 console.warn(`[LLM] ⚠️ Perplexity model ${pplxModel} failed. Error:`, error);
+                logTelemetry('ai_failure', pplxModel, false, String(error));
                 // Continue to the next model
             }
         }
@@ -255,6 +287,7 @@ async function* executeTextGenerationWithFailover(prompt: string, systemInstruct
 
     // --- GLOBAL FAILURE: ALL TIERS FAILED ---
     console.error("[LLM] ❌ All AI models failed across all three tiers.");
+    logTelemetry('ai_generation_fail', undefined, false, 'All tiers exhausted');
     yield "⚠️ FamLink assistant is temporarily unavailable. Please check your connection or try again in a moment.";
 };
 

@@ -13,14 +13,15 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UserTasksModule } from './user-tasks/user-tasks.module';
 import { LocationsModule } from './locations/locations.module';
+import { TelemetryModule } from './telemetry/telemetry.module';
 
 @Module({
   imports: [
     // Load env vars from .env or .env.local in root or backend folder
-    ConfigModule.forRoot({ 
+    ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env', '.env.local', '../.env', '../.env.local'], 
-    }), 
+      envFilePath: ['.env', '.env.local', '../.env', '../.env.local'],
+    }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -39,9 +40,10 @@ import { LocationsModule } from './locations/locations.module';
     NotificationsModule,
     ReviewsModule,
     UserTasksModule,
-    LocationsModule, 
+    LocationsModule,
+    TelemetryModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

@@ -1,78 +1,103 @@
-import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { User, Screen } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { geminiService } from '../services/geminiService';
-import MessageContent from './chat/MessageContent';
+// Removed AuthContext import as we use props now
+import { useLanguage } from '../contexts/LanguageContext';
+import { User, Screen } from '../types';
 
-interface AiAssistantProps {
-  user: User;
-  currentScreen: Screen;
-}
+const FAM_LINK_SYSTEM_INSTRUCTION = `
+  You are the **FamLink AI Expert**, the specialized assistant for the FamLink community app.
 
-// UPDATED: Define the ref interface with new methods
-export interface AiAssistantRef {
-  openChat: () => void;
-  toggleVisibility: () => void;
-  toggleOpenState: () => void; // NEW: To toggle open/close
-  clearHistory: () => void;    // NEW: To clear history
-}
+  ### 🎯 PRIMARY DIRECTIVE: APP EXPERT
+  - **Goal:** Help users navigate and understand FamLink with **IN-DEPTH** expertise.
+  - **Feature Questions:** When asked about *Nanny Booking*, *Activities*, *Marketplace*, or *Support Groups*, provide **DETAILED** guides. Explain step-by-step usage, benefits, and location in the app.
+  - **Tone:** Enthusiastic, professional, and confident.
+
+  ### 🧮 MATH & FORMULA RENDERING (CRITICAL)
+  - **RULE:** You **MUST** use LaTeX for ALL mathematical formulas.
+  - **FORBIDDEN:** Do NOT use plain text approximations (e.g., do not write "x = (-b +/- sqrt...)").
+  - **REQUIRED FORMAT:**
+    - **Inline Math:** Use single dollar signs: $E=mc^2$
+    - **Block Math:** Use double dollar signs: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+  - If the user asks for a formula, ALWAYS render it in Block Math ($$).
+
+  ### 🎨 VISUAL RULES
+  - **Keywords:** Use **bold** (markdown **) for buttons, key terms, and action verbs. (Renders as Pink).
+  - **Lists:** Use clean bullet points.
+  
+  ### CORE KNOWLEDGE BASE
+  1.  **Nanny Booking:** Profiles, verifications, booking requests, hourly rates.
+  2.  **Community Activities:** Events, playdates, workshops, age-group filtering.
+  3.  **Support Groups:** Forums, advice sharing, safe space for parents.
+  4.  **Exchange Marketplace:** Sustainability, trading toys/clothes, "Give what you don't need".
+  
+  ### USER CONTEXT
+  - User Name: **{{userName}}**. Address them kindly.
+`.trim();
 
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
 
+interface AiAssistantProps {
+  user: User;
+  currentScreen: Screen;
+}
+
+export interface AiAssistantRef {
+  open: () => void;
+  close: () => void;
+}
+
+const MessageContent = ({ content, isUser }: { content: string, isUser: boolean }) => {
+  if (isUser) {
+    return <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</p>;
+  }
+  return (
+    <div className="prose prose-sm max-w-none text-[15px] leading-relaxed text-[var(--text-primary)] dark:prose-invert">
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          h3: ({ node, ...props }) => <h3 className="text-sm font-bold mt-2 mb-1 uppercase tracking-wide text-[var(--accent-primary)]" {...props} />,
+          ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+          li: ({ node, ...props }) => <li className="pl-1 marker:text-[var(--text-secondary)]" {...props} />,
+          p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+          strong: ({ node, ...props }) => <strong className="font-bold text-[#ec4899] dark:text-[#f472b6]" {...props} />,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+};
+
 const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, currentScreen }, ref) => {
+  const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-
-  const { language } = useLanguage();
-  const [aiLanguage, setAiLanguage] = useState<string>(language);
-
-  // Draggability State
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: window.innerWidth - 350, y: window.innerHeight - 400 });
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const chatRef = useRef<HTMLDivElement>(null);
-
-  // Smart Loader State
   const [isThinking, setIsThinking] = useState(false);
   const [showSlowLoader, setShowSlowLoader] = useState(false);
   const loadingTimerRef = useRef<number | null>(null);
 
-  // Define the comprehensive FamLink system prompt
-  const FAM_LINK_SYSTEM_INSTRUCTION = `
-    You are the official FamLink AI Assistant. Your user is named ${user.fullName} and is on the ${currentScreen} screen.
-    Your core goal is to answer user questions *exclusively* about the FamLink application and its features.
-    
-    ### CRITICAL FORMATTING RULE You MUST include exactly one space character between every word and after every punctuation mark (commas, periods, exclamation marks). Never output text as a single continuous string. Your output must be well-spaced and easy to read.
+  useImperativeHandle(ref, () => ({
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false)
+  }));
 
-    FAMILINK APPLICATION CONTEXT:
-    1.  **Purpose:** FamLink connects parents with trusted care providers and community features to relieve the mental load of parenthood.
-    2.  **Core Features:** Nanny Booking, AI-Powered Nanny Assessment (Gemini evaluated), Task Management, Real-time Chat (E2E encrypted), Notifications, Subscription handling.
-    3.  **Community:** Mom-to-Mom Activities, Child Outing Sharing, Skill Marketplace.
-    4.  **Technical Info:** Supports multilingual (6 languages), global location services (GeoDB), and uses keyboard shortcuts (Shift+N to open, Shift+A to toggle).
+  // Drag State
+  const [position, setPosition] = useState({ x: window.innerWidth - 420, y: window.innerHeight - 600 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const chatRef = useRef<HTMLDivElement>(null);
 
-    CRITICAL RESPONSE STYLE CONSTRAINTS:
-    - **DIRECT MODE:** Provide direct, natural answers ONLY. DO NOT use meta-talk, reasoning explanations, or preambles.
-    - **FORBIDDEN PHRASES:** Never start responses with phrases like:
-      * "Alright, let's break this down..."
-      * "Let me explain..."
-      * "To answer your question..."
-      * "I'll help you with that..."
-      * "Based on the FamLink features..."
-    - **BE CONVERSATIONAL:** Answer as if you're a helpful friend who knows the app well. Get straight to the point.
-    - **PROPER SPACING:** Always ensure there is a single space between every word and every punctuation mark in your output for readability. Never concatenate words together.
-    - **FORMATTING:** Use **bold** text for key concepts, feature names, app sections, or important takeaways to make the response easier to scan.
-    
-    CONSTRAINTS:
-    - **REFUSAL:** You MUST politely refuse to answer general knowledge questions (e.g., history, science, coding help outside of app context) or perform creative writing. Say: "I can only help with FamLink-related questions. Is there anything about the app I can assist you with?"
-    - **Language:** Answer ONLY in the user's language: ${aiLanguage}.
-    - **Tone:** Be friendly, concise, and professional.
-  `.trim();
+  // Sync AI Language with App Language
+  const [aiLanguage, setAiLanguage] = useState(language);
 
-  // Initialize with a welcome message
-  const INITIAL_MESSAGE: Message[] = [{ role: 'model', text: `Hello ${user.fullName}, I'm your FamLink AI Assistant. How can I help you today?` }];
+  const INITIAL_MESSAGE: Message[] = [{ role: 'model', text: `Hello ${user.fullName}, I'm your FamLink Assistant. How can I support your family today?` }];
 
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGE);
   const [inputValue, setInputValue] = useState('');
@@ -81,6 +106,26 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isUserAtBottomRef = useRef(true);
+
+  // Voice Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // Quick Action Chips
+  const QUICK_ACTIONS = [
+    { label: "Find a Nanny ↗", action: "Nanny Booking" },
+    { label: "Create Activity ↗", action: "Community Activities" },
+    { label: "Contact Support ↗", action: "Support" },
+    { label: "My Schedule ↗", action: "Schedule" }
+  ];
+
+  const handleChipClick = (action: string) => {
+    setInputValue(`How do I use ${action}?`);
+    // Optional: Auto-send or focus input
+    textareaRef.current?.focus();
+  };
 
   // Helper: Check if user is at the bottom (within 30px)
   const handleScroll = () => {
@@ -101,60 +146,140 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     });
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-    const newX = e.clientX - offset.x;
-    const newY = e.clientY - offset.y;
-
-    // Calculate boundaries
-    const chatWidth = chatRef.current?.offsetWidth || 350;
-    const chatHeight = chatRef.current?.offsetHeight || 400;
-    const maxX = window.innerWidth - chatWidth;
-    const maxY = window.innerHeight - chatHeight;
-
-    setPosition({
-      x: Math.min(Math.max(10, newX), maxX - 10), // 10px minimum padding
-      y: Math.min(Math.max(10, newY), maxY - 10),
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      // Calculate new position
+      let newX = e.clientX - offset.x;
+      let newY = e.clientY - offset.y;
+
+      // Boundary Checks (Keep inside viewport)
+      const maxX = window.innerWidth - (chatRef.current?.offsetWidth || 400);
+      const maxY = window.innerHeight - (chatRef.current?.offsetHeight || 600);
+
+      // Clamp
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
     }
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
-  // --- End Drag Handlers ---
+  }, [isDragging, offset]);
 
-  // Internal Clear Chat Handler
-  const handleClearChat = () => {
+  // Initial Position (Bottom Right)
+  useEffect(() => {
+    setPosition({ x: window.innerWidth - 425, y: window.innerHeight - 620 });
+
+    // Keyboard Shortcut (Shift+N) to open
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'N') {
+        setIsOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+
+  const handleClearChat = async () => {
     setMessages(INITIAL_MESSAGE);
+    setInputValue('');
   };
 
-  // EXPOSED METHODS: Updated useImperativeHandle
-  useImperativeHandle(ref, () => ({
-    openChat: () => setIsOpen(true),
-    toggleVisibility: () => setIsVisible(prev => !prev),
-    toggleOpenState: () => setIsOpen(prev => !prev), // NEW: Toggles the open state
-    clearHistory: () => { // NEW: Clears history with prompt
+  // Expose reset globally for the "Clear History" button in Settings or header
+  // (Optional: You could use a Context for this if needed globally)
+  // For now, let's assume this component manages its own state entirely.
+
+  // Attach a listener for a custom event 'reset-ai-chat'
+  useEffect(() => {
+    const handleReset = () => {
       if (window.confirm("Clear all AI chat history?")) {
         handleClearChat();
       }
-    },
-  }));
+    };
 
-  // Auto-scroll to bottom when messages update
+    // Custom event mechanism if needed (omitted for now to keep simple)
+    // window.addEventListener('reset-ai-chat', handleReset);
+    // return () => window.removeEventListener('reset-ai-chat', handleReset);
+  }, []);
+
+  // Use a ref to expose the clear function to the parent via useImperativeHandle if we were using it,
+  // but simpler to just put a clear button in the UI.
+
+  // NOTE: If we wanted to persist chat, we'd use localStorage here.
+  // useEffect(() => {
+  //   localStorage.setItem('famlink_ai_chat', JSON.stringify(messages));
+  // }, [messages]);
+
+  // Re-hydrate on mount
+  // useEffect(() => {
+  //   const saved = localStorage.getItem('famlink_ai_chat');
+  //   if (saved) setMessages(JSON.parse(saved));
+  // }, []);
+
+
+  // Register a small telemetry signal (mock)
+  useEffect(() => {
+    if (user) {
+      // Telemetry loaded
+    }
+  }, [user]);
+
+  // --- Keyboard Shortcuts & Global Toggles ---
+  // Shift+N to Toggle is handled above.
+
+  // --- Theme Syncing ---
+  // The component uses CSS variables like var(--bg-card), so it should auto-adapt 
+  // if the parent app handles theme classes on the <body> or <html> tag.
+
+
+  // --- EventSource / Socket Logic for Real-time updates (Future) ---
+  // For now, we just use the REST API via GeminiService.
+
+
+  // Clear Chat Implementation that conforms to the "reset" prop expectation if we had one.
+  // Instead, we create a global event listener so the Profile page can trigger it.
+  useEffect(() => {
+    const resetHandler = () => {
+      if (window.confirm("Clear all AI chat history?")) {
+        handleClearChat();
+      }
+    };
+    // We are adding it to the window object effectively
+    (window as any).clearFamLinkChat = resetHandler;
+
+    return () => {
+      delete (window as any).clearFamLinkChat;
+    };
+  }, []);
+
+  // Additional settings:
+  // "Enter" to send is standard. "Shift+Enter" for new line.
+
+  useEffect(() => {
+    // Expose a method to open the chat programmatically
+    (window as any).openFamLinkChat = () => setIsOpen(true);
+    return () => { delete (window as any).openFamLinkChat; };
+  }, []);
+
+
+  // --- Error Boundary / Fallback ---
+  // Wrapped internally by try-catch in handleSendMessage
+
   // Auto-scroll to bottom when messages update (Smart Scroll)
   useEffect(() => {
     // Only auto-scroll if the user hasn't manually scrolled up
@@ -168,14 +293,96 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     setAiLanguage(language);
   }, [language]);
 
-  // PREVENT AUTO-FOCUS: Removed the useEffect that called textareaRef.current?.focus();
-  // This allows the Shift+N shortcut to open the modal without stealing focus.
-
   // Clear Chat Button Handler (In-modal version)
   const handleClearButtonClick = () => {
     if (window.confirm("Are you sure you want to clear the conversation history?")) {
       handleClearChat();
     }
+  };
+
+  const handleVoiceInput = async () => {
+    if (isRecording) {
+      // STOP RECORDING
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      // START RECORDING
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          // Create Blob
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+
+          // Show processing state instead of text
+          setIsProcessingVoice(true);
+
+          // Send to Local Whisper Service
+          const formData = new FormData();
+          formData.append("audio", audioBlob, "recording.wav");
+
+          try {
+            // Local Whisper Service Port 3002
+            const response = await fetch("http://localhost:3002/transcribe", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.text) {
+              setInputValue(prev => {
+                const trimmed = prev.trim();
+                return trimmed ? `${trimmed} ${data.text}` : data.text;
+              });
+
+              // UI Updates
+              setTimeout(() => {
+                // Auto-focus the input so user can edit or send
+                textareaRef.current?.focus();
+                // Trigger auto-resize logic manually
+                if (textareaRef.current) {
+                  textareaRef.current.style.height = 'auto';
+                  textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 100)}px`;
+                }
+              }, 50);
+
+            } else {
+              console.error("No text returned from transcription");
+              alert("Could not understand audio. Please try again.");
+            }
+          } catch (error) {
+            console.error("Transcription failed:", error);
+            setInputValue("Error: Local Whisper Service not running on port 3002.");
+          } finally {
+            setIsProcessingVoice(false);
+          }
+        };
+
+        mediaRecorder.start();
+        setIsRecording(true);
+
+      } catch (err) {
+        console.error("Microphone access denied:", err);
+        alert("Microphone access is required for voice input.");
+      }
+    }
+  };
+
+  const handleInputInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+    // Auto-expand
+    e.target.style.height = 'auto';
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
   };
 
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -191,6 +398,11 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     setMessages(prev => [...prev, { role: 'user', text: userMessage }, { role: 'model', text: '' }]);
     setInputValue('');
     setIsThinking(true);
+
+    // Reset height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
 
     // 2. Smart Loader Start
     loadingTimerRef.current = setTimeout(() => {
@@ -261,7 +473,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     }
   };
 
-  if (!isVisible) return null;
+
 
   // Calculate position styles for the open chat window
   const chatStyle = isOpen ? {
@@ -269,8 +481,8 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     top: `${position.y}px`,
     left: `${position.x}px`,
     width: '100%',
-    maxWidth: '350px',
-    height: '400px',
+    maxWidth: '400px', // Slightly wider for Enterprise feel
+    height: '550px',   // Taller
     maxHeight: '80vh',
     zIndex: 1000,
     transition: isDragging ? 'none' : 'opacity 0.3s' // Disable transition during drag
@@ -285,6 +497,22 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
             ${!isOpen ? 'fixed bottom-0 right-0 w-16 h-16' : 'shadow-2xl'}
         `}
     >
+      <style>{`
+        /* Custom Scrollbar for AI Chat */
+        .ai-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .ai-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .ai-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.4); /* Gray-400 with opacity */
+          border-radius: 20px;
+        }
+        .ai-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(156, 163, 175, 0.6);
+        }
+      `}</style>
       {!isOpen ? (
         // Closed State (Floating Button)
         <button
@@ -298,11 +526,11 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
           </svg>
         </button>
       ) : (
-        // Open State (Draggable Modal)
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-2xl h-full flex flex-col border border-[var(--border-color)]">
+        // Open State (Draggable Modal) - Enterprise Style
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-2xl h-full flex flex-col border border-[var(--border-color)] font-sans transition-colors duration-200">
 
-          {/* Header */}
-          <div className="p-3 border-b border-[var(--border-color)] flex justify-between items-center shrink-0">
+          {/* Header - Minimalist */}
+          <div className="p-4 bg-[var(--bg-card)] border-b border-[var(--border-color)] flex justify-between items-center shrink-0 rounded-t-xl">
 
             {/* Drag Handles / Title Area */}
             <div
@@ -310,39 +538,31 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
               className="flex items-center cursor-move select-none flex-grow"
               style={{ touchAction: 'none' }}
             >
-              <h3 className="font-bold text-[var(--text-primary)] mr-3">AI Assistant</h3>
-
-              {/* IMPLEMENTATION: Center the drag dots relative to the title */}
-              <div className="flex flex-col gap-0.5 items-center justify-center flex-grow opacity-50 text-[var(--text-secondary)]">
-                <div className="flex gap-0.5">
-                  <span className="w-1 h-1 bg-current rounded-full"></span>
-                  <span className="w-1 h-1 bg-current rounded-full"></span>
-                  <span className="w-1 h-1 bg-current rounded-full"></span>
-                </div>
-                <div className="flex gap-0.5">
-                  <span className="w-1 h-1 bg-current rounded-full"></span>
-                  <span className="w-1 h-1 bg-current rounded-full"></span>
-                  <span className="w-1 h-1 bg-current rounded-full"></span>
+              <div className="mr-3 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm overflow-hidden bg-white">
+                <img src="/famlink-icon.png" alt="FamLink" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h3 className="font-bold text-[var(--text-primary)] text-sm">FamLink Assistant</h3>
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <p className="text-[10px] text-[var(--text-secondary)] font-medium">Online</p>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1">
-              {/* Clear Chat Button (In-modal button) */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleClearButtonClick}
-                className="text-[var(--text-secondary)] hover:text-red-500 p-1 rounded-full transition-colors"
+                className="w-8 h-8 flex items-center justify-center bg-transparent hover:bg-red-50 text-red-500 rounded-full transition-colors"
                 title="Clear Chat History"
               >
-                {/* Trash/Clear Icon */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
 
-              {/* X Close Button */}
-              <button onClick={() => setIsOpen(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none p-1 rounded-full">&times;</button>
+              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none p-1 rounded-full">&times;</button>
             </div>
           </div>
 
@@ -350,67 +570,116 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-3 overflow-y-auto space-y-3 scrollbar-thin"
+            className="flex-1 p-4 overflow-y-auto space-y-4 ai-scrollbar bg-[var(--bg-subtle)]"
           >
             {messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[85%] text-sm rounded-2xl ${msg.role === 'user' ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-card-subtle)] text-[var(--text-primary)] border border-[var(--border-color)]'}`}
-                  style={{
-                    wordBreak: 'normal',
-                    overflowWrap: 'break-word',
-                    lineHeight: '1.6',
-                    padding: '12px 16px',
-                    marginBottom: '12px',
-                    letterSpacing: '0.01em',
-                    display: 'block',
-                    textAlign: 'left'
-                  }}
-                >
-                  <MessageContent
-                    content={msg.text}
-                    isUser={msg.role === 'user'}
-                  />
-                </div>
+              <div key={idx} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'user' ? (
+                  <div className="bg-[var(--accent-primary)] text-white px-5 py-3 rounded-2xl rounded-br-sm ml-auto max-w-[85%] shadow-sm">
+                    <MessageContent content={msg.text} isUser={true} />
+                  </div>
+                ) : (
+                  <div className="flex gap-3 max-w-[90%] group">
+                    {/* Anchor Icon */}
+                    <div className="flex-shrink-0 w-8 h-8 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-full flex items-center justify-center mt-0 shadow-sm overflow-hidden p-1">
+                      <img src="/famlink-icon.png" alt="AI" className="w-full h-full object-contain" />
+                    </div>
+                    {/* Message Bubble - Sharp top-left */}
+                    <div className="bg-[var(--bg-card)] text-[var(--text-primary)] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm border border-[var(--border-color)]">
+                      <MessageContent content={msg.text} isUser={false} />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
-            {/* Show smart loader */}
+
+            {/* Thinking Spinner */}
             {(isThinking && messages[messages.length - 1].text === '') && (
-              <div className="flex justify-start items-center gap-2 p-2">
-                <span className="text-xs text-gray-500">
-                  {showSlowLoader ? 'AI is engaging deep thought...' : 'AI is processing...'}
-                </span>
+              <div className="flex items-start gap-3 p-2">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <span className="text-xs text-gray-400 mt-2 font-medium">Thinking...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="p-3 bg-[var(--bg-card)] border-t border-[var(--border-color)] shrink-0">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <textarea
-                ref={textareaRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                // REPLACED PLACEHOLDER: WhatsApp style icon (Unicode) + text
-                placeholder="💬 Type a FamLink question..."
-                rows={1}
-                className="flex-1 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-none"
-              />
-              {/* RE-STYLED SEND BUTTON: Pink background, White Icon (matching WhatsApp style) */}
-              <button
-                type="submit"
-                disabled={!inputValue.trim() || isThinking}
-                className="flex items-center justify-center p-2 text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] rounded-lg shadow-md disabled:opacity-50 transition-transform active:scale-95"
-                title="Send Message"
-              >
-                {/* REPLACED ICON: Simple solid arrow pointing right/up-right for clean WhatsApp look */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M4.697 19.467l14.93-7.465a.5.5 0 000-.864L4.697 3.533a.5.5 0 00-.773.432L4.015 9.5H10a1 1 0 110 2H4.015l-.091 5.535a.5.5 0 00.773.432z" />
-                </svg>
-              </button>
-            </form>
+          {/* Footer Area with Chips & Input */}
+          <div className="pt-2 pb-4 px-4 bg-[var(--bg-card)] border-t border-[var(--border-color)] shrink-0 flex flex-col gap-3 rounded-b-xl">
+
+            {/* Quick Action Chips (Horizontal Scroll + Hidden Scrollbar) */}
+            {!isThinking && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none mask-fade-right" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {QUICK_ACTIONS.map((chip, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleChipClick(chip.label)}
+                    className="flex-shrink-0 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-secondary)] text-[11px] font-medium rounded-full hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-colors whitespace-nowrap shadow-sm"
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Smart Input Bar */}
+            <div>
+              <form onSubmit={handleSendMessage} className="relative flex items-end gap-2">
+                <div className="relative flex-grow flex items-center bg-[var(--bg-input)] border border-[var(--border-input)] rounded-3xl px-4 py-2 focus-within:ring-2 focus-within:ring-[var(--accent-primary)] focus-within:bg-[var(--bg-card)] transition-all shadow-inner">
+
+                  {/* Processing Overlay */}
+                  {isProcessingVoice && (
+                    <div className="absolute inset-0 bg-[var(--bg-input)] rounded-3xl z-10 flex items-center px-4 gap-3">
+                      <div className="w-5 h-5 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-gray-400 italic">Processing audio...</span>
+                    </div>
+                  )}
+
+                  <textarea
+                    ref={textareaRef}
+                    value={inputValue}
+                    onChange={handleInputInput}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type your question here..."
+                    rows={1}
+                    className="flex-grow bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none appearance-none text-sm text-[var(--text-primary)] placeholder-gray-400 resize-none max-h-[100px] py-1"
+                    style={{ minHeight: '24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    spellCheck={false}
+                  />
+
+                  {/* Microphone Icon */}
+                  <button
+                    type="button"
+                    onClick={handleVoiceInput}
+                    className={`ml-2 transition-colors p-1 flex-shrink-0 ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-[var(--accent-primary)]'}`}
+                    title={isRecording ? "Stop Recording" : "Voice Input"}
+                    disabled={isProcessingVoice}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill={isRecording ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Circular Send Button */}
+                <button
+                  type="submit"
+                  disabled={!inputValue.trim() || isThinking}
+                  className="flex-shrink-0 w-10 h-10 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-full shadow-md flex items-center justify-center disabled:opacity-50 disabled:shadow-none transition-all hover:scale-105 active:scale-95 mb-0.5"
+                  title="Send Message"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              </form>
+
+              {/* Powered By Caption */}
+              <div className="text-center mt-2">
+                <p className="text-[10px] text-gray-300 font-medium tracking-wide">Powered by FamLink AI</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

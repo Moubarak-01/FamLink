@@ -13,13 +13,13 @@ export const OPENROUTER_API_KEY_ENV = 'VITE_OPENROUTER_API_KEY';
 // NEW: OpenRouter Free Models - Tier 1 (Primary)
 // These are the best free models available on OpenRouter as of Jan 2026
 export const OPENROUTER_FREE_MODELS: string[] = [
-  'meta-llama/llama-4-scout:free',           // 512k context - best for long conversations
-  'xiaomi/mimo-v2-flash:free',               // #1 open-source for reasoning & coding
-  'google/gemini-3-flash:free',              // Multimodal, 128k context
-  'z-ai/glm-4.5-air:free',                   // Lightweight, agent-centric, 131k context
-  'meta-llama/llama-4-maverick:free',        // 400B multimodal, 256k context
-  'moonshotai/kimi-vl-a3b-thinking:free',    // Visual reasoning & math
-  'qwen/qwen3-coder-480b-a35b-instruct:free' // MoE for tool-use & function calling
+  'meta-llama/llama-3.3-70b-instruct:free', // TIER 1: Best Logic (volatile)
+  'google/gemini-2.0-flash-exp:free',       // Stable & Smart
+  'arcee-ai/trinity-large-preview:free',    // Corrected ID
+  'nvidia/nemotron-3-nano:free',            // Corrected ID
+  'xiaomi/mimo-v2-flash:free',              // Re-added (Recommended)
+  'openai/gpt-oss-120b:free',               // User Request
+  'z-ai/glm-4.5-air:free',                  // Stable Fallback (Last Resort)
 ];
 
 // FINALIZED: Array of all Gemini models for chat failover

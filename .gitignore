@@ -26,3 +26,20 @@ dist-ssr
 # Environment files
 backend/.env
 .env.local
+
+# Backend Uploads
+backend/uploads/voice/*
+backend/uploads/profile/*
+backend/uploads/temp/*
+
+# Local Whisper Service
+local-whisper/node_modules
+local-whisper/models
+local-whisper/uploads/*
+local-whisper/audio-*
+local-whisper/*.exe
+local-whisper/*.dll
+
+*.exe
+*.dll
+local-whisper/uploads/*

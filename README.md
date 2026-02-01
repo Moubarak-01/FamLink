@@ -76,7 +76,35 @@ The application now uses a robust multi-provider AI fallback system:
 
 ---
 
+## 🆕 Latest Updates (v2.1: The AI & Polish Upgrade) - Feb 2026
+
+### 1. 🧠 Advanced AI & Telemetry
+*   **Smart Model Waterfall:** Prioritizes **Meta Llama 3.3 70B** for best logic, falling back to **Gemini 2.0 Flash** and **Z.AI GLM 4.5** if the free tier is busy.
+*   **Backend Telemetry:** Every AI attempt and failure is now logged to the backend console (`[Telemetry] ai_attempt: ...`), giving complete visibility into the waterfall process.
+*   **Voice Input 2.0:** Voice transcription now intelligently **appends** to your existing text instead of overwriting it, allowing for multi-sentence composition.
+
+### 2. 🎨 "Moubely" Visual Style & Math
+*   **Pink Emphasis:** Bold text in AI responses now renders in a distinct **Pink** highlight, improving readability and visual flair.
+*   **LaTeX Math Support:** Integrated `remark-math` and `rehype-katex` to render beautiful mathematical formulas (e.g., $E=mc^2$) directly in the chat.
+
+### 3. 📅 Precision Date Handling
+*   **Timezone Fix:** Solved the "Off-by-One Day" bug by forcing all activity dates to **Noon UTC**. This ensures dates remain stable regardless of whether the user is in the US, Europe, or Asia.
+
+---
+
 ## 🔧 Challenges Faced & Solutions
+
+### 🔴 The "Yesterday" Date Bug
+**The Issue:**
+Activity dates selected as "Feb 1st" were saving as `2026-02-01`. JavaScript parses this string as "Midnight UTC". For users in the US (e.g., EST), "Midnight UTC" is "7 PM Yesterday", causing the UI to display "Jan 31st".
+**The Solution:**
+We updated the frontend storage logic to append `T12:00:00` (Noon) to date strings. This places the timestamp safely in the middle of the day, so timezone offsets (+/- 12h) never shift the calendar date.
+
+### 🔴 OpenRouter Free Tier Volatility
+**The Issue:**
+Free models like `llama-3.3-70b-instruct:free` are hosted by volunteers and often go offline, returning `404 Not Found` or `400 Bad Request`.
+**The Solution:**
+We built a robust **Waterfall System** in `geminiService.ts`. It tries the user's preferred model (Llama) first. If it fails (caught via specific error codes), it silently retries with the next best model (Gemini/Z.AI/Nvidia), ensuring the user always gets an answer.
 
 ### 🔴 The Reactivity Problem
 **The Issue:**

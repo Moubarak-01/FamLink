@@ -94,7 +94,7 @@ const OutingCard: React.FC<{
                             </div>
                             <div className="text-right flex-shrink-0 ml-4 mr-8">
                                 <p className="text-sm font-bold text-[var(--text-primary)]">
-                                    {new Date(outing.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                    {new Date(outing.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                 </p>
                                 <p className="text-sm text-[var(--text-secondary)]">{outing.time}</p>
                             </div>

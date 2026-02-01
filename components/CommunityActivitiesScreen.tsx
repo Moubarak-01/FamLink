@@ -68,7 +68,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                                 <p className="text-[var(--text-secondary)] mt-2 text-sm">{activity.description}</p>
                             </div>
                             <div className="text-right flex-shrink-0 ml-4 mr-8">
-                                <p className="text-sm font-bold text-[var(--text-primary)]">{new Date(activity.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                <p className="text-sm font-bold text-[var(--text-primary)]">{new Date(activity.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                                 <p className="text-sm text-[var(--text-secondary)]">{activity.time}</p>
                             </div>
                         </div>
