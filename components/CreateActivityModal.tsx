@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Activity, ActivityCategory } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocationInput from './LocationInput';
+import PrivacyToggle from './PrivacyToggle';
 
 interface CreateActivityModalProps {
     onClose: () => void;
@@ -97,34 +98,8 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({ onClose, onSu
 
                         {/* Privacy Setting Toggle */}
                         <div className="bg-[var(--bg-card-subtle)] p-4 rounded-lg border border-[var(--border-color)]">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className={labelStyles}>Privacy Setting</label>
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${privacy === 'public' ? 'bg-green-100 text-green-700' : 'bg-pink-100 text-pink-700'}`}>
-                                    {privacy === 'public' ? 'Public' : 'Private'}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-4 cursor-pointer relative" onClick={() => setPrivacy(privacy === 'public' ? 'private' : 'public')}>
-                                <motion.div
-                                    className="w-16 h-8 bg-gray-300 rounded-full p-1 flex items-center"
-                                    animate={{ backgroundColor: privacy === 'public' ? '#10B981' : '#EC4899' }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <motion.div
-                                        className="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-xs"
-                                        layout
-                                        transition={{ type: "spring", stiffness: 700, damping: 30 }}
-                                        style={{ marginLeft: privacy === 'public' ? '0px' : '32px' }} // Fallback if layout prop fails? No, layout handles position. But flex alignment?
-                                    // Simplify: Just use layout prop. But flex container "items-center" centers vertical. Horizontal needs "justify-start" vs "justify-end"?
-                                    // Better approach for toggle without complex layout math:
-                                    >
-                                        {privacy === 'public' ? '🌍' : '🔒'}
-                                    </motion.div>
-                                </motion.div>
-                                <p className="text-xs text-[var(--text-secondary)] flex-1">
-                                    {privacy === 'public' ? 'Anyone can join instantly. Great for open playdates.' : 'Users must request to join. You approve them manually.'}
-                                </p>
-                            </div>
+                            <label className={`${labelStyles} mb-2`}>Privacy Setting</label>
+                            <PrivacyToggle value={privacy} onChange={setPrivacy} />
                         </div>
 
                         <div>

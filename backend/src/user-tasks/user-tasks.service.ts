@@ -4,12 +4,15 @@ import { Model } from 'mongoose';
 import { UserTask, UserTaskDocument } from '../schemas/user-task.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 
+import { ChatGateway } from '../chat/chat.gateway';
+
 @Injectable()
 export class UserTasksService {
   constructor(
     @InjectModel(UserTask.name) private userTaskModel: Model<UserTaskDocument>,
-    private notificationsService: NotificationsService
-  ) {}
+    private notificationsService: NotificationsService,
+    private chatGateway: ChatGateway
+  ) { }
 
   async create(createTaskDto: any, parentId: string): Promise<UserTaskDocument> {
     const task = new this.userTaskModel({
@@ -19,12 +22,13 @@ export class UserTasksService {
     const savedTask = await task.save();
 
     await this.notificationsService.create(
-        createTaskDto.nannyId,
-        `New task assigned: ${createTaskDto.description}`,
-        'task',
-        savedTask._id.toString()
+      createTaskDto.nannyId,
+      `New task assigned: ${createTaskDto.description}`,
+      'task',
+      savedTask._id.toString()
     );
 
+    this.chatGateway.server.emit('tasks_update', { action: 'create', taskId: savedTask._id });
     return savedTask;
   }
 
@@ -37,11 +41,11 @@ export class UserTasksService {
       $or: [{ parentId: userId }, { nannyId: userId }],
       // Filter out tasks that are completed, NOT marked to keep, and older than 7 days
       $nor: [
-          { 
-              status: 'completed', 
-              keepPermanently: false, 
-              completedAt: { $lt: sevenDaysAgo } 
-          }
+        {
+          status: 'completed',
+          keepPermanently: false,
+          completedAt: { $lt: sevenDaysAgo }
+        }
       ]
     }).sort({ dueDate: 1 }).exec();
   }
@@ -49,18 +53,24 @@ export class UserTasksService {
   async updateStatus(taskId: string, status: string): Promise<UserTaskDocument> {
     const updateData: any = { status };
     if (status === 'completed') {
-        updateData.completedAt = new Date();
+      updateData.completedAt = new Date();
     } else {
-        updateData.completedAt = null;
+      updateData.completedAt = null;
     }
-    return this.userTaskModel.findByIdAndUpdate(taskId, updateData, { new: true }).exec();
+    const res = await this.userTaskModel.findByIdAndUpdate(taskId, updateData, { new: true }).exec();
+    this.chatGateway.server.emit('tasks_update', { action: 'update_status', taskId });
+    return res;
   }
 
   async keepTaskPermanently(taskId: string): Promise<UserTaskDocument> {
-    return this.userTaskModel.findByIdAndUpdate(taskId, { keepPermanently: true }, { new: true }).exec();
+    const res = await this.userTaskModel.findByIdAndUpdate(taskId, { keepPermanently: true }, { new: true }).exec();
+    this.chatGateway.server.emit('tasks_update', { action: 'keep_permanent', taskId });
+    return res;
   }
 
   async remove(id: string): Promise<any> {
-      return this.userTaskModel.findByIdAndDelete(id).exec();
+    const res = await this.userTaskModel.findByIdAndDelete(id).exec();
+    this.chatGateway.server.emit('tasks_update', { action: 'delete', id });
+    return res;
   }
 }

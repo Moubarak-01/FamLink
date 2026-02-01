@@ -17,6 +17,9 @@ class SocketService {
     private typingHandlers: ((data: { roomId: string, userId: string, userName: string, isTyping: boolean }) => void)[] = [];
     private marketplaceHandlers: ((data: any) => void)[] = [];
     private activityHandlers: ((data: any) => void)[] = [];
+    private outingsHandlers: ((data: any) => void)[] = [];
+    private bookingsHandlers: ((data: any) => void)[] = [];
+    private tasksHandlers: ((data: any) => void)[] = [];
 
     async connect(userId?: string) {
         let currentUserId = userId;
@@ -83,6 +86,16 @@ class SocketService {
 
         this.socket.on('activity_update', (data) => {
             this.activityHandlers.forEach(h => h(data));
+        });
+
+        this.socket.on('outings_update', (data) => {
+            this.outingsHandlers.forEach(h => h(data));
+        });
+        this.socket.on('bookings_update', (data) => {
+            this.bookingsHandlers.forEach(h => h(data));
+        });
+        this.socket.on('tasks_update', (data) => {
+            this.tasksHandlers.forEach(h => h(data));
         });
         this.socket.on('message_deleted', (data) => this.deleteHandlers.forEach(h => h(data)));
         this.socket.on('message_deleted_for_me', (data) => this.deleteHandlers.forEach(h => h({ ...data, isLocalDelete: true })));
@@ -267,6 +280,27 @@ class SocketService {
         this.activityHandlers.push(callback);
         return () => {
             this.activityHandlers = this.activityHandlers.filter(h => h !== callback);
+        };
+    }
+
+    onOutingsUpdate(callback: (data: any) => void) {
+        this.outingsHandlers.push(callback);
+        return () => {
+            this.outingsHandlers = this.outingsHandlers.filter(h => h !== callback);
+        };
+    }
+
+    onBookingsUpdate(callback: (data: any) => void) {
+        this.bookingsHandlers.push(callback);
+        return () => {
+            this.bookingsHandlers = this.bookingsHandlers.filter(h => h !== callback);
+        };
+    }
+
+    onTasksUpdate(callback: (data: any) => void) {
+        this.tasksHandlers.push(callback);
+        return () => {
+            this.tasksHandlers = this.tasksHandlers.filter(h => h !== callback);
         };
     }
 

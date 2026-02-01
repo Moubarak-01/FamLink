@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SharedOuting } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocationInput from './LocationInput';
+import PrivacyToggle from './PrivacyToggle';
 
 interface CreateOutingModalProps {
     onClose: () => void;
@@ -27,6 +28,7 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
     const [liveLocationEnabled, setLiveLocationEnabled] = useState(false);
     const [image, setImage] = useState<string>('');
     const [imagePreview, setImagePreview] = useState<string>('');
+    const [privacy, setPrivacy] = useState<'public' | 'private'>('public');
 
     const inputStyles = "mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]";
     const labelStyles = "block text-sm font-medium text-[var(--text-secondary)]";
@@ -46,8 +48,6 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
             alert('Please fill in all fields.');
             return;
         }
-        // @ts-ignore
-        const privacy = document.querySelector('input[name="privacy"]:checked')?.value || 'public';
         onSubmit({ title, description, location, date, time, maxChildren, costDetails, liveLocationEnabled, image, privacy });
     };
 
@@ -105,29 +105,9 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
                         </div>
 
                         {/* Privacy Toggle */}
-                        <div className="mt-4">
-                            <label className={labelStyles}>Privacy Setting</label>
-                            <div className="mt-2 flex gap-4">
-                                <label className="flex items-center">
-                                    <input
-                                        type="radio"
-                                        name="privacy"
-                                        value="public"
-                                        defaultChecked
-                                        className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)]"
-                                    />
-                                    <span className="ml-2 text-sm text-[var(--text-primary)]">Public (Anyone can join)</span>
-                                </label>
-                                <label className="flex items-center">
-                                    <input
-                                        type="radio"
-                                        name="privacy"
-                                        value="private"
-                                        className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)]"
-                                    />
-                                    <span className="ml-2 text-sm text-[var(--text-primary)]">Private (Requires Approval)</span>
-                                </label>
-                            </div>
+                        <div className="mt-4 bg-[var(--bg-card-subtle)] p-4 rounded-lg border border-[var(--border-color)]">
+                            <label className={`${labelStyles} mb-2`}>Privacy Setting</label>
+                            <PrivacyToggle value={privacy} onChange={setPrivacy} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

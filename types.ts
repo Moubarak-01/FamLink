@@ -178,13 +178,14 @@ export interface SharedOuting {
   time: string;
   maxChildren: number;
   costDetails: string;
+  privacy?: 'public' | 'private';
   image?: string; // Added image
   requests: OutingRequest[];
   messages?: ChatMessage[];
 }
 
 export interface SkillOffer {
-  helperId: string;
+  helperId: any;
   helperName: string;
   helperPhoto: string;
   offerAmount: number;
@@ -202,6 +203,7 @@ export interface SkillRequest {
   description: string;
   location: string;
   budget: number;
+  privacy?: 'public' | 'private'; // Added privacy
   image?: string; // Added image
   status: 'open' | 'in_progress' | 'completed';
   offers: SkillOffer[];

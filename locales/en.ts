@@ -198,6 +198,10 @@ export const en = {
     community_activities_title: "Community Activities",
     community_activities_subtitle: "Find playdates, walks, and other events hosted by parents like you.",
     button_create_activity: "Create Activity",
+
+    // New Privacy Logic Keys
+    outing_card_join: "Join Outing",
+    skill_card_take_task: "Take Task",
     create_activity_modal_title: "Create a New Activity",
     activity_label_category: "Category",
     activity_label_description: "Description",

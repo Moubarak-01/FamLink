@@ -32,13 +32,37 @@ export class MarketplaceService {
   }
 
   async makeOffer(taskId: string, offerDto: any, userId: string): Promise<SkillTaskDocument> {
-    const offer = { ...offerDto, helperId: userId, status: 'pending' };
+    const task = await this.skillTaskModel.findById(taskId);
+    if (!task) throw new Error('Task not found');
+
+    // Prevent duplicate offers
+    const existingOffer = task.offers.find(o => {
+      const id = typeof o.helperId === 'object' ? (o.helperId as any)._id.toString() : o.helperId.toString();
+      return id === userId;
+    });
+    if (existingOffer) {
+      throw new Error('You have already made an offer on this task.');
+    }
+
+    const isPublic = task.privacy === 'public';
+    const status = isPublic ? 'accepted' : 'pending';
+
+    const offer = { ...offerDto, helperId: userId, status };
+
+    // If public/accepted, we might want to also update the TASK status to in_progress immediately?
+    // For simplicity and consistency with 'First Come First Serve', yes.
+    const updates: any = { $push: { offers: offer } };
+    if (isPublic) {
+      updates.status = 'in_progress';
+    }
+
     const updated = await this.skillTaskModel.findByIdAndUpdate(
       taskId,
-      { $push: { offers: offer } },
+      updates,
       { new: true }
     ).exec();
-    this.chatGateway.server.emit('marketplace_update', { action: 'offer_made' });
+
+    this.chatGateway.server.emit('marketplace_update', { action: 'offer_made', taskId });
     return updated;
   }
 

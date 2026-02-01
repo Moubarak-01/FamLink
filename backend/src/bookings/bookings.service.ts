@@ -3,13 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Booking, BookingDocument } from '../schemas/booking.schema';
 import { NotificationsService } from '../notifications/notifications.service';
-import { User } from '../schemas/user.schema'; // Ensure User is imported for typing if needed
+import { User } from '../schemas/user.schema';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Injectable()
 export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
+    private chatGateway: ChatGateway
   ) { }
 
   // Helper to flatten the Mongoose object for the frontend
@@ -82,6 +84,9 @@ export class BookingsService {
     );
 
     return this.mapBooking(savedBooking);
+
+    this.chatGateway.server.emit('bookings_update', { action: 'create', bookingId: savedBooking._id });
+    return this.mapBooking(savedBooking);
   }
 
   async findAllForUser(userId: string): Promise<any[]> {
@@ -122,11 +127,15 @@ export class BookingsService {
       );
     }
 
+
+    this.chatGateway.server.emit('bookings_update', { action: 'update_status', bookingId });
     return this.mapBooking(updatedBooking);
   }
 
   async remove(id: string): Promise<any> {
-    return this.bookingModel.findByIdAndDelete(id).exec();
+    const res = await this.bookingModel.findByIdAndDelete(id).exec();
+    this.chatGateway.server.emit('bookings_update', { action: 'delete', id });
+    return res;
   }
 
   async removeAll(): Promise<any> {

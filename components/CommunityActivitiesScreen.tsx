@@ -3,6 +3,7 @@ import { Activity, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
 import { formatCategoryName, getCategoryColor } from '../utils/textUtils';
+import DeleteButton from './DeleteButton';
 
 interface CommunityActivitiesScreenProps {
     user: User;
@@ -43,13 +44,10 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
     return (
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group">
             {isHost && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
-                    className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Delete Activity"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
+                <DeleteButton
+                    onDelete={() => onDelete(activity.id)}
+                    className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                />
             )}
 
             {activity.image && (
@@ -69,7 +67,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                                 </span>
                                 <p className="text-[var(--text-secondary)] mt-2 text-sm">{activity.description}</p>
                             </div>
-                            <div className="text-right flex-shrink-0 ml-4">
+                            <div className="text-right flex-shrink-0 ml-4 mr-8">
                                 <p className="text-sm font-bold text-[var(--text-primary)]">{new Date(activity.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                                 <p className="text-sm text-[var(--text-secondary)]">{activity.time}</p>
                             </div>

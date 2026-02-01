@@ -159,6 +159,18 @@ const App: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
     });
 
+    const unsubOuting = socketService.onOutingsUpdate(() => {
+      queryClient.invalidateQueries({ queryKey: ['outings'] });
+    });
+
+    const unsubBookings = socketService.onBookingsUpdate(() => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    });
+
+    const unsubTasks = socketService.onTasksUpdate(() => {
+      queryClient.invalidateQueries({ queryKey: ['userTasks'] });
+    });
+
     const unsubscribe = socketService.onMessage(({ roomId, message }) => {
       // 1. Process message (toast, etc.)
       processIncomingMessage(roomId, message);
@@ -188,6 +200,9 @@ const App: React.FC = () => {
       unsubNotif();
       unsubMarketplace();
       unsubActivity();
+      unsubOuting();
+      unsubBookings();
+      unsubTasks();
     };
   }, [currentUser, queryClient]);
 
@@ -843,6 +858,7 @@ const App: React.FC = () => {
         onDeleteActivities={handleDeleteAllActivities}
         onDeleteOutings={handleDeleteAllOutings}
         onDeleteSkillRequests={handleDeleteAllSkillRequests}
+        onUpdateOffer={handleUpdateSkillOfferStatus}
       /> : null;
       case Screen.NannyListing: return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
       case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen
@@ -863,6 +879,7 @@ const App: React.FC = () => {
           onBack={goBack}
           onCreateOuting={() => setIsCreateOutingModalOpen(true)}
           onRequestJoin={setRequestOutingInfo}
+          onUpdateRequestStatus={handleUpdateOutingRequestStatus} // Added prop
           onOpenChat={(outing) => setActiveChat({ type: 'outing', item: outing })}
           onRateHost={(hostId) => { const host = approvedNannies.find(n => n.id === hostId) || { id: hostId, fullName: 'Host', photo: '' } as User; setRatingTargetUser(host); }}
           onDeleteOuting={handleDeleteOuting}
@@ -900,7 +917,7 @@ const App: React.FC = () => {
       {requestOutingInfo && <RequestOutingJoinModal outing={requestOutingInfo} onClose={() => setRequestOutingInfo(null)} onSubmit={handleRequestOutingJoin} existingRequests={requestOutingInfo.requests} currentUserId={currentUser?.id || ''} />}
       {isCreateSkillRequestModalOpen && <CreateSkillRequestModal onClose={() => setIsCreateSkillRequestModalOpen(false)} onSubmit={handleCreateSkillRequest} />}
       {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
-      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onSendMessage={handleSendMessage} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
+      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
 
       {/* Conditional Rendering of Settings Modal (Now driven by state) */}
       {isSettingsModalOpen && (

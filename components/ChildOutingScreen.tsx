@@ -2,6 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { SharedOuting, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
+import DeleteButton from './DeleteButton';
+
+// Helper to safely get requestor name
+const getRequesterName = (id: any, name?: string) => {
+    if (typeof id === 'object' && id?.fullName) return id.fullName;
+    if (name) return name;
+    return 'Unknown Parent';
+};
 
 interface ChildOutingScreenProps {
     user: User;
@@ -9,6 +17,7 @@ interface ChildOutingScreenProps {
     onBack: () => void;
     onCreateOuting: () => void;
     onRequestJoin: (outing: SharedOuting) => void;
+    onUpdateRequestStatus: (outingId: string, parentId: string, status: 'accepted' | 'declined') => void; // Added Prop
     onOpenChat: (outing: SharedOuting) => void;
     onDeleteOuting: (id: string) => void;
     onDeleteAllOutings: () => void;
@@ -33,9 +42,10 @@ const OutingCard: React.FC<{
     outing: SharedOuting,
     currentUserId: string,
     onRequestJoin: (outing: SharedOuting) => void,
+    onUpdateStatus: (outingId: string, parentId: string, status: 'accepted' | 'declined') => void, // Added Prop
     onChat: (outing: SharedOuting) => void,
     onDelete: (id: string) => void
-}> = ({ outing, currentUserId, onRequestJoin, onChat, onDelete }) => {
+}> = ({ outing, currentUserId, onRequestJoin, onUpdateStatus, onChat, onDelete }) => {
     const { t } = useLanguage();
 
     // CRITICAL FIX: Safety check for requests array to prevent crash
@@ -59,17 +69,12 @@ const OutingCard: React.FC<{
 
     return (
         <div className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden border border-[var(--border-color)] relative group transition-all hover:shadow-lg">
-            {/* Delete Button - Visible only to host on hover */}
+            {/* ... Delete Button ... */}
             {isHost && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(outing.id); }}
-                    className="absolute top-2 right-2 bg-white p-1.5 rounded-full text-red-500 shadow-sm hover:bg-red-50 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Delete Outing"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
+                <DeleteButton
+                    onDelete={() => onDelete(outing.id)}
+                    className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                />
             )}
 
             {outing.image && (
@@ -87,7 +92,7 @@ const OutingCard: React.FC<{
                                 <h3 className="text-lg font-bold text-[var(--text-primary)]">{outing.title}</h3>
                                 <p className="text-sm text-[var(--text-secondary)] mt-1">{t('outing_card_hosted_by', { name: displayHostName })}</p>
                             </div>
-                            <div className="text-right flex-shrink-0 ml-4">
+                            <div className="text-right flex-shrink-0 ml-4 mr-8">
                                 <p className="text-sm font-bold text-[var(--text-primary)]">
                                     {new Date(outing.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                 </p>
@@ -139,15 +144,60 @@ const OutingCard: React.FC<{
                                         disabled={hasRequested || slotsLeft === 0}
                                         className={`font-bold py-1.5 px-4 rounded-full text-xs shadow-sm transition-transform active:scale-95 
                                             ${hasRequested
-                                                ? 'bg-gray-100 text-gray-500 cursor-default'
+                                                ? (myRequest?.status === 'accepted' ? 'bg-green-100 text-green-600 cursor-default' :
+                                                    myRequest?.status === 'declined' ? 'bg-red-100 text-red-600 cursor-default' :
+                                                        'bg-gray-100 text-gray-500 cursor-default')
                                                 : 'bg-teal-500 hover:bg-teal-600 text-white hover:scale-105'
                                             }`}
                                     >
-                                        {hasRequested ? t('outing_card_requested') : t('outing_card_request_to_join')}
+                                        {hasRequested
+                                            ? (myRequest?.status === 'accepted' ? t('status_accepted') :
+                                                myRequest?.status === 'declined' ? t('status_declined') :
+                                                    t('outing_card_requested'))
+                                            : (outing.privacy === 'public' ? t('outing_card_join') : t('outing_card_request_to_join'))
+                                        }
                                     </button>
                                 )}
                             </div>
                         </div>
+
+                        {/* HOST SECTION: Manage Requests */}
+                        {isHost && (
+                            <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
+                                <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wide">Manage Requests ({requests.length})</h4>
+                                {requests.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {requests.map((req, idx) => (
+                                            <li key={idx} className="bg-[var(--bg-background)] p-2 rounded-md flex justify-between items-center text-sm border border-[var(--border-color)]">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 overflow-hidden">
+                                                        {req.childName ? req.childName[0].toUpperCase() : '?'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-[var(--text-primary)]">{req.childName} <span className="text-[var(--text-light)] text-xs">({req.childAge}y)</span></p>
+                                                        <p className="text-xs text-[var(--text-secondary)]">Parent: {getRequesterName(req.parentId)}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    {req.status === 'pending' ? (
+                                                        <>
+                                                            <button onClick={() => onUpdateStatus(outing.id, (typeof req.parentId === 'object' ? (req.parentId as any)._id : req.parentId), 'accepted')} className="p-1.5 bg-green-100 text-green-700 rounded-full hover:bg-green-200" title="Accept">✔</button>
+                                                            <button onClick={() => onUpdateStatus(outing.id, (typeof req.parentId === 'object' ? (req.parentId as any)._id : req.parentId), 'declined')} className="p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200" title="Decline">✖</button>
+                                                        </>
+                                                    ) : (
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${req.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                            {req.status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-xs text-[var(--text-light)] italic">No requests yet.</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -156,11 +206,12 @@ const OutingCard: React.FC<{
 };
 
 const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
-    user, outings, onBack, onCreateOuting, onRequestJoin, onOpenChat, onDeleteOuting, onDeleteAllOutings
+    user, outings, onBack, onCreateOuting, onRequestJoin, onUpdateRequestStatus, onOpenChat, onDeleteOuting, onDeleteAllOutings
 }) => {
     const { t } = useLanguage();
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const handleClearAll = async () => {
         if (window.confirm("Delete ALL outings? This cannot be undone.")) {
@@ -169,11 +220,22 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
     };
 
     const displayedOutings = useMemo(() => {
-        if (viewMode === 'calendar' && selectedDate) {
-            return outings.filter(o => o.date === selectedDate);
+        let filtered = outings;
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(o =>
+                o.title.toLowerCase().includes(query) ||
+                o.description.toLowerCase().includes(query) ||
+                o.location.toLowerCase().includes(query)
+            );
         }
-        return outings;
-    }, [outings, viewMode, selectedDate]);
+
+        if (viewMode === 'calendar' && selectedDate) {
+            return filtered.filter(o => o.date === selectedDate);
+        }
+        return filtered;
+    }, [outings, viewMode, selectedDate, searchQuery]);
 
     const outingDates = useMemo(() => outings.map(o => o.date), [outings]);
 
@@ -198,9 +260,20 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
             </div>
 
             <div className="mb-6 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <div className="relative w-full max-w-md">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Find park visits, museum trips..."
+                        className="w-full px-4 py-3 pl-10 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-[var(--text-primary)]"
+                    />
+                    <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
+                </div>
+
                 <button
                     onClick={onCreateOuting}
-                    className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform hover:scale-105 flex items-center gap-2"
+                    className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform hover:scale-105 flex items-center gap-2 whitespace-nowrap"
                 >
                     <span>➕</span> {t('button_create_outing')}
                 </button>
@@ -244,6 +317,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                             outing={outing}
                             currentUserId={user.id}
                             onRequestJoin={onRequestJoin}
+                            onUpdateStatus={onUpdateRequestStatus} // Passed prop
                             onChat={onOpenChat}
                             onDelete={onDeleteOuting}
                         />

@@ -53,6 +53,7 @@ interface DashboardScreenProps {
     onDeleteActivities?: () => void; // <-- ADDED
     onDeleteOutings?: () => void; // <-- ADDED
     onDeleteSkillRequests?: () => void; // <-- ADDED
+    onUpdateOffer?: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void; // <-- FIXED: Added missing prop definition
     onOpenChat: (type: 'activity' | 'outing' | 'skill' | 'booking', item: any) => void;
 }
 
@@ -284,12 +285,15 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     onRateNanny, onOpenTaskModal, onViewActivities, onViewOutings, onUpdateOutingRequestStatus,
     onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking,
     onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus,
-    onDeleteActivities, onDeleteOutings, onDeleteSkillRequests, // <-- NEW DELETE HANDLERS
+    onDeleteActivities, onDeleteOutings, onDeleteSkillRequests, onUpdateOffer, // <-- Correctly destructured
     onOpenChat // <-- NEW Unified Chat Handler
 }) => {
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
-    const mySkillRequests = skillRequests?.filter(s => s.requesterId === user.id) || [];
+    const mySkillRequests = skillRequests?.filter(s => {
+        const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+        return rId === user.id;
+    }) || [];
 
     // DEBUG LOGGING
     console.log('DashboardScreen Debug:', {
@@ -305,7 +309,10 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     // NEW: Check for hosted entries
     const hasHostedActivities = activities.some(a => a.hostId === user.id);
     const hasHostedOutings = sharedOutings.some(o => o.hostId === user.id);
-    const hasCreatedSkillRequests = skillRequests?.some(s => s.requesterId === user.id);
+    const hasCreatedSkillRequests = skillRequests?.some(s => {
+        const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+        return rId === user.id;
+    });
 
     return (
         <>
@@ -356,15 +363,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                 </motion.div>
                 {/* Skill Sharing & Help Card */}
                 <motion.div variants={itemVariants} className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between relative">
-                    {hasCreatedSkillRequests && (
-                        <button
-                            onClick={onDeleteSkillRequests}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
-                            title="Delete all created skill requests"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
-                        </button>
-                    )}
+                    {/* Button Removed per user request */}
                     <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
                 </motion.div>
             </motion.div>
@@ -501,11 +500,17 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                     {isOpen && (
                                         <button
                                             onClick={() => onOpenChat('activity', activity)}
-                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 animate-pulse"
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
                                             <span>💬</span> Open Chat
                                         </button>
                                     )}
+                                    <button
+                                        onClick={onViewActivities}
+                                        className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                                    >
+                                        📄 View Details
+                                    </button>
                                 </div>
                             );
                         }).filter(Boolean)}
@@ -592,11 +597,17 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                     {isOpen && (
                                         <button
                                             onClick={() => onOpenChat('outing', outing)}
-                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 animate-pulse"
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
                                             <span>💬</span> Open Chat
                                         </button>
                                     )}
+                                    <button
+                                        onClick={onViewOutings}
+                                        className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                                    >
+                                        📄 View Details
+                                    </button>
                                 </div>
                             );
                         }).filter(Boolean)}
@@ -623,32 +634,102 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                     </div>
                     <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                         {/* MY REQUESTS (Requester View) */}
-                        {/* Shows tasks I created that have offers */}
-                        {skillRequests?.filter(s => s.requesterId === user.id).map(task => {
-                            const offerCount = task.offers?.length || 0;
-                            const hasPendingOffers = task.offers?.some(o => o.status === 'pending');
-                            return (
-                                <div key={`my-skill-${task.id}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${hasPendingOffers ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
-                                            {offerCount} Offer{offerCount !== 1 ? 's' : ''}
-                                        </span>
+                        {skillRequests?.filter(s => {
+                            const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+                            return rId === user.id;
+                        }).map(task => {
+                            const offers = task.offers || [];
+                            const pendingOffers = offers.filter(o => o.status === 'pending');
+                            const acceptedOffer = offers.find(o => o.status === 'accepted');
+
+                            // If there's an accepted offer, show "Hosted" style
+                            if (acceptedOffer) {
+                                const helperName = acceptedOffer.helperName || (typeof acceptedOffer.helperId === 'object' ? (acceptedOffer.helperId as any).fullName : 'Helper');
+                                return (
+                                    <div key={`my-skill-${task.id}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm border-l-4 border-l-pink-500">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div>
+                                                <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
+                                                <p className="text-xs text-[var(--text-secondary)]">Assigned to <span className="font-semibold">{helperName}</span></p>
+                                            </div>
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">In Progress</span>
+                                        </div>
+                                        <button
+                                            onClick={() => onOpenChat('skill', task)}
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                                        >
+                                            <span>💬</span> Open Chat
+                                        </button>
+                                        <button
+                                            onClick={onViewSkillMarketplace}
+                                            className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                                        >
+                                            📄 View Details
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => onViewSkillMarketplace()}
-                                        className="w-full mt-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-bold py-1.5 rounded transition-colors"
-                                    >
-                                        View Details / Chat
-                                    </button>
+                                );
+                            }
+
+                            // If pending offers, show "Action Needed" cards for EACH offer
+                            if (pendingOffers.length > 0) {
+                                return pendingOffers.map(offer => {
+                                    const hId = typeof offer.helperId === 'object' ? (offer.helperId as any)._id : offer.helperId;
+                                    const hName = offer.helperName || (typeof offer.helperId === 'object' ? (offer.helperId as any).fullName : 'User');
+                                    return (
+                                        <div key={`offer-${task.id}-${hId}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-l-4 border-l-yellow-400 border-[var(--border-color)] shadow-sm">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
+                                                    <p className="text-xs text-[var(--text-secondary)]">Offer from <span className="font-semibold">{hName}</span>: ${offer.offerAmount}</p>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">Action Needed</span>
+                                            </div>
+                                            <div className="flex gap-2 mt-2">
+                                                <button
+                                                    onClick={() => onUpdateOffer && onUpdateOffer(task.id, hId, 'accepted')}
+                                                    className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
+                                                >
+                                                    Accept
+                                                </button>
+                                                <button
+                                                    onClick={() => onUpdateOffer && onUpdateOffer(task.id, hId, 'declined')}
+                                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
+                                                >
+                                                    Decline
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            }
+
+                            // If no offers yet
+                            return (
+                                <div key={`my-skill-${task.id}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm opacity-75">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
+                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">No Offers</span>
+                                    </div>
                                 </div>
                             );
                         })}
 
                         {/* MY OFFERS (Helper View) */}
-                        {skillRequests?.filter(s => s.offers?.some(o => o.helperId === user.id)).map(task => {
-                            const myOffer = task.offers.find(o => o.helperId === user.id);
+                        {/* MY OFFERS (Helper View) */}
+                        {skillRequests?.filter(s => s.offers?.some(o => {
+                            const hId = typeof o.helperId === 'object' ? (o.helperId as any)._id || (o.helperId as any).id : o.helperId;
+                            return hId === user.id;
+                        })).map(task => {
+                            const myOffer = task.offers.find(o => {
+                                const hId = typeof o.helperId === 'object' ? (o.helperId as any)._id || (o.helperId as any).id : o.helperId;
+                                return hId === user.id;
+                            });
+
                             const isAccepted = myOffer?.status === 'accepted';
+                            const statusLabel = myOffer?.status || 'pending';
+                            const statusColor = isAccepted ? 'bg-green-100 text-green-700' :
+                                (statusLabel === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
+
                             return (
                                 <div key={`off-skill-${task.id}`} className={`bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm ${isAccepted ? 'border-l-4 border-l-pink-500' : ''}`}>
                                     <div className="flex justify-between items-center mb-2">
@@ -656,26 +737,40 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
                                             <p className="text-xs text-[var(--text-secondary)]">Offer: ${myOffer?.offerAmount}</p>
                                         </div>
-                                        <StatusTag status={myOffer?.status || 'pending'} />
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
+                                            {statusLabel}
+                                        </span>
                                     </div>
                                     {isAccepted && (
                                         <button
                                             onClick={() => onOpenChat('skill', task)}
-                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 animate-pulse"
+                                            className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
                                             <span>💬</span> Open Chat
                                         </button>
                                     )}
+                                    <button
+                                        onClick={onViewSkillMarketplace}
+                                        className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                                    >
+                                        📄 View Details
+                                    </button>
                                 </div>
                             );
                         })}
 
                         {/* Empty State */}
-                        {(!skillRequests?.some(s => s.requesterId === user.id) && !skillRequests?.some(s => s.offers?.some(o => o.helperId === user.id))) && (
-                            <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
-                                You haven't posted any skill requests.
-                            </div>
-                        )}
+                        {(!skillRequests?.some(s => {
+                            const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+                            return rId === user.id;
+                        }) && !skillRequests?.some(s => s.offers?.some(o => {
+                            const hId = typeof o.helperId === 'object' ? (o.helperId as any)._id || (o.helperId as any).id : o.helperId;
+                            return hId === user.id;
+                        }))) && (
+                                <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
+                                    You haven't posted any skill requests.
+                                </div>
+                            )}
                     </div>
                 </div>
             </div>

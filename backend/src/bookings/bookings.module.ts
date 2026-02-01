@@ -5,6 +5,7 @@ import { BookingsService } from './bookings.service';
 import { Booking, BookingSchema } from '../schemas/booking.schema';
 import { User, UserSchema } from '../schemas/user.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -12,9 +13,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: Booking.name, schema: BookingSchema },
       { name: User.name, schema: UserSchema },
     ]),
-    NotificationsModule
+    NotificationsModule,
+    ChatModule
   ],
   controllers: [BookingsController],
   providers: [BookingsService],
 })
-export class BookingsModule {}
+export class BookingsModule { }
