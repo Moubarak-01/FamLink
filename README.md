@@ -66,13 +66,13 @@ cd ..
 
 ```env
 # Google Gemini API (Primary AI)
-VITE_GEMINI_API_KEY=AIzaSyC...
+VITE_GEMINI_API_KEY=your_key_here
 
 # Perplexity AI (Fallback)
-VITE_PPLX_API_KEY=pplx-sk-...
+VITE_PPLX_API_KEY=your_key_here
 
 # OpenRouter (Free Tier AI)
-VITE_OPENROUTER_API_KEY=sk-or-v1-...
+VITE_OPENROUTER_API_KEY=your_key_here
 ```
 
 **Backend (`backend/.env`):**
@@ -82,13 +82,13 @@ VITE_OPENROUTER_API_KEY=sk-or-v1-...
 MONGO_URI=mongodb://localhost:27017/famlink
 
 # JWT Secret (CHANGE IN PRODUCTION!)
-JWT_SECRET=super_secure_secret_key_change_this
+JWT_SECRET=your_jwt_secret_here
 
 # Server Port
 PORT=3001
 
 # Stripe Payment Processing
-STRIPE_SECRET_KEY=sk_test_...
+STRIPE_SECRET_KEY=your_key_here
 
 # GeoDB API (Get from RapidAPI)
 GEODB_API_KEY=your_rapidapi_key_here
