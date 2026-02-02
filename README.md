@@ -164,7 +164,7 @@ Fixed real-time synchronization across the entire application:
 
 ---
 
-## 🐛 Solved Engineering Challenges (14 Total)
+## 🐛 Solved Engineering Challenges
 
 <details>
 <summary><strong>1. The "Yesterday" Date Bug</strong></summary>
@@ -483,24 +483,6 @@ npm run test
 # E2E tests (Cypress)
 npm run cypress:open
 ```
-
----
-
-## 🚧 Known Issues & Roadmap
-
-### Current Limitations
-
-| Issue | Status | Notes |
-|:------|:------:|:------|
-| Native emoji picker | Deferred | Multi-byte character handling issues |
-
-### Roadmap
-
-- [ ] **Email Verification** - Add email confirmation flow
-- [ ] **Push Notifications** - Add Firebase Cloud Messaging
-- [ ] **Calendar Integration** - Google/Apple Calendar sync
-- [ ] **Video Chat** - WebRTC integration for video calls
-- [ ] **Automated Testing** - Expand Jest & Cypress coverage
 
 ---
 
