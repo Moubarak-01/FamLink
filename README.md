@@ -1,6 +1,6 @@
-# FamLink ✨
-
 <div align="center">
+
+<img src="public/famlink-logo.png" alt="FamLink Logo" width="200" />
 
 ![Version](https://img.shields.io/badge/version-2.2-pink?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
