@@ -80,9 +80,9 @@ const RequestOutingJoinModal: React.FC<RequestOutingJoinModalProps> = ({ outing,
               />
             </div>
             <hr className="border-[var(--border-color)] my-2" />
-            <h4 className="text-sm font-semibold text-[var(--text-primary)]">Emergency Contact</h4>
+            <h4 className="text-sm font-semibold text-[var(--text-primary)]">{t('label_emergency_contact')}</h4>
             <div>
-              <label htmlFor="emerName" className={labelStyles}>Name</label>
+              <label htmlFor="emerName" className={labelStyles}>{t('label_name')}</label>
               <input
                 type="text"
                 id="emerName"
@@ -93,7 +93,7 @@ const RequestOutingJoinModal: React.FC<RequestOutingJoinModalProps> = ({ outing,
               />
             </div>
             <div>
-              <label htmlFor="emerPhone" className={labelStyles}>Phone</label>
+              <label htmlFor="emerPhone" className={labelStyles}>{t('label_phone')}</label>
               <input
                 type="tel"
                 id="emerPhone"

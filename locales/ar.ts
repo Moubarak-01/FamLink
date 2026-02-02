@@ -6,6 +6,35 @@ export const ar = {
     button_settings: "الإعدادات",
     menu_edit_profile: "تعديل الملف الشخصي",
     menu_subscription_status: "حالة الاشتراك",
+    shortcut_open_settings: "فتح الإعدادات",
+
+    // Settings Modal
+    settings_title: "الإعدادات",
+    settings_noise_reduction: "تقليل الضوضاء",
+    settings_keyboard_shortcuts: "اختصارات لوحة المفاتيح",
+    settings_shortcut_toggle_chat: "تبديل فتح/إغلاق الدردشة",
+    settings_shortcut_toggle_visibility: "تبديل رؤية المساعد",
+    settings_shortcut_clear_history: "مسح سجل الدردشة",
+    settings_danger_zone: "منطقة الخطر",
+    settings_delete_account: "حذف الحساب",
+    settings_delete_account_confirm: "هل أنت متأكد أنك تريد حذف حسابك؟ لا يمكن التراجع عن هذا الإجراء.",
+
+    // AI Assistant
+    ai_welcome_message: "مرحباً {name}، أنا مساعد FamLink الخاص بك. كيف يمكنني مساعدتك اليوم؟",
+    ai_chip_find_nanny: "البحث عن مربية ↗",
+    ai_chip_create_activity: "إنشاء نشاط ↗",
+    ai_chip_contact_support: "الاتصال بالدعم ↗",
+    ai_chip_my_schedule: "جدولي ↗",
+    ai_error_voice_service: "خطأ: خدمة Whisper المحلية غير متاحة على المنفذ 3002.",
+    ai_error_transcription: "تعذر فهم الصوت. يرجى المحاولة مرة أخرى.",
+    ai_error_api: "عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.",
+    ai_microphone_required: "يلزم الوصول إلى الميكروفون للإدخال الصوتي.",
+    ai_status_online: "متصل",
+    ai_input_placeholder: "اكتب سؤالك هنا...",
+    ai_thinking: "جارٍ التفكير...",
+    ai_processing_voice: "جارٍ معالجة الصوت...",
+    ai_powered_by: "مدعوم من FamLink AI",
+    ai_open_assistant: "فتح المساعد الذكي",
 
     // Generic Statuses (New)
     status_pending: "قيد الانتظار",
@@ -30,11 +59,19 @@ export const ar = {
     welcome_already_account: "هل لديك حساب بالفعل؟",
     button_login: "تسجيل الدخول",
     button_signup: "إنشاء حساب",
-    
+    welcome_no_account: "ليس لديك حساب؟",
+    button_forgot_password: "نسيت كلمة المرور؟",
+
     // Navigation Buttons
+    label_chat: "دردشة",
+    text_no_notifications: "لا توجد إشعارات جديدة",
+    menu_settings: "الإعدادات",
     button_back: "رجوع",
     button_next: "التالي",
     button_prev: "السابق",
+    button_upload: "تحميل",
+    button_remove: "إزالة",
+    button_chat: "دردشة",
 
     // Auth Screens
     signup_title_parent: "انضم إلى FamLink كوالد!",
@@ -43,6 +80,10 @@ export const ar = {
     form_fullname_label: "الاسم الكامل",
     form_email_label: "البريد الإلكتروني",
     form_password_label: "كلمة المرور",
+    form_confirm_password_label: "تأكيد كلمة المرور",
+    form_passwords_must_match: "كلمات المرور غير متطابقة!",
+    signup_success_title: "مرحباً بك في العائلة!",
+    signup_success_subtitle: "جارٍ إنشاء حسابك...",
     password_strength_weak: "ضعيفة",
     password_strength_medium: "متوسطة",
     password_strength_strong: "قوية",
@@ -95,6 +136,8 @@ export const ar = {
     parent_profile_skills_title: "مهارات يمكنني مشاركتها",
     parent_profile_skills_subtitle: "اختاري المهارات التي يمكنك تعليمها أو تقديمها لآباء آخرين.",
     button_save_profile: "حفظ الملف الشخصي",
+    profile_add_custom_interest: "أضف هواية (مثل: بيانو)...",
+    profile_add_custom_skill: "أضف مهارة...",
     profile_form_congrats: "عمل رائع!",
     profile_form_complete_prompt: "يرجى إكمال ملفك الشخصي حتى يتمكن الآباء من العثور عليك.",
     profile_form_photo: "صورة الملف الشخصي",
@@ -126,7 +169,7 @@ export const ar = {
     payment_cvv: "CVV",
     button_pay_now: "ادفع €{price} الآن",
     button_processing: "جارٍ المعالجة...",
-    
+
     // Dashboard
     dashboard_title: "لوحة التحكم",
     dashboard_welcome: "مرحبًا",
@@ -188,15 +231,35 @@ export const ar = {
     dashboard_no_skill_requests: "لم تقم بنشر أي طلبات مهارات.",
     dashboard_hosted_outings_title: "النزهات التي تستضيفها",
     dashboard_no_hosted_outings: "أنت لا تستضيف أي نزهات.",
-    
+    dashboard_my_activity_requests: "طلبات الأنشطة الخاصة بي",
+    dashboard_request_from: "طلب من",
+    dashboard_request_for: "طلب لـ",
+    dashboard_action_needed: "إجراء مطلوب",
+    dashboard_hosted: "مستضاف",
+    dashboard_hosted_by_you: "مستضاف بواسطتك",
+    dashboard_open_chat: "فتح الدردشة",
+    dashboard_view_details: "عرض التفاصيل",
+    dashboard_no_activity_requests: "لم تطلب الانضمام إلى أي أنشطة بعد.",
+    dashboard_assigned_to: "معين لـ",
+    dashboard_no_offers: "لا توجد عروض",
+    dashboard_offer_from: "عرض من",
+
     // Community & Activities
     community_activities_title: "أنشطة المجتمع",
     community_activities_subtitle: "اعثر على مواعيد اللعب والمشي وغيرها من الأحداث التي يستضيفها آباء مثلك.",
     button_create_activity: "إنشاء نشاط",
+    outing_card_join: "الانضمام للنزهة",
+    skill_card_take_task: "أخذ المهمة",
     create_activity_modal_title: "إنشاء نشاط جديد",
     activity_label_category: "الفئة",
     activity_label_description: "الوصف",
     activity_label_location: "الموقع",
+    activity_cat_other_placeholder: "حدد فئة النشاط...",
+    label_privacy_setting: "إعدادات الخصوصية",
+    label_activity_image: "صورة النشاط (اختياري)",
+    activity_placeholder_description: "أخبر الآباء الآخرين بما يجب إحضاره...",
+    placeholder_specify_category: "حدد الفئة...",
+    location_placeholder: "بحث عن مدينة...",
     activity_label_date: "التاريخ",
     activity_label_time: "الوقت",
     button_post_activity: "نشر النشاط",
@@ -212,11 +275,15 @@ export const ar = {
     activity_card_joined: "تم الانضمام",
     activity_card_chat: "دردشة",
     activity_card_join_to_chat: "انضم للدردشة",
+    activity_request_sent: "تم إرسال الطلب",
+    activity_request_to_join: "طلب الانضمام",
+    button_clear: "مسح",
+    button_clear_all: "مسح الكل",
     community_recommendations_title: "موصى به لك",
     community_view_list: "عرض القائمة",
     community_view_calendar: "عرض التقويم",
     community_no_activities_for_date: "لا توجد أنشطة مجدولة لهذا التاريخ.",
-    
+
     // Chat
     chat_modal_title: "دردشة النشاط",
     chat_placeholder: "اكتب رسالتك...",
@@ -254,7 +321,7 @@ export const ar = {
     request_outing_label_child_name: "اسم الطفل",
     request_outing_label_child_age: "عمر الطفل",
     button_send_join_request: "إرسال طلب الانضمام",
-    
+
     // Skills
     skill_marketplace_title: "سوق مشاركة المهارات",
     skill_marketplace_subtitle: "احصل على مساعدة في المهام أو تعلم مهارة جديدة من والد آخر في المجتمع.",
@@ -266,6 +333,7 @@ export const ar = {
     skill_request_label_description: "صف ما تحتاجه",
     skill_request_label_location: "الموقع",
     skill_request_label_budget: "ميزانيتك (€)",
+    label_budget: "الميزانية",
     button_post_request: "نشر الطلب",
     skill_cat_cooking: "طبخ",
     skill_cat_cleaning: "تنظيف",
@@ -302,12 +370,11 @@ export const ar = {
     button_add_to_dashboard: "إضافة للوحة التحكم",
     button_added_to_dashboard: "تمت الإضافة",
     button_request_booking: "طلب حجز",
-    button_remove: "إزالة",
     button_rate: "تقييم",
     button_rated: "تم التقييم",
     button_accept: "قبول",
     button_decline: "رفض",
-    
+
     // Profile Detail
     nanny_profile_title: "ملف المربية",
     nanny_profile_experience: "الخبرة",
@@ -345,9 +412,9 @@ export const ar = {
     booking_status_pending: "قيد الانتظار",
     booking_status_accepted: "مقبول",
     booking_status_declined: "مرفوض",
-    
+
     // Footer
-    footer_text: "© 2025 FamLink. تخفيف العبء عن الآباء، تمكين العائلات بواسطة",
+    footer_text: "FamLink. تخفيف العبء عن الآباء، تمكين العائلات بواسطة",
     footer_rights_reserved: ". جميع الحقوق محفوظة",
 
     // Errors & Alerts
@@ -379,6 +446,10 @@ export const ar = {
     alert_due_date_past: "تاريخ الاستحقاق لا يمكن أن يكون في الماضي.",
     alert_description_required: "يرجى إدخال وصف المهمة.",
     alert_outing_request_sent: "تم إرسال طلبك للانضمام إلى النزهة!",
+    alert_specify_category: "يرجى تحديد الفئة.",
+    confirm_delete_all_requests: "حذف جميع الطلبات؟ لا يمكن التراجع عن هذا.",
+    tooltip_chat_requires_acceptance: "يجب قبول العرض للدردشة",
+    experience_placeholder: "مثال: 5",
 
     // Calendar
     unit_hours: "ساعات",
@@ -619,5 +690,110 @@ export const ar = {
     q47_text: "صفي فلسفتك في تغذية الأطفال.",
     q48_text: "ما هو الموقف الأكثر تحديًا الذي واجهته كمقدمة رعاية، وكيف تعاملت معه؟",
     q49_text: "كيف تبقين على اطلاع دائم بأفضل الممارسات في تنمية الطفل وسلامته؟",
-    q50_text: "لماذا من المهم للمربية أن تكون جديرة بالثقة وتلتزم بالمواعيد؟"
+    q50_text: "لماذا من المهم للمربية أن تكون جديرة بالثقة وتلتزم بالمواعيد؟",
+    // Additional Keys (TODO: Translate)
+    label_add: "إضافة",
+    label_use_search: 'استخدم "{search}"',
+    label_emergency_contact: "جهة اتصال للطوارئ",
+    label_name: "الاسم",
+    label_phone: "الهاتف",
+    title_chat_nanny: "دردشة مع المربية",
+    title_report_user: "إبلاغ عن مستخدم",
+    title_nanny_location: "موقع المربية",
+    label_country: "البلد",
+    placeholder_select_country: "اختر البلد",
+    placeholder_select_state: "اختر الولاية/المنطقة",
+    label_city: "المدينة",
+    placeholder_select_city: "اختر المدينة",
+    title_noise_reduction: "تقليل الضوضاء نشط",
+    title_notifications: "إشعارات",
+    button_clear_notifications: "مسح الكل",
+    title_delete: "حذف",
+    title_delete_task: "حذف المهمة",
+    title_delete_all_activities: "حذف جميع الأنشطة المستضافة",
+    title_delete_all_outings: "حذف جميع النزهات المستضافة",
+    button_view: "عرض",
+    confirm_delete_task: "حذف هذه المهمة؟",
+    placeholder_city_neighborhood: "المدينة أو الحي",
+    status_offline: "غير متصل",
+    title_more_emojis: "المزيد من الرموز التعبيرية",
+    label_select_emoji: "اختر أي رمز تعبيري",
+    ai_assistant_title: "مساعد FamLink",
+    title_clear_chat_history: "مسح سجل الدردشة",
+    // Comprehensive Audit Additions
+    button_back_arrow: "← رجوع",
+    placeholder_search_skills: "البحث عن التدريس، التدريب، المساعدة...",
+    no_tasks_posted: "لا توجد مهام منشورة بعد. كن أول من ينشر!",
+    placeholder_card_number: "•••• •••• •••• ••••",
+    placeholder_expiry: "شهر / سنة",
+    placeholder_cvv: "•••",
+    price_per_period: "/{period}",
+    // Auth & Profile Additions
+    placeholder_name_example: "فلان الفلاني",
+    placeholder_email_example: "fulan@example.com",
+    placeholder_password_dots: "••••••••",
+    label_whats_your_name: "ما هو اسمك؟",
+    label_enter_email: "أدخل بريدك الإلكتروني",
+    label_your_password: "كلمة المرور الخاصة بك",
+    label_create_password: "إنشاء كلمة مرور",
+    button_forgot_password_q: "هل نسيت كلمة المرور؟",
+    title_welcome_back: "مرحبًا بعودتك",
+    title_register_now: "سجل الآن",
+    subtitle_signin: "سجل الدخول للمتابعة إلى FamLink.",
+    subtitle_join: "انضم إلى مجتمع FamLink اليوم.",
+    text_no_account: "ليس لديك حساب؟",
+    text_already_have_account: "هل لديك حساب بالفعل؟",
+    button_sign_in: "تسجيل الدخول",
+    placeholder_search_city: "بحث عن مدينة (مثل دبي، القاهرة)...",
+    placeholder_experience_years: "مثال: 5",
+    placeholder_add_interest: "أضف اهتمامًا...",
+    placeholder_add_skill: "أضف مهارة...",
+    button_saving: "جاري الحفظ...",
+    // Modal Additions
+    modal_create_request_title: "نشر طلب",
+    modal_create_outing_title: "إنشاء نزهة",
+    modal_create_activity_title: "إنشاء نشاط",
+    label_title: "العنوان",
+    label_description: "الوصف",
+    label_location: "الموقع",
+    label_date: "التاريخ",
+    label_time: "الوقت",
+    label_category: "الفئة",
+
+    placeholder_request_title: "مثال: مطلوب مدرس رياضيات",
+    placeholder_request_description: "صف ما تحتاج مساعدة به...",
+    placeholder_outing_title: "مثال: رحلة إلى حديقة الحيوان",
+    placeholder_outing_description: "تفاصيل النزهة...",
+    placeholder_activity_title: "مثال: لعب في الحديقة يوم الأحد",
+    placeholder_activity_description: "صف النشاط...",
+    button_create: "إنشاء",
+    button_cancel: "إلغاء",
+    button_posting: "جاري النشر...",
+    button_creating: "جاري الإنشاء...",
+    // Community & Outing Additions
+    text_unknown_user: "مستخدم غير معروف",
+    text_unknown_host: "مضيف غير معروف",
+    text_unknown_parent: "والد غير معروف",
+    placeholder_search_activities: "البحث عن رفقاء للعب أو المشي...",
+    text_no_activities_yet: "لا توجد أنشطة بعد! كن أول من ينظم نزهة في الحي.",
+    text_live_location: "موقع مباشر",
+    text_full: "ممتلئ",
+    tooltip_join_chat: "انضم وتم قبولك للدردشة",
+    title_manage_requests: "إدارة الطلبات",
+    label_parent: "الوالد: ",
+    text_no_requests: "لا توجد طلبات بعد.",
+    text_no_outings_yet: "لم يتم إنشاء نزهات بعد. كن الأول في التخطيط لواحدة!",
+    placeholder_search_outings: "البحث عن زيارات للحدائق والمتاحف...",
+    text_showing_events_for: "عرض الأحداث لـ: ",
+    // Chat Modal
+    text_nanny: "المربية",
+    text_parent: "الوالد",
+    text_members_count: " ({{count}} عضو)",
+    text_online: "متصل",
+    text_last_seen: "آخر ظهور ",
+    text_offline: "غير متصل",
+    text_just_now: "الآن",
+    text_m_ago: "منذ {{count}}د",
+    text_h_ago: "منذ {{count}}س",
+    placeholder_chat_input: "💬 اكتب رسالة...",
 };

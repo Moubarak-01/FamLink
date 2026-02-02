@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
@@ -14,6 +15,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { UserTasksModule } from './user-tasks/user-tasks.module';
 import { LocationsModule } from './locations/locations.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
+import { LanguageInterceptor } from './language.interceptor';
 
 @Module({
   imports: [
@@ -44,6 +46,11 @@ import { TelemetryModule } from './telemetry/telemetry.module';
     TelemetryModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LanguageInterceptor,
+    },
+  ],
 })
 export class AppModule { }

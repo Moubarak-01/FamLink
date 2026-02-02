@@ -54,7 +54,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack, onSignUp, on
             required
             autoComplete="email"
             className="auth-input w-full px-4 py-3"
-            placeholder="jane@example.com"
+            placeholder={t('placeholder_email_example')}
           />
         </motion.div>
 
@@ -80,7 +80,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack, onSignUp, on
               required
               autoComplete="current-password"
               className="auth-input w-full px-4 py-3 pr-10"
-              placeholder="••••••••"
+              placeholder={t('placeholder_password_dots')}
             />
             <button
               type="button"

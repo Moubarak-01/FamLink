@@ -72,6 +72,7 @@ const StarRating: React.FC<{ rating: number, setRating: (rating: number) => void
   );
 };
 
+
 const RatingModal: React.FC<{ targetUser?: User, nanny?: User, onClose: () => void, onSubmit: (rating: number, comment: string) => void }> = ({ targetUser, nanny, onClose, onSubmit }) => {
   const { t } = useLanguage();
   const [rating, setRating] = useState(0);
@@ -140,6 +141,7 @@ const App: React.FC = () => {
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
   const [noiseReductionEnabled, setNoiseReductionEnabled] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isAiVisible, setIsAiVisible] = useState(true); // Added for Shift+A visibility toggle
 
   const aiAssistantRef = useRef<AiAssistantRef>(null);
 
@@ -168,7 +170,7 @@ const App: React.FC = () => {
     });
 
     const unsubTasks = socketService.onTasksUpdate(() => {
-      queryClient.invalidateQueries({ queryKey: ['userTasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     });
 
     const unsubscribe = socketService.onMessage(({ roomId, message }) => {
@@ -295,12 +297,12 @@ const App: React.FC = () => {
       // Shift + N toggles open/close
       if (e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        aiAssistantRef.current?.toggleOpenState();
+        aiAssistantRef.current?.toggle(); // Corrected method name
       }
 
       if (e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
-        aiAssistantRef.current?.toggleVisibility();
+        setIsAiVisible(prev => !prev); // Toggles React State
       }
 
       // Control + D clears history
@@ -323,6 +325,21 @@ const App: React.FC = () => {
   useEffect(() => {
     if (currentUser) refreshData();
   }, [currentUser, refreshData]);
+
+  // Fetch approved nannies when user is logged in
+  useEffect(() => {
+    const fetchNannies = async () => {
+      if (currentUser) {
+        try {
+          const nanniesRes = await userService.getNannies();
+          setApprovedNannies(nanniesRes.filter(n => n.profile));
+        } catch (e) {
+          console.error("Failed to fetch nannies:", e);
+        }
+      }
+    };
+    fetchNannies();
+  }, [currentUser]);
 
   const processIncomingMessage = useCallback((id: string, message: ChatMessage) => {
     // Intentionally empty - notifications handled by 'notification' event
@@ -394,7 +411,7 @@ const App: React.FC = () => {
   };
   const handleSubscribe = async (plan: Plan) => { if (!currentUser) return; const renewalDate = new Date(); renewalDate.setMonth(renewalDate.getMonth() + 1); const newSubscription: Subscription = { plan, status: 'active', renewalDate: renewalDate.toLocaleDateString() }; try { const updatedUser = await userService.updateProfile({ subscription: newSubscription }); setCurrentUser(updatedUser); alert(t('alert_subscription_success')); if (pendingAction) { const action = { ...pendingAction }; setPendingAction(null); if (action.type === 'contact') setContactNannyInfo(action.nanny); if (action.type === 'book') setBookingNannyInfo(action.nanny); } navigateTo(Screen.Dashboard); } catch (e) { alert("Subscription failed"); } };
   const handleNannyProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile({ fullName: profileData.fullName, email: profileData.email, photo: profileData.photo, profile: { ...profileData } }); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e) { alert("Failed to save profile"); } };
-  const handleParentProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile(profileData); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e) { alert("Failed to save profile"); } };
+  const handleParentProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile(profileData); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e: any) { console.error("Profile save error:", e); alert(`Failed to save profile: ${e.response?.data?.message || e.message}`); } };
   const handleEditProfile = () => { if (!currentUser) return; currentUser.userType === 'parent' ? navigateTo(Screen.ParentProfileForm) : navigateTo(Screen.NannyProfileForm); };
   const handleViewSubscription = () => navigateTo(Screen.SubscriptionStatus);
   const handleCancelSubscription = async () => { if (currentUser?.subscription) { try { const updatedUser = await userService.updateProfile({ subscription: { ...currentUser.subscription, status: 'canceled' } }); setCurrentUser(updatedUser); } catch (e) { alert("Error canceling subscription"); } } };
@@ -403,7 +420,17 @@ const App: React.FC = () => {
   const handleViewNannyProfile = (nannyId: string) => { setViewingNannyId(nannyId); navigateTo(Screen.NannyProfileDetail); };
   const handleContactAttempt = (nanny: User) => { if (!currentUser) { setPendingAction({ type: 'contact', nanny }); navigateTo(Screen.Login); return; } if (currentUser.subscription?.status === 'active') setContactNannyInfo(nanny); else { setPendingAction({ type: 'contact', nanny }); navigateTo(Screen.Subscription); } };
   const handleAddNanny = async (nannyId: string) => { if (!currentUser) return; try { const updatedUser = await userService.addNanny(nannyId); setCurrentUser(updatedUser); alert(t('alert_nanny_added_dashboard')); } catch (e) { alert("Error adding nanny"); } };
-  const handleRemoveNanny = async (nannyId: string) => { if (!currentUser) return; try { const updatedUser = await userService.removeNanny(nannyId); setCurrentUser(updatedUser); } catch (e) { alert("Error removing nanny"); } };
+  const handleRemoveNanny = async (nannyId: string) => {
+    if (!currentUser) return;
+    if (!window.confirm(t('confirm_remove_nanny') || "Remove this nanny from your dashboard?")) return;
+    try {
+      const updatedUser = await userService.removeNanny(nannyId);
+      setCurrentUser(updatedUser);
+      alert(t('alert_nanny_removed') || "Nanny removed from your dashboard.");
+    } catch (e) {
+      alert("Error removing nanny");
+    }
+  };
   const handleOpenRatingModal = (userToRate: User) => setRatingTargetUser(userToRate);
   const handleSubmitRating = async (targetUserId: string, ratingValue: number, comment: string) => { if (!currentUser) return; try { await reviewService.create(targetUserId, ratingValue, comment); setRatingTargetUser(null); alert(t('alert_rating_success')); const nanniesRes = await userService.getNannies(); setApprovedNannies(nanniesRes.filter(n => n.profile)); } catch (e) { alert("Error submitting rating"); } };
   const handleOpenBookingModal = (nanny: User) => { if (!currentUser) { setPendingAction({ type: 'book', nanny }); navigateTo(Screen.Login); return; } if (currentUser.subscription?.status !== 'active') { setPendingAction({ type: 'book', nanny }); alert(t('alert_subscribe_to_book')); navigateTo(Screen.Subscription); return; } setBookingNannyInfo(nanny); };
@@ -737,14 +764,27 @@ const App: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
       navigateTo(Screen.Dashboard);
     } else if (notification.type === 'booking') {
+      // Refresh bookings data to ensure we have the latest requests
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
       navigateTo(Screen.Dashboard);
+      // Only open chat for accepted bookings, pending requests are shown on dashboard
       if (notification.relatedId) {
         const booking = bookingRequests.find(b => b.id === notification.relatedId);
-        if (booking && booking.status === 'accepted') setActiveChat({ type: 'booking', item: booking });
+        if (booking && booking.status === 'accepted') {
+          setActiveChat({ type: 'booking', item: booking });
+        }
+        // For pending bookings, the dashboard will show them in the "My Booking Requests" section
       }
-    } else if (notification.type === 'outing') navigateTo(Screen.ChildOutings);
-    else if (notification.type === 'skill') navigateTo(Screen.SkillMarketplace);
-    else if (notification.type === 'task') navigateTo(Screen.Dashboard);
+    } else if (notification.type === 'outing') {
+      queryClient.invalidateQueries({ queryKey: ['outings'] });
+      navigateTo(Screen.ChildOutings);
+    } else if (notification.type === 'skill') {
+      queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
+      navigateTo(Screen.SkillMarketplace);
+    } else if (notification.type === 'task') {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      navigateTo(Screen.Dashboard);
+    }
   };
 
   const handleClearNotifications = async () => {
@@ -952,7 +992,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {showAiAssistant && currentUser && (
+      {showAiAssistant && isAiVisible && currentUser && (
         <AiAssistant
           ref={aiAssistantRef}
           user={currentUser}
@@ -960,7 +1000,7 @@ const App: React.FC = () => {
         />
       )}
 
-      <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>{t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
+      <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
     </div>
   );
 };

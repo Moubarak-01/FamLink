@@ -67,7 +67,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      alert(t('form_passwords_must_match'));
       return;
     }
 
@@ -83,7 +83,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
   const title = userType === 'parent' ? t('signup_title_parent') : t('signup_title_nanny');
 
   return (
-    <AuthLayout title={isSuccess ? "Welcome to the Family!" : title} subtitle={isSuccess ? "Redirecting you to dashboard..." : t('signup_subtitle')}>
+    <AuthLayout title={isSuccess ? t('signup_success_title') : title} subtitle={isSuccess ? t('signup_success_subtitle') : t('signup_subtitle')}>
       <AnimatePresence mode="wait">
         {!isSuccess ? (
           <motion.div
@@ -122,7 +122,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
                   required
                   autoComplete="name"
                   className="auth-input w-full px-4 py-3"
-                  placeholder="Jane Doe"
+                  placeholder={t('placeholder_name_example')}
                 />
               </motion.div>
 
@@ -138,7 +138,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
                   required
                   autoComplete="email"
                   className="auth-input w-full px-4 py-3"
-                  placeholder="jane@example.com"
+                  placeholder={t('placeholder_email_example')}
                 />
               </motion.div>
 
@@ -156,7 +156,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
                     minLength={6}
                     autoComplete="new-password"
                     className="auth-input w-full px-4 py-3 pr-10"
-                    placeholder="••••••••"
+                    placeholder={t('placeholder_password_dots')}
                   />
                   <button
                     type="button"
@@ -181,7 +181,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
 
               <motion.div variants={formItemVariants}>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                  Confirm Password
+                  {t('form_confirm_password_label')}
                 </label>
                 <div className="relative">
                   <input
@@ -267,8 +267,8 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Welcome to the Family!</h3>
-            <p className="text-[var(--text-secondary)]">Creating your account...</p>
+            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{t('signup_success_title')}</h3>
+            <p className="text-[var(--text-secondary)]">{t('signup_success_subtitle')}</p>
           </motion.div>
         )}
       </AnimatePresence>

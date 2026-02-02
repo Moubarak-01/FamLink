@@ -66,12 +66,17 @@ const formatDateSafe = (dateString: string) => {
 // --- Helper Components ---
 
 const StatusTag: React.FC<{ status: string }> = ({ status }) => {
+    const { t } = useLanguage();
     let styles = { bg: 'bg-gray-100', text: 'text-gray-700' };
     if (status === 'accepted' || status === 'completed') styles = { bg: 'bg-[var(--bg-status-green)]', text: 'text-[var(--text-status-green)]' };
     if (status === 'declined' || status === 'canceled') styles = { bg: 'bg-[var(--bg-status-red)]', text: 'text-[var(--text-status-red)]' };
     if (status === 'pending' || status === 'open') styles = { bg: 'bg-[var(--bg-status-yellow)]', text: 'text-[var(--text-status-yellow)]' };
 
-    return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text} capitalize`}>{status}</span>;
+    const statusKey = `status_${status.toLowerCase().replace('canceled', 'cancelled')}`;
+    // @ts-ignore
+    const label = t(statusKey) || status;
+
+    return <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${styles.bg} ${styles.text} capitalize`}>{label}</span>;
 }
 
 const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScreenProps['onUpdateTaskStatus'], onKeep?: (id: string) => void, onDelete?: (id: string) => void }> = ({ task, onUpdateStatus, onKeep, onDelete }) => {
@@ -157,18 +162,37 @@ const AddedNannyCard: React.FC<{ nanny: User, currentUser: User, tasks: Task[], 
                 <p className="text-sm text-[var(--text-light)]">{t('nanny_profile_experience')}: {nanny.profile.experience} {t('nanny_profile_years')}</p>
                 <p className="text-xs text-[var(--text-light)] line-clamp-1">{nanny.profile.description}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-                <button onClick={() => onView(nanny.id)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_view_profile')}</button>
-                <button onClick={() => onContact(nanny)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_contact')}</button>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                <button
+                    onClick={() => onView(nanny.id)}
+                    className="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                >
+                    <span>📄</span> {t('dashboard_view_details')}
+                </button>
+                <button
+                    onClick={() => onContact(nanny)}
+                    className="flex-1 sm:flex-none bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                >
+                    <span>💬</span> {t('button_contact')}
+                </button>
                 <button
                     onClick={() => onRate(nanny)}
                     disabled={!!hasRated}
-                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">
-                    {hasRated ? t('button_rated') : t('button_rate')}
+                    className="flex-1 sm:flex-none bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                >
+                    <span>⭐</span> {hasRated ? t('button_rated') : t('button_rate')}
                 </button>
-                <button onClick={() => onAddTask()} className="text-xs font-semibold text-green-600 dark:text-green-400 hover:underline">{t('button_add_task')}</button>
-                <button onClick={() => onRemove(nanny.id)} className="text-xs font-semibold text-red-500 dark:text-red-400 hover:underline">
-                    {t('button_remove')}
+                <button
+                    onClick={() => onAddTask()}
+                    className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                >
+                    <span>📝</span> {t('button_add_task')}
+                </button>
+                <button
+                    onClick={() => onRemove(nanny.id)}
+                    className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                >
+                    <span>🗑️</span> {t('button_remove')}
                 </button>
             </div>
             <div className="mt-3 pt-3 border-t border-[var(--border-color)] w-full">
@@ -215,16 +239,17 @@ const ParentBookingCard: React.FC<{ request: EnrichedBookingRequest }> = ({ requ
                 )}
             </div>
 
-            <h4 className="text-xl font-bold mb-1 text-center">Request to {nannyName.split(' ')[0]}</h4>
+            <h4 className="text-xl font-bold mb-1 text-center">{t('booking_request_to')} {nannyName.split(' ')[0]}</h4>
 
             <div className="text-gray-300 text-sm space-y-1 mb-4 text-center">
-                <p><span className="font-semibold">Date:</span> {formatDateSafe(request.date)}</p>
-                <p><span className="font-semibold">Time:</span> {request.startTime} - {request.endTime}</p>
+                <p><span className="font-semibold">{t('booking_label_date')}:</span> {formatDateSafe(request.date)}</p>
+                <p><span className="font-semibold">{t('booking_label_time')}:</span> {request.startTime} - {request.endTime}</p>
             </div>
 
             <div className="flex justify-center mt-2">
                 <span className={`px-4 py-1 rounded-full text-sm font-semibold ${statusColor} capitalize`}>
-                    {request.status}
+                    {/* @ts-ignore */}
+                    {t(`status_${request.status.toLowerCase()}`) || request.status}
                 </span>
             </div>
         </div>
@@ -423,7 +448,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                     </div>
                 ) : (
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)]">You haven't assigned any tasks yet.</p>
+                        <p className="text-[var(--text-light)]">{t('dashboard_no_tasks')}</p>
                     </div>
                 )}
             </div>
@@ -432,7 +457,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                 {/* My Activity Requests (Unified) */}
                 <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden flex flex-col h-full">
                     <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card-subtle)]">
-                        <h3 className="text-lg font-bold text-[var(--text-primary)]">My Activity Requests</h3>
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('dashboard_my_activity_requests')}</h3>
                     </div>
                     <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                         {/* INCOMING (Host View) */}
@@ -446,9 +471,9 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
                                             <h4 className="font-bold text-[var(--text-primary)] text-sm">{formatActivityTitle(activity.category)}</h4>
-                                            <p className="text-xs text-[var(--text-secondary)]">Request from <span className="font-semibold">User {req.userId.substring(0, 6)}...</span></p>
+                                            <p className="text-xs text-[var(--text-secondary)]">{t('dashboard_request_from')} <span className="font-semibold">{t('dashboard_user')} {req.userId.substring(0, 6)}...</span></p>
                                         </div>
-                                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">Action Needed</span>
+                                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">{t('dashboard_action_needed')}</span>
                                     </div>
                                     <div className="flex gap-2 mt-2">
                                         <button
@@ -457,7 +482,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             }}
                                             className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
                                         >
-                                            Accept
+                                            {t('button_accept')}
                                         </button>
                                         <button
                                             onClick={async () => {
@@ -465,7 +490,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             }}
                                             className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
                                         >
-                                            Decline
+                                            {t('button_decline')}
                                         </button>
                                     </div>
                                 </div>
@@ -494,7 +519,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             <p className="text-xs text-[var(--text-secondary)]">{formatDateSafe(activity.date)}</p>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
-                                            {statusLabel}
+                                            {isHost ? t('dashboard_hosted') : (t(`status_${statusLabel?.toLowerCase()}` as any) || statusLabel)}
                                         </span>
                                     </div>
                                     {isOpen && (
@@ -502,14 +527,14 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             onClick={() => onOpenChat('activity', activity)}
                                             className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
-                                            <span>💬</span> Open Chat
+                                            <span>💬</span> {t('dashboard_open_chat')}
                                         </button>
                                     )}
                                     <button
                                         onClick={onViewActivities}
                                         className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                     >
-                                        📄 View Details
+                                        📄 {t('dashboard_view_details')}
                                     </button>
                                 </div>
                             );
@@ -524,7 +549,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                 (a.requests?.some(r => r.userId === user.id));
                         })) && (
                                 <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
-                                    You haven't requested to join any activities yet.
+                                    {t('dashboard_no_activity_requests')}
                                 </div>
                             )}
                     </div>
@@ -533,7 +558,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                 {/* My Outing Requests (Unified) */}
                 <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden flex flex-col h-full">
                     <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card-subtle)]">
-                        <h3 className="text-lg font-bold text-[var(--text-primary)]">My Outing Requests</h3>
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('dashboard_my_outing_requests')}</h3>
                     </div>
                     <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                         {/* INCOMING (Host View) */}
@@ -547,22 +572,22 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
                                             <h4 className="font-bold text-[var(--text-primary)] text-sm">{outing.title}</h4>
-                                            <p className="text-xs text-[var(--text-secondary)]">Request for <span className="font-semibold">{req.childName}</span></p>
+                                            <p className="text-xs text-[var(--text-secondary)]">{t('dashboard_request_for')} <span className="font-semibold">{req.childName}</span></p>
                                         </div>
-                                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">Action Needed</span>
+                                        <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">{t('dashboard_action_needed')}</span>
                                     </div>
                                     <div className="flex gap-2 mt-2">
                                         <button
                                             onClick={() => onUpdateOutingRequestStatus(outing.id, req.parentId, 'accepted')}
                                             className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
                                         >
-                                            Accept
+                                            {t('button_accept')}
                                         </button>
                                         <button
                                             onClick={() => onUpdateOutingRequestStatus(outing.id, req.parentId, 'declined')}
                                             className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
                                         >
-                                            Decline
+                                            {t('button_decline')}
                                         </button>
                                     </div>
                                 </div>
@@ -588,10 +613,10 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                     <div className="flex justify-between items-center mb-2">
                                         <div>
                                             <h4 className="font-bold text-[var(--text-primary)] text-sm">{outing.title}</h4>
-                                            <p className="text-xs text-[var(--text-secondary)]">{formatDateSafe(outing.date)} • {isHost ? 'Hosted by You' : myRequest?.childName}</p>
+                                            <p className="text-xs text-[var(--text-secondary)]">{formatDateSafe(outing.date)} • {isHost ? t('dashboard_hosted_by_you') : myRequest?.childName}</p>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
-                                            {statusLabel}
+                                            {isHost ? t('dashboard_hosted') : statusLabel}
                                         </span>
                                     </div>
                                     {isOpen && (
@@ -599,14 +624,14 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             onClick={() => onOpenChat('outing', outing)}
                                             className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
-                                            <span>💬</span> Open Chat
+                                            <span>💬</span> {t('dashboard_open_chat')}
                                         </button>
                                     )}
                                     <button
                                         onClick={onViewOutings}
                                         className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                     >
-                                        📄 View Details
+                                        📄 {t('dashboard_view_details')}
                                     </button>
                                 </div>
                             );
@@ -621,7 +646,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                 (o.requests?.some(r => r.parentId === user.id));
                         })) && (
                                 <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
-                                    You haven't requested to join any outings yet.
+                                    {t('dashboard_no_outing_requests')}
                                 </div>
                             )}
                     </div>
@@ -630,7 +655,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                 {/* My Skill Requests (Unified) */}
                 <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden flex flex-col h-full">
                     <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card-subtle)]">
-                        <h3 className="text-lg font-bold text-[var(--text-primary)]">My Skill Requests</h3>
+                        <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('dashboard_my_skill_requests')}</h3>
                     </div>
                     <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                         {/* MY REQUESTS (Requester View) */}
@@ -650,21 +675,21 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                         <div className="flex justify-between items-center mb-2">
                                             <div>
                                                 <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
-                                                <p className="text-xs text-[var(--text-secondary)]">Assigned to <span className="font-semibold">{helperName}</span></p>
+                                                <p className="text-xs text-[var(--text-secondary)]">{t('dashboard_assigned_to')} <span className="font-semibold">{helperName}</span></p>
                                             </div>
-                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">In Progress</span>
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">{t('status_in_progress')}</span>
                                         </div>
                                         <button
                                             onClick={() => onOpenChat('skill', task)}
                                             className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
-                                            <span>💬</span> Open Chat
+                                            <span>💬</span> {t('dashboard_open_chat')}
                                         </button>
                                         <button
                                             onClick={onViewSkillMarketplace}
                                             className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
-                                            📄 View Details
+                                            📄 {t('dashboard_view_details')}
                                         </button>
                                     </div>
                                 );
@@ -680,22 +705,22 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
-                                                    <p className="text-xs text-[var(--text-secondary)]">Offer from <span className="font-semibold">{hName}</span>: ${offer.offerAmount}</p>
+                                                    <p className="text-xs text-[var(--text-secondary)]">{t('dashboard_offer_from')} <span className="font-semibold">{hName}</span>: ${offer.offerAmount}</p>
                                                 </div>
-                                                <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">Action Needed</span>
+                                                <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full uppercase tracking-wide">{t('dashboard_action_needed')}</span>
                                             </div>
                                             <div className="flex gap-2 mt-2">
                                                 <button
                                                     onClick={() => onUpdateOffer && onUpdateOffer(task.id, hId, 'accepted')}
                                                     className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
                                                 >
-                                                    Accept
+                                                    {t('button_accept')}
                                                 </button>
                                                 <button
                                                     onClick={() => onUpdateOffer && onUpdateOffer(task.id, hId, 'declined')}
                                                     className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 rounded transition-colors"
                                                 >
-                                                    Decline
+                                                    {t('button_decline')}
                                                 </button>
                                             </div>
                                         </div>
@@ -708,7 +733,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                 <div key={`my-skill-${task.id}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm opacity-75">
                                     <div className="flex justify-between items-center">
                                         <h4 className="font-bold text-[var(--text-primary)] text-sm">{task.title}</h4>
-                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">No Offers</span>
+                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{t('dashboard_no_offers')}</span>
                                     </div>
                                 </div>
                             );
@@ -738,7 +763,8 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             <p className="text-xs text-[var(--text-secondary)]">Offer: ${myOffer?.offerAmount}</p>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
-                                            {statusLabel}
+                                            {/* @ts-ignore */}
+                                            {t(`status_${statusLabel.toLowerCase()}`) || statusLabel}
                                         </span>
                                     </div>
                                     {isAccepted && (
@@ -746,14 +772,14 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                                             onClick={() => onOpenChat('skill', task)}
                                             className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                         >
-                                            <span>💬</span> Open Chat
+                                            <span>💬</span> {t('dashboard_open_chat')}
                                         </button>
                                     )}
                                     <button
                                         onClick={onViewSkillMarketplace}
                                         className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                                     >
-                                        📄 View Details
+                                        📄 {t('dashboard_view_details')}
                                     </button>
                                 </div>
                             );
@@ -768,7 +794,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                             return hId === user.id;
                         }))) && (
                                 <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
-                                    You haven't posted any skill requests.
+                                    {t('dashboard_no_skill_requests')}
                                 </div>
                             )}
                     </div>

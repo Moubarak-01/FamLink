@@ -48,7 +48,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     if (bookingRequest) {
         const isParent = currentUser.id === bookingRequest.parentId;
         otherUserId = isParent ? bookingRequest.nannyId : bookingRequest.parentId;
-        title = isParent ? (bookingRequest.nannyName || 'Nanny') : (bookingRequest.parentName || 'Parent');
+        title = isParent ? (bookingRequest.nannyName || t('text_nanny')) : (bookingRequest.parentName || t('text_parent'));
         otherUserPhoto = isParent ? (bookingRequest.nannyPhoto || '') : (bookingRequest['parentPhoto'] || '');
     } else if (skillRequest) {
         title = skillRequest.title;
@@ -59,7 +59,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     } else if (activity) {
         title = formatActivityTitle(activity.category);
         if (activity.participants.length > 2) {
-            title += ` (${activity.participants.length} members)`;
+            title += t('text_members_count', { count: activity.participants.length });
         }
         otherUserPhoto = activity.image || activity.hostPhoto || '';
     }
@@ -305,9 +305,9 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         const now = new Date();
         const diff = (now.getTime() - date.getTime()) / 1000; // seconds
 
-        if (diff < 60) return 'Just now';
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        if (diff < 60) return t('text_just_now');
+        if (diff < 3600) return t('text_m_ago', { count: Math.floor(diff / 60) });
+        if (diff < 86400) return t('text_h_ago', { count: Math.floor(diff / 3600) });
         return date.toLocaleDateString();
     };
 
@@ -397,11 +397,11 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             {bookingRequest && (
                                 <p className="text-xs text-[var(--text-secondary)]">
                                     {isRecipientOnline ? (
-                                        <span className="text-green-500 font-medium">● Online</span>
+                                        <span className="text-green-500 font-medium">● {t('text_online')}</span>
                                     ) : recipientLastSeen ? (
-                                        <span>Last seen {formatLastSeen(recipientLastSeen)}</span>
+                                        <span>{t('text_last_seen')}{formatLastSeen(recipientLastSeen)}</span>
                                     ) : (
-                                        <span>Offline</span>
+                                        <span>{t('text_offline')}</span>
                                     )}
                                 </p>
                             )}
@@ -522,7 +522,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                 handleKeyDown(); // Reset timeout on key press
                                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
                             }}
-                            placeholder="💬 Type a message..."
+                            placeholder={t('placeholder_chat_input')}
                             rows={1}
                             className={`flex-1 px-4 py-3 bg-[var(--bg-input)] border rounded-full shadow-sm 
                                 transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[45px] max-h-[100px]

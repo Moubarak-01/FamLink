@@ -85,7 +85,7 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
                         </div>
                         <div className="text-right flex-shrink-0 ml-4 mr-8">
                             <p className="text-lg font-bold text-[var(--text-primary)]">€{request.budget}</p>
-                            <p className="text-xs text-[var(--text-light)]">Budget</p>
+                            <p className="text-xs text-[var(--text-light)]">{t('label_budget')}</p>
                         </div>
                     </div>
                     <p className="text-[var(--text-secondary)] mt-1 text-sm">{request.description}</p>
@@ -182,8 +182,8 @@ const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, r
     return (
         <div className="p-8">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800">← Back</button>
-                <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded-md">Clear All</button>
+                <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800">{t('button_back_arrow')}</button>
+                <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded-md">{t('button_clear_all')}</button>
             </div>
 
             <div className="text-center mb-8">
@@ -197,7 +197,7 @@ const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, r
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Find tutoring, coaching, help..."
+                        placeholder={t('placeholder_search_skills')}
                         className="w-full px-4 py-3 pl-10 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-[var(--text-primary)]"
                     />
                     <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
@@ -225,7 +225,7 @@ const SkillMarketplaceScreen: React.FC<SkillMarketplaceScreenProps> = ({ user, r
                     ))
                 ) : (
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                        <p className="text-[var(--text-light)] font-medium">No tasks posted yet. Be the first to post one!</p>
+                        <p className="text-[var(--text-light)] font-medium">{t('no_tasks_posted')}</p>
                     </div>
                 )}
             </div>

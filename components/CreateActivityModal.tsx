@@ -78,27 +78,27 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({ onClose, onSu
         <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4" onClick={onClose}>
             <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="p-8">
-                    <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('create_activity_modal_title')}</h2>
+                    <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('modal_create_activity_title')}</h2>
 
                     <div className="space-y-4">
                         {/* Image Upload Section */}
                         <div>
-                            <label className={labelStyles}>Activity Image (Optional)</label>
+                            <label className={labelStyles}>{t('label_image_optional')}</label>
                             <div className="mt-2 flex items-center gap-4">
                                 <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
                                     {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
                                 </span>
                                 <label htmlFor="activity-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                                    Upload
+                                    {t('button_upload')}
                                     <input id="activity-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 </label>
-                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">Remove</button>}
+                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">{t('button_remove')}</button>}
                             </div>
                         </div>
 
                         {/* Privacy Setting Toggle */}
                         <div className="bg-[var(--bg-card-subtle)] p-4 rounded-lg border border-[var(--border-color)]">
-                            <label className={`${labelStyles} mb-2`}>Privacy Setting</label>
+                            <label className={`${labelStyles} mb-2`}>{t('label_privacy_setting')}</label>
                             <PrivacyToggle value={privacy} onChange={setPrivacy} />
                         </div>
 
@@ -110,7 +110,7 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({ onClose, onSu
                             {category === 'other' && (
                                 <input
                                     type="text"
-                                    placeholder={t('activity_cat_other_placeholder') || "Specify category..."}
+                                    placeholder={t('activity_cat_other_placeholder')}
                                     value={customCategory}
                                     onChange={e => setCustomCategory(e.target.value)}
                                     className={`${inputStyles} mt-2`}
@@ -121,12 +121,12 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({ onClose, onSu
 
                         <div>
                             <label htmlFor="description" className={labelStyles}>{t('activity_label_description')}</label>
-                            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className={inputStyles} placeholder="Tell other parents what to bring (snacks, strollers, etc.)..." />
+                            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className={inputStyles} placeholder={t('placeholder_activity_description')} />
                         </div>
 
                         <div>
                             <label htmlFor="location" className={labelStyles}>{t('activity_label_location')}</label>
-                            <LocationInput value={location} onChange={setLocation} className={inputStyles} />
+                            <LocationInput value={location} onChange={setLocation} className={inputStyles} placeholder={t('placeholder_search_city')} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

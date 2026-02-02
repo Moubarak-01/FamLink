@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Activity, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import Calendar from './Calendar';
-import { formatCategoryName, getCategoryColor } from '../utils/textUtils';
+import { formatCategoryName, getCategoryColor, getCategoryTranslationKey } from '../utils/textUtils';
 import DeleteButton from './DeleteButton';
 
 interface CommunityActivitiesScreenProps {
@@ -16,10 +16,10 @@ interface CommunityActivitiesScreenProps {
     onDeleteAllActivities: () => void;
 }
 
-const getHostName = (hostId: any, hostName?: string) => {
+const getHostName = (hostId: any, hostName: string | undefined, t: any) => {
     if (typeof hostId === 'object' && hostId?.fullName) return hostId.fullName;
     if (hostName) return hostName;
-    return 'Unknown User';
+    return t('text_unknown_user');
 };
 
 const getHostPhoto = (hostId: any, hostPhoto?: string) => {
@@ -38,7 +38,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
     const hostIdStr = (activity.hostId && typeof activity.hostId === 'object') ? activity.hostId._id : (activity.hostId as string || '');
     const isHost = hostIdStr === currentUserId;
 
-    const displayHostName = getHostName(activity.hostId, activity.hostName);
+    const displayHostName = getHostName(activity.hostId, activity.hostName, t);
     const displayHostPhoto = getHostPhoto(activity.hostId, activity.hostPhoto);
 
     return (
@@ -63,7 +63,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                         <div className="flex justify-between items-start">
                             <div>
                                 <span className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${getCategoryColor(activity.category)}`}>
-                                    {formatCategoryName(activity.category)}
+                                    {t(getCategoryTranslationKey(activity.category)) || formatCategoryName(activity.category)}
                                 </span>
                                 <p className="text-[var(--text-secondary)] mt-2 text-sm">{activity.description}</p>
                             </div>
@@ -74,7 +74,7 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                         </div>
                         <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div>
-                                <p className="text-xs text-[var(--text-light)]">Hosted by <span className="font-medium text-[var(--text-primary)]">{displayHostName}</span></p>
+                                <p className="text-xs text-[var(--text-light)]">{t('activity_card_hosted_by', { name: displayHostName })}</p>
                                 <p className="text-xs text-[var(--text-light)] font-medium">📍 {activity.location}</p>
                             </div>
                             <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -95,8 +95,8 @@ const ActivityCard: React.FC<{ activity: Activity, currentUserId: string, onJoin
                                             } text-white font-bold py-1.5 px-4 rounded-full text-xs disabled:opacity-80 transition-colors`}
                                     >
                                         {isParticipant ? t('activity_card_joined') :
-                                            hasRequested ? 'Request Sent' :
-                                                activity.privacy === 'private' ? 'Request to Join' :
+                                            hasRequested ? t('activity_request_sent') :
+                                                activity.privacy === 'private' ? t('activity_request_to_join') :
                                                     t('activity_card_join')}
                                     </button>
                                 )}
@@ -144,8 +144,8 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
     return (
         <div className="p-8">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800">← Back</button>
-                <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded-md">Clear All</button>
+                <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-800">← {t('button_back')}</button>
+                <button onClick={handleClearAll} className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1 rounded-md">{t('button_clear_all')}</button>
             </div>
 
             <div className="text-center mb-8">
@@ -159,7 +159,7 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Find playdates, tennis partners, or local walks..."
+                        placeholder={t('placeholder_search_activities')}
                         className="w-full px-4 py-3 pl-10 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-[var(--text-primary)]"
                     />
                     <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
@@ -201,7 +201,7 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
                 ) : (
                     <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
                         <p className="text-[var(--text-light)] font-medium text-lg">
-                            {selectedDate ? t('community_no_activities_for_date') : "No activities yet! Why not be the first to host a neighborhood walk?"}
+                            {selectedDate ? t('community_no_activities_for_date') : t('text_no_activities_yet')}
                         </p>
                     </div>
                 )}

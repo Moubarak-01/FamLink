@@ -51,6 +51,8 @@ interface AiAssistantProps {
 export interface AiAssistantRef {
   open: () => void;
   close: () => void;
+  toggle: () => void;
+  clearHistory: () => void; // Added for Ctrl+D shortcut
 }
 
 const MessageContent = ({ content, isUser }: { content: string, isUser: boolean }) => {
@@ -77,7 +79,7 @@ const MessageContent = ({ content, isUser }: { content: string, isUser: boolean 
 };
 
 const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, currentScreen }, ref) => {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [showSlowLoader, setShowSlowLoader] = useState(false);
@@ -85,7 +87,9 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
 
   useImperativeHandle(ref, () => ({
     open: () => setIsOpen(true),
-    close: () => setIsOpen(false)
+    close: () => setIsOpen(false),
+    toggle: () => setIsOpen(prev => !prev),
+    clearHistory: () => setMessages(getInitialMessage())
   }));
 
   // Drag State
@@ -97,10 +101,23 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   // Sync AI Language with App Language
   const [aiLanguage, setAiLanguage] = useState(language);
 
-  const INITIAL_MESSAGE: Message[] = [{ role: 'model', text: `Hello ${user.fullName}, I'm your FamLink Assistant. How can I support your family today?` }];
+  // Update AI language when app language changes
+  useEffect(() => {
+    setAiLanguage(language);
+  }, [language]);
 
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGE);
+  // Generate initial message using translation
+  const getInitialMessage = (): Message[] => [
+    { role: 'model', text: t('ai_welcome_message', { name: user.fullName || 'User' }) }
+  ];
+
+  const [messages, setMessages] = useState<Message[]>(getInitialMessage);
   const [inputValue, setInputValue] = useState('');
+
+  // Re-initialize messages when language changes
+  useEffect(() => {
+    setMessages(getInitialMessage());
+  }, [language]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -113,12 +130,12 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Quick Action Chips
+  // Quick Action Chips - dynamic based on current language
   const QUICK_ACTIONS = [
-    { label: "Find a Nanny ↗", action: "Nanny Booking" },
-    { label: "Create Activity ↗", action: "Community Activities" },
-    { label: "Contact Support ↗", action: "Support" },
-    { label: "My Schedule ↗", action: "Schedule" }
+    { label: t('ai_chip_find_nanny'), action: "Nanny Booking" },
+    { label: t('ai_chip_create_activity'), action: "Community Activities" },
+    { label: t('ai_chip_contact_support'), action: "Support" },
+    { label: t('ai_chip_my_schedule'), action: "Schedule" }
   ];
 
   const handleChipClick = (action: string) => {
@@ -183,20 +200,11 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   // Initial Position (Bottom Right)
   useEffect(() => {
     setPosition({ x: window.innerWidth - 425, y: window.innerHeight - 620 });
-
-    // Keyboard Shortcut (Shift+N) to open
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'N') {
-        setIsOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
 
   const handleClearChat = async () => {
-    setMessages(INITIAL_MESSAGE);
+    setMessages(getInitialMessage());
     setInputValue('');
   };
 
@@ -358,11 +366,11 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
 
             } else {
               console.error("No text returned from transcription");
-              alert("Could not understand audio. Please try again.");
+              alert(t('ai_error_transcription'));
             }
           } catch (error) {
             console.error("Transcription failed:", error);
-            setInputValue("Error: Local Whisper Service not running on port 3002.");
+            setInputValue(t('ai_error_voice_service'));
           } finally {
             setIsProcessingVoice(false);
           }
@@ -373,7 +381,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
 
       } catch (err) {
         console.error("Microphone access denied:", err);
-        alert("Microphone access is required for voice input.");
+        alert(t('ai_microphone_required'));
       }
     }
   };
@@ -412,7 +420,30 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
     try {
       const prompt = userMessage;
 
-      const stream = await geminiService.generateResponse(prompt, FAM_LINK_SYSTEM_INSTRUCTION);
+      // Map language code to full name for clearer AI instruction
+      const LANGUAGE_MAP: Record<string, string> = {
+        en: "English",
+        fr: "French (Français)",
+        es: "Spanish (Español)",
+        ar: "Arabic (العربية)",
+        zh: "Chinese (中文)",
+        ja: "Japanese (日本語)"
+      };
+
+      const currentLangName = LANGUAGE_MAP[aiLanguage] || "English";
+
+      const languageDirective = `
+      
+      ### 🌍 LANGUAGE INSTRUCTION (CRITICAL)
+      - The user is currently browsing the app in **${currentLangName}**.
+      - You **MUST** respond in **${currentLangName}**.
+      - Do NOT respond in English unless the user's current language is English.
+      - Translate all your answers to **${currentLangName}**.
+      `;
+
+      const interpolatedInstruction = FAM_LINK_SYSTEM_INSTRUCTION.replace('{{userName}}', user.fullName || "User") + languageDirective;
+
+      const stream = await geminiService.generateResponse(prompt, interpolatedInstruction);
 
       let firstTokenReceived = false;
       let finalResponseText = '';
@@ -451,7 +482,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
         if (prev[lastMessageIndex].role === 'model') {
           prev[lastMessageIndex] = {
             ...prev[lastMessageIndex],
-            text: "Sorry, a serious error occurred during the API communication. Please try again."
+            text: t('ai_error_api')
           };
         }
         return [...prev];
@@ -518,7 +549,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
         <button
           onClick={() => setIsOpen(true)}
           className="w-16 h-16 bg-[var(--accent-primary)] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[var(--accent-primary-hover)] transition-transform active:scale-95"
-          title="Open AI Assistant"
+          title={t('ai_open_assistant')}
         >
           {/* REPLACED ICON: Use a rounded Message Bubble Icon */}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -545,7 +576,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                 <h3 className="font-bold text-[var(--text-primary)] text-sm">FamLink Assistant</h3>
                 <div className="flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <p className="text-[10px] text-[var(--text-secondary)] font-medium">Online</p>
+                  <p className="text-[10px] text-[var(--text-secondary)] font-medium">{t('ai_status_online')}</p>
                 </div>
               </div>
             </div>
@@ -599,7 +630,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                 <div className="w-8 h-8 flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <span className="text-xs text-gray-400 mt-2 font-medium">Thinking...</span>
+                <span className="text-xs text-gray-400 mt-2 font-medium">{t('ai_thinking')}</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -632,7 +663,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                   {isProcessingVoice && (
                     <div className="absolute inset-0 bg-[var(--bg-input)] rounded-3xl z-10 flex items-center px-4 gap-3">
                       <div className="w-5 h-5 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-gray-400 italic">Processing audio...</span>
+                      <span className="text-sm text-gray-400 italic">{t('ai_processing_voice')}</span>
                     </div>
                   )}
 
@@ -641,7 +672,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                     value={inputValue}
                     onChange={handleInputInput}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type your question here..."
+                    placeholder={t('ai_input_placeholder')}
                     rows={1}
                     className="flex-grow bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none appearance-none text-sm text-[var(--text-primary)] placeholder-gray-400 resize-none max-h-[100px] py-1"
                     style={{ minHeight: '24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -677,7 +708,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
 
               {/* Powered By Caption */}
               <div className="text-center mt-2">
-                <p className="text-[10px] text-gray-300 font-medium tracking-wide">Powered by FamLink AI</p>
+                <p className="text-[10px] text-gray-300 font-medium tracking-wide">{t('ai_powered_by')}</p>
               </div>
             </div>
           </div>

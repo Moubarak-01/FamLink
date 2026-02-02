@@ -134,7 +134,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
 
     setShowErrors(true);
 
-    if (!photo || !fullName.trim() || !location.trim() || !phone) {
+    if (!fullName.trim() || !location.trim() || !phone) {
       alert(t('alert_fill_required_fields'));
       return;
     }
@@ -191,12 +191,12 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
       <form onSubmit={handleSubmit} className="space-y-8 max-w-lg mx-auto">
 
         <div>
-          <label className={labelStyles}>{t('profile_form_photo')}<span className="text-red-500">*</span></label>
+          <label className={labelStyles}>{t('profile_form_photo')}</label>
           <div className="mt-2 flex items-center gap-4">
             <span className={`inline-block h-20 w-20 rounded-full overflow-hidden bg-gray-100 ${showErrors && !photo ? 'ring-2 ring-red-500' : ''}`}>
               {photoPreview ? <img src={photoPreview} alt="Profile Preview" className="h-full w-full object-cover" /> : <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.997A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
             </span>
-            <input type="file" id="photo" onChange={handlePhotoUpload} accept="image/*" required={!photo} className="block w-full text-sm text-[var(--text-light)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100" />
+            <input type="file" id="photo" onChange={handlePhotoUpload} accept="image/*" className="block w-full text-sm text-[var(--text-light)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100" />
           </div>
         </div>
 
@@ -211,7 +211,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
             <LocationInput
               value={location}
               onChange={setLocation}
-              placeholder="Search city (e.g. Paris, London)..."
+              placeholder={t('placeholder_search_city')}
               hasError={showErrors && !location}
               onCountryChange={setSelectedCountryIso}
             />
@@ -281,7 +281,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
                 type="text"
                 value={customInterestInput}
                 onChange={e => setCustomInterestInput(e.target.value)}
-                placeholder={t('profile_add_custom_interest') || "Add interest..."}
+                placeholder={t('placeholder_add_interest')}
                 className="px-3 py-1.5 text-sm bg-[var(--bg-input)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] w-full max-w-xs"
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCustomInterest())}
               />
@@ -315,7 +315,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
                 type="text"
                 value={customSkillInput}
                 onChange={e => setCustomSkillInput(e.target.value)}
-                placeholder={t('profile_add_custom_skill') || "Add skill..."}
+                placeholder={t('placeholder_add_skill')}
                 className="px-3 py-1.5 text-sm bg-[var(--bg-input)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 w-full max-w-xs"
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCustomSkill())}
               />
@@ -335,7 +335,7 @@ const ParentProfileForm: React.FC<ParentProfileFormProps> = ({ user, onSubmit, o
             disabled={isSubmitting}
             className={`w-full sm:w-auto flex-grow text-white font-bold py-3 px-4 rounded-lg shadow-sm transition-colors ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)]'}`}
           >
-            {isSubmitting ? 'Saving...' : t('button_save_profile')}
+            {isSubmitting ? t('button_saving') : t('button_save_profile')}
           </button>
         </div>
       </form>

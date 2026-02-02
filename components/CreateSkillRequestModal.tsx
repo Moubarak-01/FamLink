@@ -66,16 +66,16 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                     <div className="space-y-4">
                         {/* Image Upload Section */}
                         <div>
-                            <label className={labelStyles}>Task Image (Optional)</label>
+                            <label className={labelStyles}>{t('label_image_optional')}</label>
                             <div className="mt-2 flex items-center gap-4">
                                 <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
                                     {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
                                 </span>
                                 <label htmlFor="task-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                                    Upload
+                                    {t('button_upload')}
                                     <input id="task-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 </label>
-                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">Remove</button>}
+                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">{t('button_remove')}</button>}
                             </div>
                         </div>
 
@@ -99,7 +99,7 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
                                 value={location}
                                 onChange={setLocation}
                                 className={inputStyles}
-                                placeholder="City or Neighborhood"
+                                placeholder={t('placeholder_search_city')}
                             />
                         </div>
                         <div>
@@ -109,7 +109,7 @@ const CreateSkillRequestModal: React.FC<CreateSkillRequestModalProps> = ({ onClo
 
                         {/* Privacy Toggle */}
                         <div className="mt-4 bg-[var(--bg-card-subtle)] p-4 rounded-lg border border-[var(--border-color)]">
-                            <label className={`${labelStyles} mb-2`}>Privacy Setting</label>
+                            <label className={`${labelStyles} mb-2`}>{t('label_privacy_setting')}</label>
                             <PrivacyToggle value={privacy} onChange={setPrivacy} />
                         </div>
                     </div>

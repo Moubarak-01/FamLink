@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                 <div className="flex items-center gap-3">
                     <img
                         src="/famlink-icon.png"
-                        alt="FamLink Icon"
+                        alt={t('app_name') || "FamLink"}
                         className="h-10 w-10 object-contain"
                     />
                     <div className="flex flex-col justify-center -space-y-0.5">
@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
 
                     {/* Noise Reduction Indicator */}
                     {noiseReductionEnabled && (
-                        <div className="hidden sm:flex items-center justify-center p-2 text-green-500 bg-green-50 dark:bg-green-900/30 rounded-full" title="Noise Reduction Active">
+                        <div className="hidden sm:flex items-center justify-center p-2 text-green-500 bg-green-50 dark:bg-green-900/30 rounded-full" title={t('title_noise_reduction')}>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                             </svg>
@@ -94,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                 <button
                                     onClick={() => setShowNotifications(!showNotifications)}
                                     className="p-2 rounded-full bg-[var(--header-icon-bg)] text-[var(--header-icon-fg)] hover:text-[var(--accent-primary)] transition-colors relative"
-                                    title="Notifications"
+                                    title={t('title_notifications')}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -108,9 +108,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                 {showNotifications && (
                                     <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-card)] rounded-md shadow-lg py-1 border border-[var(--border-color)] z-50 max-h-96 overflow-y-auto">
                                         <div className="px-4 py-2 border-b border-[var(--border-color)] flex justify-between items-center sticky top-0 bg-[var(--bg-card)] z-10">
-                                            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Notifications</span>
+                                            <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{t('title_notifications')}</span>
                                             {unreadCount > 0 && onClearNotifications && (
-                                                <button onClick={onClearNotifications} className="text-xs text-[var(--accent-primary)] hover:underline">Clear all</button>
+                                                <button onClick={onClearNotifications} className="text-xs text-[var(--accent-primary)] hover:underline">{t('button_clear_notifications')}</button>
                                             )}
                                         </div>
                                         {notifications.length > 0 ? (
@@ -125,14 +125,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                                 >
                                                     <div className="flex justify-between items-start w-full">
                                                         <p className="text-sm text-[var(--text-primary)] font-medium line-clamp-2">{notif.message}</p>
-                                                        {notif.type === 'chat' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Chat</span>}
+                                                        {notif.type === 'chat' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{t('label_chat')}</span>}
                                                     </div>
                                                     <p className="text-xs text-[var(--text-light)]">{formatTime(notif)}</p>
                                                 </button>
                                             ))
                                         ) : (
                                             <div className="px-4 py-6 text-center text-sm text-[var(--text-light)]">
-                                                No new notifications
+                                                {t('text_no_notifications')}
                                             </div>
                                         )}
                                     </div>
@@ -183,7 +183,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                                     }}
                                                     className="block w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border-t border-[var(--border-color)]"
                                                 >
-                                                    Settings
+                                                    {t('menu_settings')}
                                                 </button>
                                             )}
                                         </div>

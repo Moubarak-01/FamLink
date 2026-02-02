@@ -19,6 +19,23 @@ export const formatCategoryName = (key: string): string => {
 };
 
 /**
+ * Returns a translation key for a category.
+ * This allows components to use t(getCategoryTranslationKey(category)) for localized names.
+ * e.g. "playdates" -> "activity_cat_playdates"
+ * e.g. "tennis" -> "activity_cat_tennis"
+ */
+export const getCategoryTranslationKey = (category: string): string => {
+    if (!category) return 'activity_cat_other';
+
+    // Normalize category to lowercase and remove prefixes
+    const normalized = category.toLowerCase()
+        .replace(/^(activity_cat_|skill_cat_)/i, '')
+        .replace(/\s+/g, '_');
+
+    return `activity_cat_${normalized}`;
+};
+
+/**
  * Clean, formatted title for Activities.
  * e.g. "activity_cat_tennis" -> "Tennis"
  * e.g. "" -> "General Activity"

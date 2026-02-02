@@ -5,10 +5,10 @@ import Calendar from './Calendar';
 import DeleteButton from './DeleteButton';
 
 // Helper to safely get requestor name
-const getRequesterName = (id: any, name?: string) => {
+const getRequesterName = (id: any, name: string | undefined, t: any) => {
     if (typeof id === 'object' && id?.fullName) return id.fullName;
     if (name) return name;
-    return 'Unknown Parent';
+    return t('text_unknown_parent');
 };
 
 interface ChildOutingScreenProps {
@@ -25,10 +25,10 @@ interface ChildOutingScreenProps {
 }
 
 // Helper to safely get host name
-const getHostName = (hostId: any, hostName?: string) => {
+const getHostName = (hostId: any, hostName: string | undefined, t: any) => {
     if (typeof hostId === 'object' && hostId?.fullName) return hostId.fullName;
     if (hostName) return hostName;
-    return 'Unknown Host';
+    return t('text_unknown_host');
 };
 
 // Helper to safely get host photo
@@ -61,7 +61,7 @@ const OutingCard: React.FC<{
     const isAccepted = myRequest?.status === 'accepted';
     const canChat = isHost || isAccepted;
 
-    const displayHostName = getHostName(outing.hostId, outing.hostName);
+    const displayHostName = getHostName(outing.hostId, outing.hostName, t);
     const displayHostPhoto = getHostPhoto(outing.hostId, outing.hostPhoto);
 
     const acceptedCount = requests.filter(r => r.status === 'accepted').length;
@@ -111,7 +111,7 @@ const OutingCard: React.FC<{
                             </span>
                             {outing.liveLocationEnabled && (
                                 <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md border border-red-100 flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Live Location
+                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> {t('text_live_location')}
                                 </span>
                             )}
                         </div>
@@ -119,7 +119,7 @@ const OutingCard: React.FC<{
                         <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div>
                                 <p className={`text-xs font-bold ${slotsLeft > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                    {slotsLeft > 0 ? t('outing_card_slots_available', { count: slotsLeft }) : 'Full'}
+                                    {slotsLeft > 0 ? t('outing_card_slots_available', { count: slotsLeft }) : t('text_full')}
                                 </p>
                                 {hasRequested && (
                                     <p className="text-xs text-[var(--text-light)] mt-1">
@@ -133,7 +133,7 @@ const OutingCard: React.FC<{
                                     onClick={() => onChat(outing)}
                                     disabled={!canChat}
                                     className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                                    title={!canChat ? "Join and get accepted to chat" : ""}
+                                    title={!canChat ? t('tooltip_join_chat') : ""}
                                 >
                                     <span>💬</span> {t('activity_card_chat')}
                                 </button>
@@ -164,7 +164,7 @@ const OutingCard: React.FC<{
                         {/* HOST SECTION: Manage Requests */}
                         {isHost && (
                             <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
-                                <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wide">Manage Requests ({requests.length})</h4>
+                                <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wide">{t('title_manage_requests')} ({requests.length})</h4>
                                 {requests.length > 0 ? (
                                     <ul className="space-y-2">
                                         {requests.map((req, idx) => (
@@ -175,7 +175,7 @@ const OutingCard: React.FC<{
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-[var(--text-primary)]">{req.childName} <span className="text-[var(--text-light)] text-xs">({req.childAge}y)</span></p>
-                                                        <p className="text-xs text-[var(--text-secondary)]">Parent: {getRequesterName(req.parentId)}</p>
+                                                        <p className="text-xs text-[var(--text-secondary)]">{t('label_parent')} {getRequesterName(req.parentId, undefined, t)}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1">
@@ -194,7 +194,7 @@ const OutingCard: React.FC<{
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-xs text-[var(--text-light)] italic">No requests yet.</p>
+                                    <p className="text-xs text-[var(--text-light)] italic">{t('text_no_requests')}</p>
                                 )}
                             </div>
                         )}
@@ -250,7 +250,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                     onClick={handleClearAll}
                     className="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 bg-red-50 px-3 py-1.5 rounded-md hover:bg-red-100 transition-colors"
                 >
-                    Clear All
+                    {t('button_clear_all')}
                 </button>
             </div>
 
@@ -265,7 +265,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Find park visits, museum trips..."
+                        placeholder={t('placeholder_search_outings')}
                         className="w-full px-4 py-3 pl-10 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-[var(--text-primary)]"
                     />
                     <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
@@ -303,7 +303,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                     />
                     {selectedDate && (
                         <p className="text-center mt-2 text-sm text-[var(--text-secondary)]">
-                            Showing events for: <span className="font-bold">{selectedDate}</span>
+                            {t('text_showing_events_for')} <span className="font-bold">{selectedDate}</span>
                         </p>
                     )}
                 </div>
@@ -328,7 +328,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
                         <p className="text-[var(--text-light)] font-medium">
                             {selectedDate
                                 ? t('community_no_activities_for_date')
-                                : 'No outings created yet. Be the first to plan one!'}
+                                : t('text_no_outings_yet')}
                         </p>
                     </div>
                 )}

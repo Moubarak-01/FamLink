@@ -43,3 +43,8 @@ local-whisper/*.dll
 *.exe
 *.dll
 local-whisper/uploads/*
+
+# Temporary verification files
+verify_features.js
+verify_output*.txt
+scripts/

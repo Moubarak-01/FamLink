@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface GlassFormProps {
     email: string;
@@ -18,6 +19,8 @@ interface GlassFormProps {
 export default function GlassForm({
     email, setEmail, password, setPassword, onSubmit, onSignUp, onForgotPassword, error, variant = 'login', fullName, setFullName
 }: GlassFormProps) {
+    const { t } = useLanguage();
+
     return (
         <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -30,10 +33,10 @@ export default function GlassForm({
                 <div className="absolute top-0 -left-1/2 w-full h-full bg-gradient-to-br from-transparent to-white/10 dark:to-white/5 pointer-events-none transform rotate-12" />
 
                 <h2 className="text-3xl font-bold mb-2 text-slate-800 dark:text-white text-center font-outfit">
-                    {variant === 'login' ? 'Welcome Back' : 'Register now'}
+                    {variant === 'login' ? t('login_title') : t('title_register_now')}
                 </h2>
                 <p className="text-slate-500 dark:text-slate-300 text-center mb-8 text-sm">
-                    {variant === 'login' ? 'Sign in to continue to FamLink.' : 'Join the FamLink community today.'}
+                    {variant === 'login' ? t('subtitle_signin') : t('subtitle_join')}
                 </p>
 
                 {error && (
@@ -50,11 +53,11 @@ export default function GlassForm({
                     {variant === 'register' && (
                         <div className="space-y-1">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
-                                What's your name?
+                                {t('label_whats_your_name')}
                             </label>
                             <input
                                 type="text"
-                                placeholder="Jane Doe"
+                                placeholder={t('placeholder_name_example')}
                                 value={fullName}
                                 onChange={(e) => setFullName?.(e.target.value)}
                                 className="auth-input w-full px-4 py-3 rounded-xl bg-white/50 dark:bg-black/20 border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all placeholder-slate-400 text-slate-800 dark:text-white backdrop-blur-sm"
@@ -64,11 +67,11 @@ export default function GlassForm({
 
                     <div className="space-y-1">
                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
-                            Enter your email
+                            {t('label_enter_email')}
                         </label>
                         <input
                             type="email"
-                            placeholder="jane@example.com"
+                            placeholder={t('placeholder_email_example')}
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="auth-input w-full px-4 py-3 rounded-xl bg-white/50 dark:bg-black/20 border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all placeholder-slate-400 text-slate-800 dark:text-white backdrop-blur-sm"
@@ -77,11 +80,11 @@ export default function GlassForm({
 
                     <div className="space-y-1">
                         <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 ml-1">
-                            {variant === 'login' ? 'Your password' : 'Create password'}
+                            {variant === 'login' ? t('label_your_password') : t('label_create_password')}
                         </label>
                         <input
                             type="password"
-                            placeholder="••••••••"
+                            placeholder={t('placeholder_password_dots')}
                             value={password}
                             onChange={(e) => setPassword?.(e.target.value)}
                             className="auth-input w-full px-4 py-3 rounded-xl bg-white/50 dark:bg-black/20 border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all placeholder-slate-400 text-slate-800 dark:text-white backdrop-blur-sm"
@@ -96,7 +99,7 @@ export default function GlassForm({
                                 onClick={onForgotPassword}
                                 className="text-xs text-pink-500 hover:text-pink-400 transition-colors font-medium"
                             >
-                                Forgot Password?
+                                {t('button_forgot_password_q')}
                             </button>
                         </div>
                     )}
@@ -106,7 +109,7 @@ export default function GlassForm({
                         whileTap={{ scale: 0.98 }}
                         className="w-full mt-6 py-4 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-lg shadow-lg hover:shadow-pink-500/30 transition-shadow relative overflow-hidden group"
                     >
-                        <span className="relative z-10">{variant === 'login' ? 'Sign In' : 'Next'}</span>
+                        <span className="relative z-10">{variant === 'login' ? t('button_sign_in') : t('button_next')}</span>
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                     </motion.button>
                 </form>
@@ -114,12 +117,12 @@ export default function GlassForm({
                 {/* Role Switcher / Toggle */}
                 <div className="mt-6 text-center">
                     <p className="text-slate-500 dark:text-slate-400 text-sm">
-                        {variant === 'login' ? "Don't have an account?" : "Already have an account?"}
+                        {variant === 'login' ? t('text_no_account') : t('text_already_have_account')}
                         <button
                             onClick={onSignUp || (() => { })} // In a real app this would toggle mode
                             className="ml-1 text-pink-500 hover:text-pink-400 font-bold hover:underline transition-all"
                         >
-                            {variant === 'login' ? "Sign Up" : "Log In"}
+                            {variant === 'login' ? t('button_signup') : t('button_login')}
                         </button>
                     </p>
                 </div>

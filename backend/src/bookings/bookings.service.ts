@@ -83,8 +83,6 @@ export class BookingsService {
       savedBooking._id.toString()
     );
 
-    return this.mapBooking(savedBooking);
-
     this.chatGateway.server.emit('bookings_update', { action: 'create', bookingId: savedBooking._id });
     return this.mapBooking(savedBooking);
   }

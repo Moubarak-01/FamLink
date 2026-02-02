@@ -55,39 +55,39 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
         <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4" onClick={onClose}>
             <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit} className="p-8">
-                    <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('create_outing_modal_title')}</h2>
+                    <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('modal_create_outing_title')}</h2>
 
                     <div className="space-y-4">
                         {/* Image Upload Section */}
                         <div>
-                            <label className={labelStyles}>Outing Image (Optional)</label>
+                            <label className={labelStyles}>{t('label_image_optional')}</label>
                             <div className="mt-2 flex items-center gap-4">
                                 <span className="inline-block h-16 w-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-300">
                                     {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center text-gray-400">📷</div>}
                                 </span>
                                 <label htmlFor="outing-image" className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                                    Upload
+                                    {t('button_upload')}
                                     <input id="outing-image" type="file" onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 </label>
-                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">Remove</button>}
+                                {image && <button type="button" onClick={() => { setImage(''); setImagePreview('') }} className="text-sm text-red-500 hover:underline">{t('button_remove')}</button>}
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="title" className={labelStyles}>{t('outing_label_title')}</label>
-                            <input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('outing_placeholder_title')} className={inputStyles} />
+                            <label htmlFor="title" className={labelStyles}>{t('label_title')}</label>
+                            <input type="text" id="title" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('placeholder_outing_title')} className={inputStyles} />
                         </div>
                         <div>
-                            <label htmlFor="description" className={labelStyles}>{t('outing_label_description')}</label>
-                            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className={inputStyles} />
+                            <label htmlFor="description" className={labelStyles}>{t('label_description')}</label>
+                            <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} required className={inputStyles} placeholder={t('placeholder_outing_description')} />
                         </div>
                         <div>
-                            <label htmlFor="location" className={labelStyles}>{t('outing_label_location')}</label>
+                            <label htmlFor="location" className={labelStyles}>{t('label_location')}</label>
                             <LocationInput
                                 value={location}
                                 onChange={setLocation}
                                 className={inputStyles}
-                                placeholder="Where are you going?"
+                                placeholder={t('placeholder_where_going')}
                             />
                         </div>
 
@@ -100,33 +100,33 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
                                 className="h-4 w-4 text-[var(--accent-primary)] focus:ring-[var(--ring-accent)] border-gray-300 rounded cursor-pointer"
                             />
                             <label htmlFor="liveLocation" className="ml-2 block text-sm text-[var(--text-primary)] cursor-pointer">
-                                Enable Live Location Sharing for participants
+                                {t('label_enable_live_location')}
                             </label>
                         </div>
 
                         {/* Privacy Toggle */}
                         <div className="mt-4 bg-[var(--bg-card-subtle)] p-4 rounded-lg border border-[var(--border-color)]">
-                            <label className={`${labelStyles} mb-2`}>Privacy Setting</label>
+                            <label className={`${labelStyles} mb-2`}>{t('label_privacy_setting')}</label>
                             <PrivacyToggle value={privacy} onChange={setPrivacy} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="date" className={labelStyles}>{t('outing_label_date')}</label>
+                                <label htmlFor="date" className={labelStyles}>{t('label_date')}</label>
                                 <input type="date" id="date" value={date} onChange={e => setDate(e.target.value)} required min={new Date().toISOString().split('T')[0]} className={inputStyles} />
                             </div>
                             <div>
-                                <label htmlFor="time" className={labelStyles}>{t('outing_label_time')}</label>
+                                <label htmlFor="time" className={labelStyles}>{t('label_time')}</label>
                                 <input type="time" id="time" value={time} onChange={e => setTime(e.target.value)} required className={inputStyles} />
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="maxChildren" className={labelStyles}>{t('outing_label_max_children')}</label>
+                            <label htmlFor="maxChildren" className={labelStyles}>{t('label_max_children')}</label>
                             <input type="number" id="maxChildren" value={maxChildren} onChange={e => setMaxChildren(parseInt(e.target.value, 10))} required min="1" className={inputStyles} />
                         </div>
                         <div>
-                            <label htmlFor="cost" className={labelStyles}>{t('outing_label_cost')}</label>
-                            <input type="text" id="cost" value={costDetails} onChange={e => setCostDetails(e.target.value)} required placeholder={t('outing_placeholder_cost')} className={inputStyles} />
+                            <label htmlFor="cost" className={labelStyles}>{t('label_cost')}</label>
+                            <input type="text" id="cost" value={costDetails} onChange={e => setCostDetails(e.target.value)} required placeholder={t('placeholder_cost_details')} className={inputStyles} />
                         </div>
                     </div>
 
