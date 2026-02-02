@@ -2,6 +2,8 @@
 
 <img src="public/famlink-logo.png" alt="FamLink Logo" width="200" />
 <br />
+
+**An AI-powered community platform connecting parents with trusted care providers**
 <hr />
 
 
@@ -12,7 +14,7 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?style=for-the-badge&logo=mongodb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)
 
-**An AI-powered community platform connecting parents with trusted care providers**
+
 
 [Features](#-features-overview) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [API Reference](#-api-reference) • [Challenges](#-solved-engineering-challenges)
 
