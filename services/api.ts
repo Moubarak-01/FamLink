@@ -1,8 +1,9 @@
 
 import axios from 'axios';
 
-// Default to localhost for development, can be configured via env vars
-const API_URL = 'http://localhost:3001';
+// Use environment variable for API URL, fallback to localhost for development
+// @ts-ignore - Vite handles import.meta.env at build time
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const api = axios.create({
   baseURL: API_URL,

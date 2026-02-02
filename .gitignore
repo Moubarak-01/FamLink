@@ -23,9 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment files
-backend/.env
+# Environment files - NEVER COMMIT THESE
+.env
+.env.*
 .env.local
+.env.development
+.env.production
+.env.test
+backend/.env
+backend/.env.*
+*.env
 
 # Backend Uploads
 backend/uploads/voice/*

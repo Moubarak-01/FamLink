@@ -7,14 +7,18 @@ export class PaymentService {
   private stripe: Stripe;
 
   constructor() {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock_key', {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      console.warn('⚠️ STRIPE_SECRET_KEY not set. Payment features will be disabled.');
+    }
+    this.stripe = new Stripe(stripeKey || '', {
       apiVersion: '2023-10-16',
     });
   }
 
   async createCheckoutSession(planId: string, userId: string) {
     // In a real app, look up price ID based on planId
-    const priceId = planId === 'parent_monthly' ? 'price_H5ggYwdDqB' : 'price_H5ggYwdDqB'; 
+    const priceId = planId === 'parent_monthly' ? 'price_H5ggYwdDqB' : 'price_H5ggYwdDqB';
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -34,7 +38,7 @@ export class PaymentService {
       success_url: `http://localhost:5173?payment_success=true`,
       cancel_url: `http://localhost:5173?payment_canceled=true`,
       metadata: {
-          userId
+        userId
       }
     });
 
