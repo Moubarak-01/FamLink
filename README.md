@@ -2,6 +2,8 @@
 
 <img src="public/famlink-logo.png" alt="FamLink Logo" width="200" />
 <br />
+<hr />
+
 
 
 ![Version](https://img.shields.io/badge/version-2.2-pink?style=for-the-badge)
