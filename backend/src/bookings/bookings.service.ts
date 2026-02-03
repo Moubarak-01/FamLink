@@ -5,13 +5,15 @@ import { Booking, BookingDocument } from '../schemas/booking.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import { User } from '../schemas/user.schema';
 import { ChatGateway } from '../chat/chat.gateway';
+import { CalendarService } from '../calendar/calendar.service';
 
 @Injectable()
 export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private notificationsService: NotificationsService,
-    private chatGateway: ChatGateway
+    private chatGateway: ChatGateway,
+    private calendarService: CalendarService
   ) { }
 
   // Helper to flatten the Mongoose object for the frontend
@@ -37,28 +39,22 @@ export class BookingsService {
   }
 
   async create(createBookingDto: any, parentId: string): Promise<any> {
-    // 1. Check for Double Booking (Status: Accepted)
+    // 1. Check for Duplicate Requests (Accepted, Pending, OR Declined)
     const existingBooking = await this.bookingModel.findOne({
       nannyId: createBookingDto.nannyId,
       parentId: parentId,
       date: createBookingDto.date,
-      status: 'accepted'
+      status: { $in: ['accepted', 'pending', 'declined'] }
     }).exec();
 
     if (existingBooking) {
-      throw new BadRequestException('You already have a confirmed booking with this nanny for this date.');
-    }
-
-    // 2. Check for Duplicate Pending Request
-    const duplicateRequest = await this.bookingModel.findOne({
-      nannyId: createBookingDto.nannyId,
-      parentId: parentId,
-      date: createBookingDto.date,
-      status: 'pending'
-    }).exec();
-
-    if (duplicateRequest) {
-      throw new BadRequestException('You already have a pending request for this date.');
+      if (existingBooking.status === 'accepted') {
+        throw new BadRequestException('You already have a confirmed booking with this nanny for this date.');
+      } else if (existingBooking.status === 'pending') {
+        throw new BadRequestException('You already have a pending request for this date.');
+      } else if (existingBooking.status === 'declined') {
+        throw new BadRequestException('This request was previously declined for this date. You cannot re-apply.');
+      }
     }
 
     // 3. Create Booking
@@ -117,14 +113,23 @@ export class BookingsService {
 
     if (status === 'accepted' || status === 'declined') {
       const nannyName = originalBooking['nannyId']['fullName'] || 'The Nanny';
+      // 1. Send Notification
       await this.notificationsService.create(
         originalBooking.parentId.toString(),
         `${nannyName} ${status} your booking request!`,
         'booking',
         originalBooking._id.toString()
       );
-    }
 
+      // 2. Sync to Calendar if accepted
+      if (status === 'accepted') {
+        const nannyId = (originalBooking.nannyId as any)._id || originalBooking.nannyId;
+        const parentId = (originalBooking.parentId as any)._id || originalBooking.parentId;
+        // Try to add to both users' calendars (if connected)
+        await this.calendarService.createEvent(nannyId.toString(), updatedBooking);
+        await this.calendarService.createEvent(parentId.toString(), updatedBooking);
+      }
+    }
 
     this.chatGateway.server.emit('bookings_update', { action: 'update_status', bookingId });
     return this.mapBooking(updatedBooking);

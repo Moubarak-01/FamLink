@@ -49,10 +49,19 @@ export class NannyProfile {
   @Prop([String])
   availableDates: string[];
 
+  @Prop({ default: 'parent' })
+  userType: 'parent' | 'nanny';
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
+  @Prop()
+  verificationToken: string;
+
   @Prop({ default: 0 })
   rating: number;
 
-  @Prop({ default: 0 })
+  @Prop({ type: [String], default: [] })
   ratingCount: number;
 }
 
@@ -129,6 +138,15 @@ export class User {
 
   @Prop([String])
   addedNannyIds: string[];
+
+  @Prop()
+  fcmToken: string;
+
+  @Prop()
+  googleRefreshToken: string;
+
+  @Prop({ default: false })
+  isGoogleCalendarConnected: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

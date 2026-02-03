@@ -1,10 +1,10 @@
 
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('login')
   async login(@Body() req: { email: string; password: string }) {
@@ -18,5 +18,10 @@ export class AuthController {
   @Post('signup')
   async signup(@Body() createUserDto: any) {
     return this.authService.register(createUserDto);
+  }
+
+  @Get('verify')
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
   }
 }

@@ -49,12 +49,12 @@ class SocketService {
         });
 
         this.socket.on('connect', () => {
-            console.log(`✅ Socket Connected for user: ${currentUserId}`);
+
             this.connected = true;
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log(`🔌 Socket Disconnected. Reason: ${reason}`);
+
             this.connected = false;
         });
 
@@ -141,8 +141,8 @@ class SocketService {
     }
 
     sendMessage(roomId: string, message: ChatMessage, callback?: (savedMessage: ChatMessage) => void) {
-        console.log(`🚀 [socketService] sendMessage called. roomId: ${roomId}`);
-        console.log(`🚀 [socketService] State: this.connected=${this.connected}, socket.connected=${this.socket?.connected}, socket.id=${this.socket?.id}`);
+
+
 
         // Extra safety: Check Socket.IO's internal connected state, not just our flag
         if (!this.socket || !this.socket.connected) {
@@ -191,7 +191,7 @@ class SocketService {
             console.error(`⚠️ [socketService] Payload is HUGE! This might cause disconnect.`);
         }
 
-        console.log(`📤 [socketService] Emitting send_message. socket.id=${this.socket?.id}`);
+
         this.socket!.emit('send_message', encryptedPayload, (response: any) => {
             console.log(`✅ [socketService] Server ACK received:`, response);
             if (callback && response) {

@@ -320,14 +320,6 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
         return rId === user.id;
     }) || [];
 
-    // DEBUG LOGGING
-    console.log('DashboardScreen Debug:', {
-        userId: user.id,
-        activitiesCount: activities.length,
-        hostedActivities: activities.filter(a => a.hostId === user.id),
-        activitiesWithRequests: activities.filter(a => a.requests && a.requests.length > 0)
-    });
-
     // Parent sees tasks they created
     const myTasks = allTasks.filter(t => t.parentId === user.id);
 

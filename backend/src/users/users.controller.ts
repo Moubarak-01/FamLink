@@ -49,4 +49,10 @@ export class UsersController {
   async deleteProfile(@Request() req) {
     return this.usersService.deleteUser(req.user.userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('push-token')
+  async updatePushToken(@Request() req, @Body('token') token: string) {
+    return this.usersService.updateFcmToken(req.user.userId, token);
+  }
 }

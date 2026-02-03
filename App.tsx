@@ -14,6 +14,7 @@ import LoginScreen from './components/LoginScreen';
 import NannyProfileForm from './components/NannyProfileForm';
 import ParentProfileForm from './components/ParentProfileForm';
 import NannyListingScreen from './components/NannyListingScreen';
+import VerifyEmailScreen from './components/VerifyEmailScreen';
 import { useLanguage } from './contexts/LanguageContext';
 import NannyProfileDetailScreen from './components/NannyProfileDetailScreen';
 import ContactModal from './components/ContactModal';
@@ -45,6 +46,7 @@ import { taskService } from './services/taskService';
 import { chatService } from './services/chatService';
 import { useQueryClient } from '@tanstack/react-query';
 import { useActivities, useSkillRequests, useTasks, useNotifications, useBookings, useSharedOutings } from './hooks/useFamLinkQueries';
+import usePushNotifications from './hooks/usePushNotifications';
 
 const getAvatarId = (id?: string) => {
   if (!id || typeof id !== 'string') return 0;
@@ -144,6 +146,9 @@ const App: React.FC = () => {
   const [isAiVisible, setIsAiVisible] = useState(true); // Added for Shift+A visibility toggle
 
   const aiAssistantRef = useRef<AiAssistantRef>(null);
+
+  // Initialize Push Notifications
+  usePushNotifications(currentUser?.id);
 
   useEffect(() => {
     if (currentUser) {
@@ -281,6 +286,14 @@ const App: React.FC = () => {
     checkAuth();
   }, []);
 
+  // Check for email verification token
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('token')) {
+      setCurrentScreen(Screen.VerifyEmail);
+    }
+  }, []);
+
   // IMPLEMENTATION FIX: Global Keyboard Shortcut Listener
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -371,17 +384,10 @@ const App: React.FC = () => {
   const handleSelectUserType = (type: UserType) => { setUserTypeForSignup(type); navigateTo(Screen.SignUp); };
   const handleSignUp = async (fullName: string, email: string, password: string, userType: UserType) => {
     try {
-      const data = await authService.signup(fullName, email, password, userType);
-      localStorage.setItem('authToken', data.access_token);
-      setCurrentUser(data.user);
-      alert(t('alert_signup_success'));
-
-      // FIX: Redirect based on user type
-      if (userType === 'nanny') {
-        navigateTo(Screen.Questionnaire);
-      } else {
-        navigateTo(Screen.ParentProfileForm); // Parents go to profile creation
-      }
+      const response = await authService.signup(fullName, email, password, userType);
+      // New flow: Backend returns message, not token. User must verify email.
+      alert(response.message || t('alert_signup_success_check_email') || "Registration successful! Please check your email to verify your account.");
+      navigateTo(Screen.Login);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Signup failed.');
     }
@@ -936,6 +942,7 @@ const App: React.FC = () => {
         onDeleteSkillRequest={handleDeleteSkillRequest}
         onDeleteAllSkillRequests={handleDeleteAllSkillRequests}
       /> : null;
+      case Screen.VerifyEmail: return <VerifyEmailScreen onLogin={() => navigateTo(Screen.Login)} />;
       default: return <WelcomeScreen onSelectUserType={handleSelectUserType} onLogin={() => navigateTo(Screen.Login)} />;
     }
   };

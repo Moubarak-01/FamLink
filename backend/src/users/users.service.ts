@@ -59,4 +59,33 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
+
+  async findByVerificationToken(token: string): Promise<UserDocument | undefined> {
+    return this.userModel.findOne({ verificationToken: token }).exec();
+  }
+
+  async markEmailAsVerified(userId: string): Promise<UserDocument> {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { isVerified: true, verificationToken: null },
+      { new: true }
+    ).exec();
+  }
+
+  async updateFcmToken(userId: string, token: string): Promise<UserDocument> {
+    return this.userModel.findByIdAndUpdate(userId, { fcmToken: token }, { new: true }).exec();
+  }
+
+  async updateGoogleToken(userId: string, refreshToken: string): Promise<UserDocument> {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { googleRefreshToken: refreshToken, isGoogleCalendarConnected: true },
+      { new: true }
+    ).exec();
+  }
+
+  // Alias for generic usage
+  async findById(id: string): Promise<UserDocument | undefined> {
+    return this.findOneById(id);
+  }
 }

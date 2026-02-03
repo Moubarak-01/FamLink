@@ -4,6 +4,7 @@ import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { Booking, BookingSchema } from '../schemas/booking.schema';
 import { User, UserSchema } from '../schemas/user.schema';
+import { CalendarModule } from '../calendar/calendar.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ChatModule } from '../chat/chat.module';
 
@@ -14,7 +15,8 @@ import { ChatModule } from '../chat/chat.module';
       { name: User.name, schema: UserSchema },
     ]),
     NotificationsModule,
-    ChatModule
+    ChatModule,
+    CalendarModule
   ],
   controllers: [BookingsController],
   providers: [BookingsService],

@@ -16,6 +16,7 @@
     "@types/three": "^0.182.0",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
+    "firebase": "^12.8.0",
     "framer-motion": "^11.18.2",
     "framer-motion-3d": "^11.3.17",
     "libphonenumber-js": "1.10.18",

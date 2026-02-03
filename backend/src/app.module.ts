@@ -15,7 +15,10 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { UserTasksModule } from './user-tasks/user-tasks.module';
 import { LocationsModule } from './locations/locations.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
+import { MailModule } from './mail/mail.module';
 import { LanguageInterceptor } from './language.interceptor';
+
+import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
   imports: [
@@ -44,6 +47,8 @@ import { LanguageInterceptor } from './language.interceptor';
     UserTasksModule,
     LocationsModule,
     TelemetryModule,
+    MailModule,
+    CalendarModule,
   ],
   controllers: [],
   providers: [

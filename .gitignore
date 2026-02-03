@@ -55,3 +55,16 @@ local-whisper/uploads/*
 verify_features.js
 verify_output*.txt
 scripts/
+
+# Security & Credentials
+firebase-adminsdk.json
+backend/firebase-adminsdk.json
+*.json
+!package.json
+!tsconfig.json
+!metadata.json
+
+# Misc Junk
+*.diff
+*.patch
+
