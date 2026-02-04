@@ -25,7 +25,8 @@ export class UserTasksService {
       createTaskDto.nannyId,
       `New task assigned: ${createTaskDto.description}`,
       'task',
-      savedTask._id.toString()
+      savedTask._id.toString(),
+      { description: createTaskDto.description }
     );
 
     this.chatGateway.server.emit('tasks_update', { action: 'create', taskId: savedTask._id });

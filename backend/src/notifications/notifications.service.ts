@@ -15,12 +15,13 @@ export class NotificationsService {
     @Inject(forwardRef(() => UsersService)) private usersService: UsersService
   ) { }
 
-  async create(userId: string, message: string, type: string, relatedId?: string): Promise<NotificationDocument> {
+  async create(userId: string, message: string, type: string, relatedId?: string, data?: any): Promise<NotificationDocument> {
     const notification = new this.notificationModel({
       userId,
       message,
       type,
       relatedId,
+      data,
       read: false,
     });
     const savedNotification = await notification.save();
@@ -33,6 +34,7 @@ export class NotificationsService {
       type,
       read: false,
       relatedId,
+      data,
       createdAt: savedNotification['createdAt']
     });
 

@@ -65,7 +65,8 @@ export class ActivitiesService {
         hostIdStr,
         'New request to join your activity',
         'activity_request',
-        activityId
+        activityId,
+        { activityId }
       );
 
       return saved;
@@ -106,7 +107,8 @@ export class ActivitiesService {
       userId,
       'Your request to join an activity was approved! You can now chat.',
       'activity_approved',
-      activityId
+      activityId,
+      { activityId }
     );
 
     return saved;

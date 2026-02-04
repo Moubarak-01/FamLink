@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(private readonly bookingsService: BookingsService) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -21,18 +21,18 @@ export class BookingsController {
   @UseGuards(JwtAuthGuard)
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body('status') status: string) {
-      return this.bookingsService.updateStatus(id, status);
+    return this.bookingsService.updateStatus(id, status);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-      return this.bookingsService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    return this.bookingsService.remove(id, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete()
   removeAll() {
-      return this.bookingsService.removeAll();
+    return this.bookingsService.removeAll();
   }
 }

@@ -45,7 +45,7 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim() || !description.trim() || !location.trim() || !costDetails.trim()) {
-            alert('Please fill in all fields.');
+            alert(t('alert_fill_all_fields_generic'));
             return;
         }
         onSubmit({ title, description, location, date, time, maxChildren, costDetails, liveLocationEnabled, image, privacy });

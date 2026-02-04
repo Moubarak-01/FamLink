@@ -60,13 +60,13 @@ const CreateActivityModal: React.FC<CreateActivityModalProps> = ({ onClose, onSu
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!description.trim() || !location.trim()) {
-            alert('Please fill in all fields.');
+            alert(t('alert_fill_all_fields_generic'));
             return;
         }
         let finalCategory = category;
         if (category === 'other') {
             if (!customCategory.trim()) {
-                alert('Please specify the category.');
+                alert(t('alert_specify_category'));
                 return;
             }
             finalCategory = customCategory;

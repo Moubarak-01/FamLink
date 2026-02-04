@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Booking, BookingDocument } from '../schemas/booking.schema';
@@ -76,7 +76,11 @@ export class BookingsService {
       createBookingDto.nannyId,
       `New booking request from ${savedBooking['parentId']['fullName']} for ${bookingDate}`,
       'booking',
-      savedBooking._id.toString()
+      savedBooking._id.toString(),
+      {
+        parentName: savedBooking['parentId']['fullName'],
+        date: bookingDate
+      }
     );
 
     this.chatGateway.server.emit('bookings_update', { action: 'create', bookingId: savedBooking._id });
@@ -113,12 +117,14 @@ export class BookingsService {
 
     if (status === 'accepted' || status === 'declined') {
       const nannyName = originalBooking['nannyId']['fullName'] || 'The Nanny';
+      const type = status === 'accepted' ? 'booking_accepted' : 'booking_declined';
       // 1. Send Notification
       await this.notificationsService.create(
         originalBooking.parentId.toString(),
         `${nannyName} ${status} your booking request!`,
-        'booking',
-        originalBooking._id.toString()
+        type,
+        originalBooking._id.toString(),
+        { nannyName }
       );
 
       // 2. Sync to Calendar if accepted
@@ -135,7 +141,17 @@ export class BookingsService {
     return this.mapBooking(updatedBooking);
   }
 
-  async remove(id: string): Promise<any> {
+  async remove(id: string, userId: string): Promise<any> {
+    const booking = await this.bookingModel.findById(id).exec();
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    const nannyId = (booking.nannyId as any)._id ? (booking.nannyId as any)._id.toString() : booking.nannyId.toString();
+    const parentId = (booking.parentId as any)._id ? (booking.parentId as any)._id.toString() : booking.parentId.toString();
+
+    if (parentId !== userId && nannyId !== userId) {
+      throw new ForbiddenException('You do not have permission to delete this booking.');
+    }
+
     const res = await this.bookingModel.findByIdAndDelete(id).exec();
     this.chatGateway.server.emit('bookings_update', { action: 'delete', id });
     return res;

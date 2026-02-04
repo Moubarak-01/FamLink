@@ -749,6 +749,18 @@ export const ar = {
     placeholder_add_interest: "أضف اهتمامًا...",
     placeholder_add_skill: "أضف مهارة...",
     button_saving: "جاري الحفظ...",
+    notification_booking: "طلب حجز جديد من {{parentName}} بتاريخ {{date}}",
+    notification_activity_request: "طلب جديد للانضمام إلى نشاطك",
+    notification_activity_approved: "تمت الموافقة على طلبك للانضمام إلى النشاط!",
+    notification_chat_reaction: "تفاعل {{reactorName}} مع رسالتك بـ {{emoji}}",
+    notification_chat: "رسالة جديدة من {{senderName}}",
+    notification_task: "مهمة جديدة مسندة: {{description}}",
+    notification_outing_request: "طلب انضمام إلى \"{{title}}\"",
+    notification_outing_joined: "مشارك جديد في \"{{title}}\"",
+    notification_outing_status_accepted: "تم قبول طلبك للانضمام إلى \"{{title}}\"",
+    notification_outing_status_declined: "تم رفض طلبك للانضمام إلى \"{{title}}\"",
+    notification_booking_accepted: "قبِلَت {{nannyName}} طلب الحجز الخاص بك!",
+    notification_booking_declined: "رفضت {{nannyName}} طلب الحجز الخاص بك.",
     // Modal Additions
     modal_create_request_title: "نشر طلب",
     modal_create_outing_title: "إنشاء نزهة",
@@ -770,6 +782,12 @@ export const ar = {
     button_cancel: "إلغاء",
     button_posting: "جاري النشر...",
     button_creating: "جاري الإنشاء...",
+    label_image_optional: "صورة (اختياري)",
+    placeholder_where_going: "إلى أين أنت ذاهب؟",
+    label_enable_live_location: "تفعيل الموقع المباشر",
+    label_max_children: "أقصى عدد للأطفال الإضافيين / الأماكن المتاحة",
+    label_cost: "تفاصيل التكلفة",
+    placeholder_cost_details: "مثلاً: 10 دولارات للتذكرة",
     // Community & Outing Additions
     text_unknown_user: "مستخدم غير معروف",
     text_unknown_host: "مضيف غير معروف",
@@ -796,4 +814,24 @@ export const ar = {
     text_m_ago: "منذ {{count}}د",
     text_h_ago: "منذ {{count}}س",
     placeholder_chat_input: "💬 اكتب رسالة...",
+    button_clear_history: "مسح السجل",
+
+    // Missing Keys
+    today: "اليوم",
+    yesterday: "أمس",
+    text_voice_call: "مكالمة صوتية",
+    call_waiting_status: "بانتظار الرد...",
+    title_unmute: "إلغاء كتم الصوت",
+    title_mute: "كتم الصوت",
+    title_camera_on: "تشغيل الكاميرا",
+    title_camera_off: "إيقاف الكاميرا",
+    title_swap_videos: "تبديل الكاميرات",
+    pip_remote: "المتصل",
+    pip_you: "أنت",
+    camera_off_status: "📷 متوقفة",
+    chat_offer_accepted_to_chat: "يجب قبول العرض للدردشة",
+    confirm_delete_all_skill_requests: "حذف جميع الطلبات؟ لا يمكن التراجع عن هذا الإجراء.",
+    alert_fill_all_fields_generic: "يرجى ملء جميع الحقول.",
+    label_chat_with_count: "دردشة ({{count}})",
+    label_chat_empty: "دردشة",
 };

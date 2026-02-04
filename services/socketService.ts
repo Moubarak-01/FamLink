@@ -21,6 +21,12 @@ class SocketService {
     private bookingsHandlers: ((data: any) => void)[] = [];
     private tasksHandlers: ((data: any) => void)[] = [];
 
+    // WebRTC Handlers
+    private callReceivedHandlers: ((data: { from: string, name: string, signal: any }) => void)[] = [];
+    private callAcceptedHandlers: ((signal: any) => void)[] = [];
+    private iceCandidateHandlers: ((candidate: any) => void)[] = [];
+    private callEndedHandlers: (() => void)[] = [];
+
     async connect(userId?: string) {
         let currentUserId = userId;
         if (!currentUserId) {
@@ -49,12 +55,10 @@ class SocketService {
         });
 
         this.socket.on('connect', () => {
-
             this.connected = true;
         });
 
         this.socket.on('disconnect', (reason) => {
-
             this.connected = false;
         });
 
@@ -102,6 +106,12 @@ class SocketService {
         this.socket.on('chat_cleared', (data) => this.clearHandlers.forEach(h => h(data)));
         this.socket.on('user_typing', (data) => this.typingHandlers.forEach(h => h({ ...data, isTyping: true })));
         this.socket.on('user_stop_typing', (data) => this.typingHandlers.forEach(h => h({ ...data, isTyping: false })));
+
+        // WebRTC Events
+        this.socket.on('call_received', (data) => this.callReceivedHandlers.forEach(h => h(data)));
+        this.socket.on('call_accepted', (data) => this.callAcceptedHandlers.forEach(h => h(data)));
+        this.socket.on('ice_candidate_received', (data) => this.iceCandidateHandlers.forEach(h => h(data)));
+        this.socket.on('call_ended', () => this.callEndedHandlers.forEach(h => h()));
     }
 
     disconnect() {
@@ -307,6 +317,44 @@ class SocketService {
     onTyping(handler: (data: { roomId: string, userId: string, userName: string, isTyping: boolean }) => void) {
         this.typingHandlers.push(handler);
         return () => { this.typingHandlers = this.typingHandlers.filter(h => h !== handler); };
+    }
+
+    // --- WebRTC Signaling ---
+
+    callUser(userToCall: string, signalData: any, from: string, name: string, callType: 'video' | 'voice' = 'video') {
+        this.socket?.emit('call_user', { userToCall, signalData, from, name, callType });
+    }
+
+    answerCall(data: { to: string, signal: any }) {
+        this.socket?.emit('answer_call', data);
+    }
+
+    sendIceCandidate(to: string, candidate: any) {
+        this.socket?.emit('ice_candidate', { to, candidate });
+    }
+
+    endCall(to: string) {
+        this.socket?.emit('end_call', { to });
+    }
+
+    onCallReceived(callback: (data: { from: string, name: string, signal: any, callType?: 'video' | 'voice' }) => void) {
+        this.callReceivedHandlers.push(callback);
+        return () => { this.callReceivedHandlers = this.callReceivedHandlers.filter(h => h !== callback); };
+    }
+
+    onCallAccepted(callback: (signal: any) => void) {
+        this.callAcceptedHandlers.push(callback);
+        return () => { this.callAcceptedHandlers = this.callAcceptedHandlers.filter(h => h !== callback); };
+    }
+
+    onIceCandidateReceived(callback: (candidate: any) => void) {
+        this.iceCandidateHandlers.push(callback);
+        return () => { this.iceCandidateHandlers = this.iceCandidateHandlers.filter(h => h !== callback); };
+    }
+
+    onCallEnded(callback: () => void) {
+        this.callEndedHandlers.push(callback);
+        return () => { this.callEndedHandlers = this.callEndedHandlers.filter(h => h !== callback); };
     }
 }
 

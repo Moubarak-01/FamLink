@@ -33,6 +33,8 @@ import ChatModal from './components/ChatModal';
 import SubscriptionStatusScreen from './components/SubscriptionStatusScreen';
 import AiAssistant, { AiAssistantRef } from './components/AiAssistant';
 import SettingsModal from './components/SettingsModal';
+import VideoCallModal from './components/VideoCallModal';
+import CallHistoryModal from './components/chat/CallHistoryModal';
 import { socketService } from './services/socketService';
 import { authService } from './services/authService';
 import { userService } from './services/userService';
@@ -143,7 +145,14 @@ const App: React.FC = () => {
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
   const [noiseReductionEnabled, setNoiseReductionEnabled] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isAiVisible, setIsAiVisible] = useState(true); // Added for Shift+A visibility toggle
+  const [isAiVisible, setIsAiVisible] = useState(true);
+
+  // Video Call State
+  // Video Call State
+  const [outgoingCallTarget, setOutgoingCallTarget] = useState<string | null>(null);
+  const [outgoingCallName, setOutgoingCallName] = useState<string | null>(null);
+  const [outgoingCallType, setOutgoingCallType] = useState<'video' | 'voice'>('video');
+  const [showCallHistory, setShowCallHistory] = useState(false);
 
   const aiAssistantRef = useRef<AiAssistantRef>(null);
 
@@ -257,30 +266,30 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        try {
-          const profile = await authService.getProfile();
-          setCurrentUser(profile);
-          // STRICT ENFORCEMENT: Redirect based on profile status, not just existence
-          if (profile.userType === 'parent') {
-            if (!profile.location) navigateTo(Screen.ParentProfileForm, true);
-            else navigateTo(Screen.Dashboard, true);
+      // Cookie-Guard: Check session by hitting the profile endpoint directly
+      // We no longer rely on localStorage token presence
+      try {
+        const profile = await authService.getProfile();
+        setCurrentUser(profile);
+        // STRICT ENFORCEMENT: Redirect based on profile status
+        if (profile.userType === 'parent') {
+          if (!profile.location) navigateTo(Screen.ParentProfileForm, true);
+          else if (currentScreen === Screen.Welcome || currentScreen === Screen.Login) navigateTo(Screen.Dashboard, true);
+        } else {
+          // Nanny Logic
+          if (profile.profile) {
+            if (currentScreen === Screen.Welcome || currentScreen === Screen.Login) navigateTo(Screen.Dashboard, true);
+          } else if (profile.assessmentResult?.decision === 'Approved') {
+            navigateTo(Screen.NannyProfileForm, true);
+          } else if (profile.assessmentResult) {
+            navigateTo(Screen.Result, true);
           } else {
-            // Nanny Logic
-            if (profile.profile) {
-              navigateTo(Screen.Dashboard, true);
-            } else if (profile.assessmentResult?.decision === 'Approved') {
-              navigateTo(Screen.NannyProfileForm, true);
-            } else if (profile.assessmentResult) {
-              navigateTo(Screen.Result, true);
-            } else {
-              navigateTo(Screen.Questionnaire, true);
-            }
+            navigateTo(Screen.Questionnaire, true);
           }
-        } catch (e) {
-          localStorage.removeItem('authToken');
         }
+      } catch (e) {
+        // Not logged in or session expired
+        // No action needed, user stays on Welcome/Login
       }
     };
     checkAuth();
@@ -361,8 +370,13 @@ const App: React.FC = () => {
   const navigateTo = (screen: Screen, replace = false) => { setError(null); if (replace) setScreenHistory([]); else setScreenHistory([...screenHistory, currentScreen]); setCurrentScreen(screen); };
   const goBack = () => { setError(null); setViewingNannyId(null); const previousScreen = screenHistory.pop(); if (previousScreen !== undefined) { setScreenHistory([...screenHistory]); setCurrentScreen(previousScreen); } else { setCurrentScreen(Screen.Welcome); } };
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+    // Clear local state regardless of backend success
     localStorage.removeItem('rememberedUser');
     setCurrentScreen(Screen.Welcome);
     setScreenHistory([]);
@@ -392,7 +406,7 @@ const App: React.FC = () => {
       setError(err.response?.data?.message || 'Signup failed.');
     }
   };
-  const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); localStorage.setItem('authToken', data.access_token); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
+  const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
   const handleForgotPassword = async (email: string) => { await new Promise(resolve => setTimeout(resolve, 1500)); alert(t('alert_forgot_password_sent')); navigateTo(Screen.Login); };
 
   const submitAssessment = async (finalAnswers: Answer[]) => {
@@ -964,9 +978,12 @@ const App: React.FC = () => {
       {requestOutingInfo && <RequestOutingJoinModal outing={requestOutingInfo} onClose={() => setRequestOutingInfo(null)} onSubmit={handleRequestOutingJoin} existingRequests={requestOutingInfo.requests} currentUserId={currentUser?.id || ''} />}
       {isCreateSkillRequestModalOpen && <CreateSkillRequestModal onClose={() => setIsCreateSkillRequestModalOpen(false)} onSubmit={handleCreateSkillRequest} />}
       {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
-      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
+      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} onStartCall={(userId, type = 'video', name) => {
+        setOutgoingCallType(type);
+        setOutgoingCallTarget(userId);
+        setOutgoingCallName(name || 'User');
+      }} />}
 
-      {/* Conditional Rendering of Settings Modal (Now driven by state) */}
       {isSettingsModalOpen && (
         <SettingsModal
           onClose={() => setIsSettingsModalOpen(false)}
@@ -976,6 +993,49 @@ const App: React.FC = () => {
             alert(!noiseReductionEnabled ? "Audio processing enabled for clearer calls." : "Noise reduction disabled.");
           }}
           onDeleteAccount={handleDeleteAccount}
+        />
+      )}
+
+      {/* Call History Modal */}
+      {currentUser && (
+        <CallHistoryModal
+          isOpen={showCallHistory}
+          onClose={() => setShowCallHistory(false)}
+          currentUserId={currentUser.id}
+          onCallUser={(userId, type = 'video', name) => {
+            setShowCallHistory(false);
+            setOutgoingCallType(type);
+            setOutgoingCallTarget(userId);
+            setOutgoingCallName(name || 'User');
+          }}
+        />
+      )}
+
+      {/* Floating Call History Button */}
+      {currentUser && !activeChat && (
+        <button
+          onClick={() => setShowCallHistory(true)}
+          className="fixed bottom-24 left-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center text-2xl"
+          title={t('calls_tab') || 'Calls'}
+        >
+          📞
+        </button>
+      )}
+
+      {/* Global Video Call Overlay */}
+      {currentUser && (
+        <VideoCallModal
+          currentUserId={currentUser.id}
+          currentUserName={currentUser.fullName}
+          outgoingCallTarget={outgoingCallTarget}
+          outgoingCallName={outgoingCallName}
+          callType={outgoingCallType}
+          onClose={() => {
+            setOutgoingCallTarget(null);
+            setOutgoingCallName(null);
+            // Reset type to video default
+            setOutgoingCallType('video');
+          }}
         />
       )}
 

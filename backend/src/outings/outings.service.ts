@@ -68,7 +68,14 @@ export class OutingsService {
 
       // Don't notify if host is joining their own event (edge case)
       if (hostIdStr !== userId) {
-        await this.notificationsService.create(hostIdStr, message, 'outing', outingId);
+        const type = isPublic ? 'outing_joined' : 'outing_request';
+        await this.notificationsService.create(
+          hostIdStr,
+          message,
+          type,
+          outingId,
+          { title: outing.title }
+        );
       }
     }
 
@@ -87,7 +94,14 @@ export class OutingsService {
     // Notify the Requester (Parent)
     if (updated) {
       const message = `Your request to join "${updated.title}" was ${status}`;
-      await this.notificationsService.create(parentId, message, 'outing', outingId);
+      const type = status === 'accepted' ? 'outing_status_accepted' : 'outing_status_declined';
+      await this.notificationsService.create(
+        parentId,
+        message,
+        type,
+        outingId,
+        { title: updated.title }
+      );
     }
 
     return updated;

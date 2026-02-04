@@ -97,9 +97,11 @@ const SkillRequestCard: React.FC<{ request: SkillRequest, currentUserId: string,
                                 onClick={() => onOpenChat(request)}
                                 disabled={!canChat}
                                 className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 disabled:text-gray-400 disabled:cursor-not-allowed"
-                                title={!canChat ? "Offer must be accepted to chat" : ""}
+                                title={!canChat ? t('chat_offer_accepted_to_chat') : ""}
                             >
-                                Chat {request.messages && request.messages.length > 0 ? `(${request.messages.length})` : ''}
+                                {request.messages && request.messages.length > 0
+                                    ? t('label_chat_with_count', { count: request.messages.length })
+                                    : t('label_chat_empty')}
                             </button>
                             {!isOwner && (
                                 <button

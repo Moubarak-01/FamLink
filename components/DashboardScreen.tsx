@@ -291,7 +291,7 @@ const NannyBookingCard: React.FC<{ request: EnrichedBookingRequest, onUpdate: Da
                             )}
                             {!isPending && onClear && (
                                 <button onClick={() => onClear(request.id)} className="text-xs text-red-500 hover:text-red-700 hover:underline">
-                                    Clear from history
+                                    {t('button_clear_history')}
                                 </button>
                             )}
                         </div>

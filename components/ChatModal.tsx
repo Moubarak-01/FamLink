@@ -16,11 +16,12 @@ interface ChatModalProps {
     currentUser: User;
     onClose: () => void;
     onDeleteMessage: (contextId: string, messageId: string) => void;
-    onDeleteAllMessages: (contextId: string) => void;
-    onReportUser: (userId: string) => void;
+    onDeleteAllMessages?: (contextId: string) => void;
+    onReportUser?: (userId: string) => void;
+    onStartCall?: (userId: string, type?: 'video' | 'voice', name?: string) => void;
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose, onDeleteMessage, onDeleteAllMessages, onReportUser }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose, onDeleteMessage, onDeleteAllMessages, onReportUser, onStartCall }) => {
     const { t } = useLanguage();
     const [messageText, setMessageText] = useState('');
     const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
@@ -31,11 +32,37 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     const [recipientLastSeen, setRecipientLastSeen] = useState<string | null>(null);
     const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
+    // NEW: Quick scroll button state
+    const [showScrollButton, setShowScrollButton] = useState(false);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Ref to track the last time we sent a "typing" signal (prevents spamming)
     const lastTypingSentRef = useRef<number>(0);
+
+    // NEW: Date grouping helper
+    const formatDateHeader = (timestamp: number): string => {
+        const date = new Date(timestamp);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) {
+            return t('today');
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return t('yesterday');
+        } else {
+            return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+        }
+    };
+
+    const shouldShowDateHeader = (messages: ChatMessage[], index: number): boolean => {
+        if (index === 0) return true;
+        const currentDate = new Date(messages[index].timestamp || 0).toDateString();
+        const prevDate = new Date(messages[index - 1].timestamp || 0).toDateString();
+        return currentDate !== prevDate;
+    };
 
     const contextItem = activity || outing || skillRequest || bookingRequest;
     const contextId = contextItem?.id || '';
@@ -53,15 +80,35 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     } else if (skillRequest) {
         title = skillRequest.title;
         otherUserPhoto = skillRequest.image || skillRequest.requesterPhoto || '';
+        // Allow calling the requester (1-on-1 style, or if only 2 participants)
+        const reqId = typeof skillRequest.requesterId === 'string' ? skillRequest.requesterId : skillRequest.requesterId?.id || skillRequest.requesterId?._id;
+        if (reqId && reqId !== currentUser.id) {
+            otherUserId = reqId;
+        }
     } else if (outing) {
         title = outing.title;
         otherUserPhoto = outing.image || outing.hostPhoto || '';
+        // Allow calling the host
+        const outingHostId = typeof outing.hostId === 'string' ? outing.hostId : outing.hostId?.id || outing.hostId?._id;
+        if (outingHostId && outingHostId !== currentUser.id) {
+            otherUserId = outingHostId;
+        }
     } else if (activity) {
         title = formatActivityTitle(activity.category);
         if (activity.participants.length > 2) {
             title += t('text_members_count', { count: activity.participants.length });
         }
         otherUserPhoto = activity.image || activity.hostPhoto || '';
+        // Allow calling the host (or another participant if it's a 2-person chat)
+        if (activity.hostId && activity.hostId !== currentUser.id) {
+            otherUserId = typeof activity.hostId === 'string' ? activity.hostId : activity.hostId.id || activity.hostId._id;
+        } else if (activity.participants.length === 2) {
+            // Find the other participant (participants is string[])
+            const otherParticipant = activity.participants.find(p => p !== currentUser.id);
+            if (otherParticipant) {
+                otherUserId = otherParticipant;
+            }
+        }
     }
 
     const allMessages = useMemo(() => {
@@ -117,29 +164,21 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 // Deduplication: Check for Real ID
                 if (prev.some(m => m.id === message.id)) return prev;
 
-                // Deduplication: If from me, check for Temp ID match (fuzzy match by text/time could be safer, but removing latest temp is easier)
-                // Actually, rely on the sendMessage callback to clean up.
-                // But we still don't want to show BOTH.
-                // If I receive a message from myself via socket, acts as confirmation.
                 if (message.senderId === currentUser.id) {
-                    // Check if we have a temp message that matches this content
                     const tempMatchIndex = prev.findIndex(m => m.id.startsWith('temp-') && m.text === message.text);
                     if (tempMatchIndex !== -1) {
-                        // Replace the temp message with the real one immediately
                         const newHistory = [...prev];
                         newHistory[tempMatchIndex] = message;
                         return newHistory;
                     }
                 }
 
-                // If I am receiving a message in this active window from SOMEONE ELSE, mark it as seen immediately
                 if (message.senderId !== currentUser.id) {
                     socketService.markMessagesAsSeen(roomId, currentUser.id);
                 }
                 return [...prev, message];
             });
 
-            // Auto-scroll
             if (scrollContainerRef.current) {
                 setTimeout(() => {
                     scrollContainerRef.current!.scrollTop = scrollContainerRef.current!.scrollHeight;
@@ -147,13 +186,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
             }
         });
 
-        // Add Status Update Listener for Blue Ticks
         const unsubStatus = socketService.onStatusUpdate((data) => {
             if (data.roomId === contextId) {
                 setHistoryMessages(prev => prev.map(msg => {
-                    // Normalize ID comparison (msg.id vs data.messageId)
                     if (data.status === 'seen') {
-                        // FIX: Mark messages NOT sent by the viewer (i.e. sent by ME) as seen
                         if (msg.senderId !== data.userId && msg.status !== 'seen') {
                             return { ...msg, status: 'seen' };
                         }
@@ -172,7 +208,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                     if (msgId === data.messageId) {
                         const currentReactions = msg.reactions || [];
                         if (data.type === 'add') {
-                            // Avoid duplicates
                             if (!currentReactions.some(r => r.userId === data.userId && r.emoji === data.emoji)) {
                                 return { ...msg, reactions: [...currentReactions, { userId: data.userId, emoji: data.emoji }] };
                             }
@@ -206,10 +241,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
         return () => {
             unsubMsg();
-            unsubStatus(); // Unsubscribe status
-            unsubReaction(); // Unsubscribe reactions
-            unsubDelete(); // Unsubscribe deletions
-            unsubTyping(); // Unsubscribe typing
+            unsubStatus();
+            unsubReaction();
+            unsubDelete();
+            unsubTyping();
             unsubPresence();
             if (contextId) {
                 socketService.sendStopTyping(contextId, currentUser.id, currentUser.fullName);
@@ -218,8 +253,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         };
     }, [contextId, currentUser.id, bookingRequest, otherUserId]);
 
-    // Initial scroll on open
-    // Initial scroll and Auto-scroll on Typing/Messages
     useEffect(() => {
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTo({
@@ -227,9 +260,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 behavior: 'smooth'
             });
         }
-    }, [contextId, allMessages.length, typingUsers.length]); // Scroll when typing toggles/messages arrive
+    }, [contextId, allMessages.length, typingUsers.length]);
 
-    // --- TYPING LOGIC ---
     const stopTyping = () => {
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
@@ -244,18 +276,15 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         if (!contextId) return;
 
         const now = Date.now();
-        // Throttle sending "typing" event to once every 2 seconds
         if (now - lastTypingSentRef.current > 2000) {
             socketService.sendTyping(contextId, currentUser.id, currentUser.fullName);
             lastTypingSentRef.current = now;
         }
 
-        // Clear existing stop timeout and set a new one
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
         }
 
-        // Auto-stop typing after 3 seconds of inactivity
         typingTimeoutRef.current = setTimeout(stopTyping, 3000);
     };
 
@@ -264,7 +293,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     };
 
     const handleBlur = () => {
-        // Only stop typing if field is empty (preserve "typing" status if drafting)
         if (!messageText.trim()) {
             stopTyping();
         }
@@ -274,17 +302,12 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         startTyping();
     };
 
-    // --- OTHER HELPERS ---
     const handleDeleteClick = (messageId: string, isMyMessage: boolean) => {
         if (isMyMessage) {
-            // If it's my message, ask if delete for all or just me
-            // For simplicity in this modal, we trigger the parent handler which likely handles "delete for all"
-            // You might want a custom UI here for "Delete for me" vs "Delete for everyone"
             if (window.confirm(t('confirm_delete_message'))) {
                 onDeleteMessage(contextId, messageId);
             }
         } else {
-            // Delete for me only (local hide)
             onDeleteMessage(contextId, messageId);
         }
     };
@@ -293,7 +316,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         const el = document.getElementById(`msg-${messageId}`);
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Highlight effect
             el.classList.add('bg-[var(--accent-primary)]/10');
             setTimeout(() => el.classList.remove('bg-[var(--accent-primary)]/10'), 2000);
         }
@@ -303,7 +325,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         if (!isoString) return '';
         const date = new Date(isoString);
         const now = new Date();
-        const diff = (now.getTime() - date.getTime()) / 1000; // seconds
+        const diff = (now.getTime() - date.getTime()) / 1000;
 
         if (diff < 60) return t('text_just_now');
         if (diff < 3600) return t('text_m_ago', { count: Math.floor(diff / 60) });
@@ -318,7 +340,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
             const tempId = `temp-${Date.now()}`;
             const newMessage: ChatMessage = {
-                // ... existing message creation ...
                 id: tempId,
                 senderId: currentUser.id,
                 senderName: currentUser.fullName,
@@ -337,20 +358,16 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
 
             socketService.sendMessage(contextId, newMessage, (savedMessage) => {
                 setHistoryMessages(prev => {
-                    // Check if Real ID already exists (from socket event replacement)
                     const realId = savedMessage.id || (savedMessage as any)._id?.toString();
                     if (prev.some(m => m.id === realId)) {
-                        // Remove the temp message, as Real one is already there
                         return prev.filter(m => m.id !== tempId);
                     }
-                    // Otherwise update tempId to savedMessage
                     return prev.map(m => m.id === tempId ? savedMessage : m);
                 });
             });
 
             setMessageText('');
             setReplyToId(null);
-            // Auto-scroll logic as requested
             if (scrollContainerRef.current) {
                 setTimeout(() => {
                     scrollContainerRef.current!.scrollTop = scrollContainerRef.current!.scrollHeight;
@@ -359,7 +376,23 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         }
     };
 
-    // ... (other handlers) ...
+    // NEW: Handle scroll events for quick scroll button
+    const handleScroll = () => {
+        if (scrollContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+            setShowScrollButton(distanceFromBottom > 200);
+        }
+    };
+
+    const scrollToBottom = () => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -408,6 +441,29 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                         </div>
                     </div>
                     <div className="flex gap-3 items-center">
+                        {/* Voice Call Button */}
+                        {onStartCall && otherUserId && (
+                            <button
+                                onClick={() => onStartCall(otherUserId, 'voice', title)}
+                                className="p-2 rounded-full hover:bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] transition-colors"
+                                title={t('start_voice_call') || 'Start Voice Call'}
+                            >
+                                📞
+                            </button>
+                        )}
+                        {/* Video Call Button */}
+                        {onStartCall && otherUserId && (
+                            <button
+                                onClick={() => onStartCall(otherUserId, 'video', title)}
+                                className="p-2 rounded-full hover:bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] transition-colors"
+                                title={t('start_video_call')}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        )}
+
                         <button
                             onClick={() => {
                                 if (window.confirm(t('confirm_delete_chat'))) {
@@ -432,44 +488,73 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 {/* Messages List - Scrollable */}
                 <div
                     ref={scrollContainerRef}
-                    className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col"
+                    onScroll={handleScroll}
+                    className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col relative"
                 >
                     <div className="space-y-2 pt-2 pb-2">
                         <AnimatePresence initial={false} mode='popLayout'>
                             {allMessages.map((msg, index) => {
-                                const isSequence = index > 0 && allMessages[index - 1].senderId === msg.senderId;
+                                const isSequence = index > 0 && allMessages[index - 1].senderId === msg.senderId && !shouldShowDateHeader(allMessages, index);
+                                const showDateHeader = shouldShowDateHeader(allMessages, index);
+
                                 return (
-                                    <motion.div
-                                        id={`msg-${msg.id}`}
-                                        key={msg.id}
-                                        initial={{ opacity: 0, y: 20, scale: 0.95 }} // Start 20px below
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
-                                        transition={{
-                                            type: "spring",
-                                            stiffness: 500,
-                                            damping: 30,
-                                            mass: 1,
-                                            delay: isSequence ? 0 : 0.05 // Faster if sequential
-                                        }}
-                                        layout
-                                        className="origin-bottom"
-                                    >
-                                        <MessageBubble
-                                            message={msg}
-                                            currentUser={currentUser}
-                                            messages={allMessages}
-                                            onReaction={(id, emoji) => socketService.sendReaction(contextId, id, currentUser.id, emoji)}
-                                            onRemoveReaction={(id, emoji) => socketService.removeReaction(contextId, id, currentUser.id, emoji)}
-                                            onReply={(id) => { setReplyToId(id); window.setTimeout(() => document.querySelector('textarea')?.focus(), 100); }}
-                                            onDelete={(id) => handleDeleteClick(id, msg.senderId === currentUser.id)}
-                                            onScrollToMessage={scrollToMessage}
-                                        />
-                                    </motion.div>
+                                    <React.Fragment key={msg.id}>
+                                        {/* Date Header */}
+                                        {showDateHeader && (
+                                            <div className="flex justify-center my-4">
+                                                <span className="bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 text-xs px-4 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                                                    {formatDateHeader(msg.timestamp || Date.now())}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <motion.div
+                                            id={`msg-${msg.id}`}
+                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 500,
+                                                damping: 30,
+                                                mass: 1,
+                                                delay: isSequence ? 0 : 0.05
+                                            }}
+                                            layout
+                                            className={`origin-bottom ${isSequence ? 'mt-0.5' : ''}`}
+                                        >
+                                            <MessageBubble
+                                                message={msg}
+                                                currentUser={currentUser}
+                                                messages={allMessages}
+                                                onReaction={(id, emoji) => socketService.sendReaction(contextId, id, currentUser.id, emoji)}
+                                                onRemoveReaction={(id, emoji) => socketService.removeReaction(contextId, id, currentUser.id, emoji)}
+                                                onReply={(id) => { setReplyToId(id); window.setTimeout(() => document.querySelector('textarea')?.focus(), 100); }}
+                                                onDelete={(id) => handleDeleteClick(id, msg.senderId === currentUser.id)}
+                                                onScrollToMessage={scrollToMessage}
+                                            />
+                                        </motion.div>
+                                    </React.Fragment>
                                 );
                             })}
                         </AnimatePresence>
                     </div>
+
+                    {/* Quick Scroll Button */}
+                    <AnimatePresence>
+                        {showScrollButton && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                                onClick={scrollToBottom}
+                                className="fixed bottom-32 right-8 w-12 h-12 rounded-full bg-[var(--bg-card)] shadow-xl border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all z-30"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
 
                     {/* WhatsApp-Style Dancing Typing Bubble */}
                     <AnimatePresence>
@@ -491,7 +576,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                                 duration: 0.6,
                                                 repeat: Infinity,
                                                 ease: "easeInOut",
-                                                delay: i * 0.1 // Staggered wave
+                                                delay: i * 0.1
                                             }}
                                         />
                                     ))}
@@ -509,33 +594,28 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             value={messageText}
                             onChange={e => {
                                 setMessageText(e.target.value);
-                                // Trigger typing status on any change (paste, voice, etc.)
                                 if (e.target.value.trim()) startTyping();
                             }}
-
-                            // --- EVENT HANDLERS FOR INSTANT UPDATES ---
-                            onFocus={handleFocus} // Start typing immediately when focused
-                            onBlur={handleBlur}   // Trigger "Stop Typing" INSTANTLY when you leave the box
-                            onClick={startTyping} // Wake up status if you click inside (even if already focused)
-
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            onClick={startTyping}
                             onKeyDown={(e) => {
-                                handleKeyDown(); // Reset timeout on key press
+                                handleKeyDown();
                                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
                             }}
                             placeholder={t('placeholder_chat_input')}
                             rows={1}
                             className={`flex-1 px-4 py-3 bg-[var(--bg-input)] border rounded-full shadow-sm 
-                                transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[45px] max-h-[100px]
-                                focus:outline-none focus:bg-pink-50 dark:focus:bg-[#1a1a1a] 
-                                border-[var(--border-input)] focus:border-pink-300 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
-                            `}
+                                            transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[45px] max-h-[100px]
+                                            focus:outline-none focus:bg-pink-50 dark:focus:bg-[#1a1a1a] 
+                                            border-[var(--border-input)] focus:border-pink-300 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
+                                        `}
                         />
                         <button
                             type="submit"
                             disabled={!messageText.trim()}
                             className="flex items-center justify-center p-3 text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] rounded-full shadow-lg shadow-pink-500/30 disabled:opacity-50 transition-all active:scale-95 hover:scale-105"
                         >
-                            {/* WhatsApp-style Send Icon (Simple Arrow) */}
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current -rotate-45" viewBox="0 0 24 24">
                                 <path d="M4.697 19.467l14.93-7.465a.5.5 0 000-.864L4.697 3.533a.5.5 0 00-.773.432L4.015 9.5H10a1 1 0 110 2H4.015l-.091 5.535a.5.5 0 00.773.432z" />
                             </svg>

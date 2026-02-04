@@ -445,6 +445,13 @@
   }
 }
 </script>
+  <script>
+    window.process = {
+      nextTick: function (callback) {
+        setTimeout(callback, 0);
+      }
+    };
+  </script>
   <link rel="stylesheet" href="/index.css">
 </head>
 

@@ -6,15 +6,11 @@
 **An AI-powered community platform connecting parents with trusted care providers**
 <hr />
 
-
-
-![Version](https://img.shields.io/badge/version-2.2-pink?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.4-pink?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 ![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs)
 ![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?style=for-the-badge&logo=mongodb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)
-
-
 
 [Features](#-features-overview) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [API Reference](#-api-reference) • [Challenges](#-solved-engineering-challenges)
 
@@ -30,10 +26,11 @@ FamLink is a comprehensive, community-driven mobile web application designed to 
 
 - 🛡️ **AI-Powered Nanny Vetting** - 50-question assessment evaluated by multi-model AI (Gemini, Perplexity, OpenRouter)
 - 💬 **Real-time Messaging** - End-to-end encrypted chat with read receipts, reactions, and replies
+- 📹 **Video Chat** - High-quality Peer-to-Peer video calls between families and nannies
 - 🌍 **Multilingual Support** - 6 languages (English, French, Spanish, Japanese, Chinese, Arabic) with RTL support
 - 🤖 **AI Assistant** - Context-aware chatbot with streaming responses and keyboard shortcuts
-- ⚡ **Real-time Everything** - WebSocket-powered updates across all features (tasks, bookings, activities)
-- 💳 **Subscription System** - Stripe-integrated payment processing
+- 📅 **Google Calendar Sync** - Two-way synchronization for seamless booking management
+- 🔒 **Cookie-Guard Security** - HttpOnly cookies for maximum protection against XSS
 
 ---
 
@@ -93,6 +90,10 @@ JWT_SECRET=your_jwt_secret_here
 # Server Port
 PORT=3001
 
+# Google Calendar OAuth
+GOOGLE_CLIENT_ID=your_id
+GOOGLE_CLIENT_SECRET=your_secret
+
 # Stripe Payment Processing
 STRIPE_SECRET_KEY=your_key_here
 
@@ -129,166 +130,92 @@ npm run dev
 
 ---
 
-## ✅ Project Status: v2.2 (Feb 2026)
+## ✅ Project Status: v2.4 (Feb 2026)
 
 | Layer | Status | Description |
 |:------|:------:|:------------|
-| **Frontend** | ✅ | Complete UI, API integration, Real-time Chat, Interactive Maps, Multilingual support |
-| **Backend** | ✅ | Full NestJS server with Authentication, MongoDB, WebSockets, Payment Logic (Stripe) |
+| **Frontend** | ✅ | Complete UI, API integration, Real-time Chat, Video Calls, Interactive Maps |
+| **Backend** | ✅ | NestJS server with Secure Auth (Cookies), WebSocket Gateway, OAuth2, Payment Logic |
 | **AI Services** | ✅ | Three-tier AI waterfall: OpenRouter → Gemini → Perplexity |
-| **Real-time** | ✅ | WebSocket events for all data changes with React Query cache invalidation |
+| **Security** | ✅ | HttpOnly Cookies, Helmet, Rate Limiting, Class Validator |
 | **Testing** | 🔄 | Jest configuration in place, Cypress e2e setup |
 
 ---
 
-## 🆕 Latest Updates (v2.2: Real-time & Polish)
+## 🆕 Latest Updates (v2.4: Security & Video Chat)
 
-### 1. ⚡ Universal Real-time Updates
+### 1. 🛡️ Cookie-Guard Security Architecture
+Migrated the entire authentication system from LocalStorage to **HttpOnly Cookies**.
+- **Impact**: Zero-exposure of JWTs to client-side scripts (XSS protection).
+- **Compliance**: `SameSite=Lax` (Dev) / `SameSite=None` + `Secure` (Prod).
+- **Backend**: Strict validation via `class-validator` and `cookie-parser`.
 
-Fixed real-time synchronization across the entire application:
+### 2. 📹 Peer-to-Peer Video Chat
+Direct, high-quality video calling between Parents and Nannies.
+- **Tech**: WebRTC (PeerJS) + Socket.io (Signaling).
+- **Features**: Picture-in-Picture, Mute/Video Toggle, Global Call Notifications.
 
-| Feature | Before | After |
-|:--------|:-------|:------|
-| Task completion | Required page refresh | Updates instantly |
-| Booking requests | Stale until refresh | Live updates via WebSocket |
-| Nanny card buttons | Text-only, no feedback | Styled with emojis & animations |
+### 3. 📅 Google Calendar Integration
+Two-way synchronization for bookings.
+- **Sync**: Automatically adds accepted FamLink bookings to your personal Google Calendar.
+- **OAuth2**: Secure, verified Google connection via Settings.
 
-### 2. 🎨 Redesigned UI Components
-
-- **Nanny Card Buttons** - 5 styled action buttons with hover effects:
-  - 📄 View Details (gray) → Opens nanny profile
-  - 💬 Contact (pink) → Opens chat
-  - ⭐ Rate (yellow) → Submit rating
-  - 📝 Add Task (green) → Assign work
-  - 🗑️ Remove (red) → Remove from dashboard
-
-### 3. 🌐 Complete Localization
-
-- Arabic (RTL) fully implemented with proper text direction
-- All 6 languages synchronized with 400+ translation keys
-- Dashboard, settings, AI assistant, and all forms localized
+### 4. ⚡ Previous Highlights
+- **Universal Real-time Updates**: Instant UI reflection for Tasks, Bookings, and Outings.
+- **Redesigned UI**: Enhanced Nanny Cards with quick-action buttons.
+- **Complete Localization**: Full RTL/Arabic support.
 
 ---
 
 ## 🐛 Solved Engineering Challenges
 
 <details>
-<summary><strong>1. The "Yesterday" Date Bug</strong></summary>
+<summary><strong>1. The "Cookie-Guard" Migration</strong></summary>
 
-**Problem:** Activity dates selected as "Feb 1st" were saving as `2026-02-01`. JavaScript parses this string as "Midnight UTC". For users in the US (e.g., EST), "Midnight UTC" is "7 PM Yesterday", causing the UI to display "Jan 31st".
-
-**Solution:** Updated the frontend storage logic to append `T12:00:00` (Noon) to date strings. This places the timestamp safely in the middle of the day, so timezone offsets (+/- 12h) never shift the calendar date.
+**Problem:** Storing JWTs in LocalStorage made the app vulnerable to XSS attacks.
+**Solution:** Refactored the entire full-stack auth flow. Backend now sets HttpOnly cookies. Frontend uses `withCredentials: true` and verifies session via `/users/profile` endpoint instead of checking storage.
 </details>
 
 <details>
-<summary><strong>2. OpenRouter Free Tier Volatility</strong></summary>
+<summary><strong>2. The "Invalid Hook" Recursion</strong></summary>
 
-**Problem:** Free models like `llama-3.3-70b-instruct:free` are hosted by volunteers and often go offline, returning `404 Not Found` or `400 Bad Request`.
-
-**Solution:** Built a robust **Waterfall System** in `geminiService.ts`. It tries the user's preferred model (Llama) first. If it fails (caught via specific error codes), it silently retries with the next best model (Gemini/Z.AI/Nvidia), ensuring the user always gets an answer.
+**Problem:** A copy-paste error nested a `useEffect` inside another `useEffect` in the main App component, causing a "Rules of Hooks" violation crash.
+**Solution:** Identified and removed the nested hook architecture, ensuring stable rendering.
 </details>
 
 <details>
-<summary><strong>3. The Query Key Mismatch (Real-time Tasks)</strong></summary>
+<summary><strong>3. The "Yesterday" Date Bug</strong></summary>
 
-**Problem:** When a nanny completed a task, the parent's dashboard didn't update. Users had to manually refresh the page to see changes.
-
-**Solution:** The socket listener was invalidating `['userTasks']` but the React Query hook used `['tasks', userId]`. Fixed by changing the invalidation to `['tasks']` which matches the hook's query key prefix, enabling partial matching.
+**Problem:** Activity dates selected as "Feb 1st" were saving as `2026-02-01` (Midnight UTC), displaying as "Jan 31st" in US times.
+**Solution:** Updated frontend storage logic to append `T12:00:00` (Noon) to date strings, ensuring timezone stability.
 </details>
 
 <details>
-<summary><strong>4. Unreachable Socket Emit (Bookings)</strong></summary>
+<summary><strong>4. OpenRouter Free Tier Volatility</strong></summary>
 
-**Problem:** New booking requests weren't triggering real-time updates for nannies.
-
-**Solution:** Found a duplicate `return` statement in `bookings.service.ts` that made the `socket.emit('bookings_update')` call unreachable. Removed the duplicate return.
-
-```diff
--    return this.mapBooking(savedBooking);
--
-     this.chatGateway.server.emit('bookings_update', { action: 'create' });
-     return this.mapBooking(savedBooking);
-```
+**Problem:** Free models like `llama-3.3-70b-instruct:free` often go offline.
+**Solution:** Built a robust **Waterfall System** in `geminiService.ts`. It tries the user's preferred model first, then silently fails over to Gemini/Perplexity.
 </details>
 
 <details>
 <summary><strong>5. The Reactivity Problem</strong></summary>
 
-**Problem:** In v1.8, deleting chat history or clearing bookings required a page refresh. The UI state was disconnected from the server state.
-
-**Solution:** Implemented **TanStack React Query** with aggressive invalidation strategies. Now, `queryClient.setQueryData` updates the UI *instantly* (optimistic), while `invalidateQueries` ensures the server data is synced in the background.
+**Problem:** Deleting chat history or clearing bookings required a page refresh.
+**Solution:** Implemented **TanStack React Query** with aggressive invalidation strategies for instant UI updates.
 </details>
 
 <details>
 <summary><strong>6. The "Static" Chat Feel</strong></summary>
 
-**Problem:** Messages appeared instantly with no weight, and typing indicators were just plain text ("User is typing..."). It felt "cheap."
-
-**Solution:** Integrated **Framer Motion** `AnimatePresence`. Added a custom "Dancing Dots" component for typing, and applied "Spring" physics to every message bubble. Also enforced strict input contrast modes for readability.
+**Problem:** Messages appeared instantly with no weight.
+**Solution:** Integrated **Framer Motion** `AnimatePresence`. Added a custom "Dancing Dots" component and spring physics to message bubbles.
 </details>
 
 <details>
-<summary><strong>7. Stale Read Receipts</strong></summary>
+<summary><strong>7. Duplicate Locale Keys</strong></summary>
 
-**Problem:** Blue ticks would only update if you re-entered the room.
-
-**Solution:** Added a live `onMessage` listener that checks if the user is currently viewing the room. If yes, it fires a `mark_seen` event immediately, turning the sender's ticks blue in real-time.
-</details>
-
-<details>
-<summary><strong>8. Silent Remove Button</strong></summary>
-
-**Problem:** The "Remove Nanny" button had no visual feedback - it worked but users thought nothing happened.
-
-**Solution:** Added confirmation dialog (`window.confirm`) and success alert to `handleRemoveNanny`, giving users clear feedback that the action was processed.
-</details>
-
-<details>
-<summary><strong>9. Notification Click Missing Invalidation</strong></summary>
-
-**Problem:** Clicking task/outing/skill notifications navigated to the correct screen but showed stale data.
-
-**Solution:** Added `queryClient.invalidateQueries()` calls for each notification type before navigation, ensuring fresh data is loaded.
-</details>
-
-<details>
-<summary><strong>10. Nanny Visibility on Parent Dashboard</strong></summary>
-
-**Problem:** Nannies weren't appearing on the parent dashboard even after completing their profiles.
-
-**Solution:** The `approvedNannies` state was initialized but never populated on app startup. Added a `useEffect` hook to fetch nannies via `userService.getNannies()` when a user logs in.
-</details>
-
-<details>
-<summary><strong>11. Booking Notification Handler</strong></summary>
-
-**Problem:** Clicking a booking notification as a nanny didn't show the pending request for acceptance.
-
-**Solution:** Modified the notification handler to invalidate bookings cache and navigate to Dashboard for all booking notifications, not just accepted ones.
-</details>
-
-<details>
-<summary><strong>12. Arabic Locale Incomplete</strong></summary>
-
-**Problem:** Arabic translations were missing 200+ keys, causing fallback to English in many UI areas.
-
-**Solution:** Comprehensive audit of all locale files, adding all missing translations with proper RTL considerations.
-</details>
-
-<details>
-<summary><strong>13. Duplicate Locale Keys</strong></summary>
-
-**Problem:** `ar.ts` had duplicate keys causing TypeScript errors and unpredictable behavior.
-
+**Problem:** `ar.ts` had duplicate keys causing TypeScript errors.
 **Solution:** Automated audit script identified duplicates; manually resolved by removing redundant entries.
-</details>
-
-<details>
-<summary><strong>14. Multi-Process Startup</strong></summary>
-
-**Problem:** Developers had to manually open multiple terminals to start frontend and backend.
-
-**Solution:** Created `npm start` script in root that uses `concurrently` to launch both services. Also added workflow documentation in `.agent/workflows/`.
 </details>
 
 ---
@@ -306,8 +233,7 @@ Fixed real-time synchronization across the entire application:
 | **Framer Motion** | 11.0 | Animations & gestures |
 | **TanStack React Query** | 5.0 | Server state management |
 | **Socket.io Client** | 4.7 | Real-time communication |
-| **React Markdown** | 10.1 | Markdown rendering |
-| **KaTeX** | - | Math formula rendering |
+| **PeerJS** | 1.5 | WebRTC Video Chat |
 
 ### Backend
 
@@ -315,19 +241,10 @@ Fixed real-time synchronization across the entire application:
 |:-----------|:-------:|:--------|
 | **NestJS** | 10.0 | Server framework |
 | **MongoDB (Mongoose)** | 8.0 | Database & ODM |
-| **Socket.io** | 4.7 | WebSocket server |
-| **Passport JWT** | 4.0 | Authentication |
+| **Passport JWT** | 4.0 | Authentication (Cookie-based) |
+| **Class Validator** | 0.14 | DTO Validation |
+| **Google APIs** | 126.0 | Calendar Integration |
 | **Stripe** | 14.0 | Payment processing |
-| **bcrypt** | 6.0 | Password hashing |
-
-### AI & External APIs
-
-| Service | Purpose |
-|:--------|:--------|
-| **Google Gemini** | Primary AI for assessment & chat |
-| **Perplexity AI** | Fallback AI with research capabilities |
-| **OpenRouter** | Free-tier AI model aggregator (10+ models) |
-| **GeoDB Cities** | Location autocomplete & geographic data |
 
 ---
 
@@ -337,181 +254,31 @@ Fixed real-time synchronization across the entire application:
 
 | Feature | Description |
 |:--------|:------------|
-| **AI-Powered Assessment** | 50-question exam evaluating empathy, safety awareness, and childcare knowledge |
-| **Multi-Model Evaluation** | Answers processed through Gemini with Perplexity fallback |
-| **JWT Authentication** | Secure token-based login for Parents and Nannies |
-| **E2E Encryption** | Chat messages encrypted with MAC verification |
+| **AI-Powered Assessment** | 50-question exam evaluated by multi-model AI |
+| **Cookie-Guard Auth** | HttpOnly, Secure, SameSite cookies for top-tier security |
+| **Video Vetting** | In-app video calling to interview candidates before meeting |
 
 ### 🤖 AI Assistant
 
 | Feature | Description |
 |:--------|:------------|
 | **Context-Aware** | Knows current screen and user context |
-| **Streaming Responses** | Real-time text generation with async generators |
+| **Streaming Responses** | Real-time text generation |
 | **Multilingual** | Responds in user's selected language |
-| **Keyboard Shortcuts** | `Shift+N` toggle, `Shift+A` visibility, `Ctrl+D` clear |
 
 ### 👥 Community & Marketplace
 
 | Module | Features |
 |:-------|:---------|
-| **Mom-to-Mom Activities** | Schedule walks, playdates, workouts, shopping trips |
+| **Mom-to-Mom Activities** | Schedule walks, playdates, workouts |
 | **Child Outings** | Coordinate group outings with cost sharing |
-| **Skill Marketplace** | Post tasks (cleaning, tutoring) and receive offers |
-
-### 💼 Management Dashboard
-
-| Feature | Description |
-|:--------|:------------|
-| **Booking Lifecycle** | Request → Accept/Decline → Complete/Cancel |
-| **Real-time Chat** | Instant messaging with read receipts & typing indicators |
-| **Task Management** | Assign and track to-do items for nannies |
-| **Notifications** | Real-time alerts for all key events |
-
----
-
-## 📡 API Reference
-
-### Authentication
-
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| `POST` | `/auth/register` | Create new user account |
-| `POST` | `/auth/login` | Authenticate and receive JWT |
-| `GET` | `/auth/profile` | Get current user profile |
-
-### Bookings
-
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| `GET` | `/bookings` | List all bookings |
-| `POST` | `/bookings` | Create booking request |
-| `PATCH` | `/bookings/:id/status` | Update booking status |
-| `DELETE` | `/bookings/:id` | Cancel booking |
-
-### Tasks
-
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| `GET` | `/tasks` | List all tasks |
-| `POST` | `/tasks` | Create new task |
-| `PATCH` | `/tasks/:id/status` | Update task status |
-| `DELETE` | `/tasks/:id` | Delete task |
-
-### Real-time Events (WebSocket)
-
-| Event | Direction | Description |
-|:------|:---------:|:------------|
-| `tasks_update` | ← | Task created/updated/deleted |
-| `bookings_update` | ← | Booking status change |
-| `activity_update` | ← | Activity join/approve/delete |
-| `outings_update` | ← | Outing requests and status |
-| `marketplace_update` | ← | Skill task offers |
-| `notification` | ← | New notification alert |
-| `message` | ↔️ | Chat message send/receive |
-| `typing` | ↔️ | User typing indicator |
-
----
-
-## 📂 Project Structure
-
-```
-FamLink/
-├── App.tsx                    # Main application logic & routing
-├── index.tsx                  # React entry point with ErrorBoundary
-├── types.ts                   # TypeScript interfaces
-├── constants.ts               # AI models, assessment questions, configs
-│
-├── components/                # React UI Components (45+ files)
-│   ├── AiAssistant.tsx        # Draggable AI chat
-│   ├── ChatModal.tsx          # Main messaging interface
-│   ├── DashboardScreen.tsx    # Parent/Nanny dashboards
-│   ├── SettingsModal.tsx      # App settings & preferences
-│   └── ...
-│
-├── services/                  # API & Service Layer
-│   ├── geminiService.ts       # AI integration (3-tier waterfall)
-│   ├── socketService.ts       # WebSocket connection manager
-│   ├── chatService.ts         # Messaging methods
-│   ├── cryptoService.ts       # E2E encryption utilities
-│   └── [feature]Service.ts    # Activity, Booking, Task, etc.
-│
-├── hooks/                     # Custom React Hooks
-│   └── useFamLinkQueries.ts   # React Query hooks for all data
-│
-├── locales/                   # Internationalization (6 languages)
-│   ├── en.ts, fr.ts, es.ts
-│   ├── ja.ts, zh.ts, ar.ts
-│
-├── backend/                   # NestJS Backend
-│   └── src/
-│       ├── schemas/           # MongoDB Models
-│       ├── auth/              # JWT Authentication
-│       ├── chat/              # WebSocket Gateway
-│       ├── bookings/          # Booking CRUD
-│       ├── user-tasks/        # Task management
-│       ├── activities/        # Community activities
-│       ├── outings/           # Child outings
-│       ├── marketplace/       # Skill marketplace
-│       ├── notifications/     # Real-time alerts
-│       └── payment/           # Stripe integration
-│
-└── .agent/workflows/          # Development automation scripts
-```
-
----
-
-## 🛠️ Development
-
-### Available Scripts
-
-**Frontend:**
-```bash
-npm run dev       # Start development server
-npm run build     # Build for production
-npm run preview   # Preview production build
-```
-
-**Backend:**
-```bash
-npm run start:dev   # Start with hot reload
-npm run start:prod  # Production mode
-npm run build       # Compile TypeScript
-```
-
-### Testing
-
-```bash
-# Backend unit tests
-cd backend
-npm run test
-
-# E2E tests (Cypress)
-npm run cypress:open
-```
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+| **Skill Marketplace** | Post tasks and receive offers |
 
 ---
 
 ## 👨‍💻 Author
 
 **Moubarak**
-
 - GitHub: [@Moubarak-01](https://github.com/Moubarak-01)
 
 ---

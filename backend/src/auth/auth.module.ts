@@ -17,10 +17,14 @@ import { JwtStrategy } from './jwt.strategy';
     ConfigModule, // Important: Import ConfigModule to use ConfigService
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'INSECURE_DEV_ONLY_SECRET_CHANGE_ME',
-        signOptions: { expiresIn: '30d' },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) throw new Error('JWT_SECRET is not defined');
+        return {
+          secret: secret,
+          signOptions: { expiresIn: '30d' },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

@@ -217,5 +217,13 @@ export class ChatService {
     return user ? { status: user.status, lastSeen: user.lastSeen } : { status: 'offline', lastSeen: null };
   }
 
+  // NEW: Get User by ID for call logging
+  async getUserById(userId: string): Promise<UserDocument | null> {
+    try {
+      return await this.userModel.findById(userId, 'fullName photo').exec();
+    } catch {
+      return null;
+    }
+  }
 
 }

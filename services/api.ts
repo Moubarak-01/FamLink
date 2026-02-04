@@ -11,6 +11,7 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000, // Increased timeout to 10 seconds
+  withCredentials: true, // Send cookies with requests
 });
 
 // Helper to recursively transform _id to id
@@ -34,10 +35,8 @@ const transformId = (data: any): any => {
 // Request interceptor for adding the bearer token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.set('Authorization', `Bearer ${token}`);
-    }
+    // Cookie-Guard: Token is now in HttpOnly cookie, so we don't need to manually add it header
+    // The browser handles this automatically with `withCredentials: true`
     return config;
   },
   (error) => Promise.reject(error)
@@ -71,8 +70,8 @@ api.interceptors.response.use(
     // Session Expired
     if (error.response && error.response.status === 401) {
       console.warn("Session expired or unauthorized, logging out...");
-      localStorage.removeItem('authToken');
-      // Allow the UI to handle the redirect/state change
+      // Cookie is already invalid or missing, just update UI state if needed
+      // Redirect logic should happen in the React Component or Provider
     }
 
     // Pass through the actual server error message if available

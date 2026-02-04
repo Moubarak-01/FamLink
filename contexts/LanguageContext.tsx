@@ -48,7 +48,16 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     if (options) {
       Object.keys(options).forEach(optionKey => {
-        translation = translation.replace(`{${optionKey}}`, String(options[optionKey]));
+        const value = String(options[optionKey]);
+        // Support both {key} and {{key}} and replace all occurrences
+        const singleBrace = `{${optionKey}}`;
+        const doubleBrace = `{{${optionKey}}}`;
+        while (translation.includes(singleBrace)) {
+          translation = translation.replace(singleBrace, value);
+        }
+        while (translation.includes(doubleBrace)) {
+          translation = translation.replace(doubleBrace, value);
+        }
       });
     }
     return translation;

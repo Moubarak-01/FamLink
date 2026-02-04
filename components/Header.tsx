@@ -124,7 +124,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                                     className="w-full text-left px-4 py-3 hover:bg-[var(--bg-hover)] border-b border-[var(--border-color)] last:border-none transition-colors flex flex-col gap-1"
                                                 >
                                                     <div className="flex justify-between items-start w-full">
-                                                        <p className="text-sm text-[var(--text-primary)] font-medium line-clamp-2">{notif.message}</p>
+                                                        <p className="text-sm text-[var(--text-primary)] font-medium line-clamp-2">
+                                                            {notif.data ? t(`notification_${notif.type}`, notif.data) : notif.message}
+                                                        </p>
                                                         {notif.type === 'chat' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{t('label_chat')}</span>}
                                                     </div>
                                                     <p className="text-xs text-[var(--text-light)]">{formatTime(notif)}</p>
