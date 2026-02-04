@@ -160,10 +160,15 @@ Two-way synchronization for bookings.
 - **Sync**: Automatically adds accepted FamLink bookings to your personal Google Calendar.
 - **OAuth2**: Secure, verified Google connection via Settings.
 
-### 4. ⚡ Previous Highlights
+### 4. 🌐 Advanced Localization & Notifications
+Deep internationalization for dynamic content.
+- **Dynamic Localization**: All system notifications (Bookings, Outings, Tasks) now support placeholder interpolation (e.g., "{{nannyName}} accepted your request").
+- **Language Coverage**: Full support for 6 languages with RTL optimization for Arabic.
+- **Chat Reactions**: WhatsApp-style reaction notifications ("User reacted with emoji") are now fully localized.
+
+### 5. ⚡ Previous Highlights
 - **Universal Real-time Updates**: Instant UI reflection for Tasks, Bookings, and Outings.
 - **Redesigned UI**: Enhanced Nanny Cards with quick-action buttons.
-- **Complete Localization**: Full RTL/Arabic support.
 
 ---
 
@@ -214,8 +219,64 @@ Two-way synchronization for bookings.
 <details>
 <summary><strong>7. Duplicate Locale Keys</strong></summary>
 
-**Problem:** `ar.ts` had duplicate keys causing TypeScript errors.
-**Solution:** Automated audit script identified duplicates; manually resolved by removing redundant entries.
+**Problem:** `ar.ts` and other locale files had duplicate keys causing TypeScript errors and unpredictable translation behavior.
+**Solution:** Built an automated audit script to identify duplicates across all language files; manually resolved by removing redundant entries.
+</details>
+
+<details>
+<summary><strong>8. The "Button Clear History" Bug</strong></summary>
+
+**Problem:** The call history button displayed "Button Clear History" (the raw key) instead of "Clear History" in English.
+**Solution:** Identified that the key was present in other languages but missing in `en.ts`. Added the correct translation to the English locale file to fix the UI fallback issue.
+</details>
+
+<details>
+<summary><strong>9. Static Notification Messages</strong></summary>
+
+**Problem:** While the UI was localized, system notifications were hardcoded in the backend. Setting the language to French still showed English notifications in the bell icon.
+**Solution:** Refactored the notification system to store metadata (JSON data) in the database. The frontend now uses these parameters to render fully localized, dynamic messages for all notification types.
+</details>
+
+<details>
+<summary><strong>10. The Query Key Mismatch (Real-time Tasks)</strong></summary>
+
+**Problem:** When a nanny completed a task, the parent's dashboard didn't update. Users had to manually refresh the page to see changes.
+**Solution:** The socket listener was invalidating `['userTasks']` but the React Query hook used `['tasks', userId]`. Fixed by changing the invalidation to `['tasks']` which matches the hook's query key prefix.
+</details>
+
+<details>
+<summary><strong>11. Unreachable Socket Emit (Bookings)</strong></summary>
+
+**Problem:** New booking requests weren't triggering real-time updates for nannies.
+**Solution:** Found a duplicate `return` statement in `bookings.service.ts` that made the `socket.emit('bookings_update')` call unreachable. Removed the duplicate return.
+</details>
+
+<details>
+<summary><strong>12. Stale Read Receipts</strong></summary>
+
+**Problem:** Chat "blue ticks" would only update if you re-entered the room.
+**Solution:** Added a live `onMessage` listener that checks if the user is currently viewing the room. If yes, it fires a `mark_seen` event immediately, turning the sender's ticks blue in real-time.
+</details>
+
+<details>
+<summary><strong>13. Notification Click Missing Invalidation</strong></summary>
+
+**Problem:** Clicking task/outing/skill notifications navigated to the correct screen but often showed stale data.
+**Solution:** Added `queryClient.invalidateQueries()` calls for each notification type before navigation, ensuring fresh data is forced to load.
+</details>
+
+<details>
+<summary><strong>14. Nanny Visibility on Parent Dashboard</strong></summary>
+
+**Problem:** Nannies weren't appearing on the parent dashboard even after completing their profiles until a manual refresh.
+**Solution:** The `approvedNannies` state was initialized but never populated on app startup. Added a `useEffect` hook to fetch nannies via `userService.getNannies()` when a user logs in.
+</details>
+
+<details>
+<summary><strong>15. Silent Remove Button</strong></summary>
+
+**Problem:** The "Remove Nanny" button had no visual feedback - it worked but users thought nothing happened.
+**Solution:** Added confirmation dialog (`window.confirm`) and success alert to `handleRemoveNanny`, providing clear feedback and styled the buttons with hover animations.
 </details>
 
 ---
