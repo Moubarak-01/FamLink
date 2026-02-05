@@ -57,11 +57,19 @@ interface DashboardScreenProps {
     onOpenChat: (type: 'activity' | 'outing' | 'skill' | 'booking', item: any) => void;
 }
 
+
 const formatDateSafe = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString.includes('T') ? dateString : dateString + 'T00:00:00');
     return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 };
+
+const getSafeId = (item: any): string | undefined => {
+    if (!item) return undefined;
+    if (typeof item === 'string') return item;
+    return item._id || item.id;
+};
+
 
 // --- Helper Components ---
 
@@ -316,7 +324,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
     const mySkillRequests = skillRequests?.filter(s => {
-        const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+        const rId = getSafeId(s.requesterId);
         return rId === user.id;
     }) || [];
 
@@ -327,7 +335,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     const hasHostedActivities = activities.some(a => a.hostId === user.id);
     const hasHostedOutings = sharedOutings.some(o => o.hostId === user.id);
     const hasCreatedSkillRequests = skillRequests?.some(s => {
-        const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+        const rId = getSafeId(s.requesterId);
         return rId === user.id;
     });
 
@@ -455,7 +463,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* INCOMING (Host View) */}
                         {activities.filter(a => {
                             if (!a.hostId) return false;
-                            const hostIdStr = typeof a.hostId === 'object' ? (a.hostId._id || a.hostId.id) : a.hostId;
+                            const hostIdStr = getSafeId(a.hostId);
                             return hostIdStr === user.id && a.requests?.some(r => r.status === 'pending');
                         }).flatMap(activity =>
                             (activity.requests || []).filter(r => r.status === 'pending').map(req => (
@@ -492,7 +500,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* OUTGOING (User View) + HOSTED (Creator View) */}
                         {activities.map(activity => {
                             if (!activity.hostId) return null; // Safe check
-                            const hostIdStr = typeof activity.hostId === 'object' ? (activity.hostId as any)._id : activity.hostId;
+                            const hostIdStr = getSafeId(activity.hostId);
                             const isHost = hostIdStr === user.id;
                             const myRequest = activity.requests?.find(r => r.userId === user.id);
 
@@ -535,7 +543,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* Empty State */}
                         {(!activities.some(a => {
                             if (!a.hostId) return false;
-                            const hostIdStr = typeof a.hostId === 'object' ? (a.hostId._id || a.hostId.id) : a.hostId;
+                            const hostIdStr = getSafeId(a.hostId);
                             // Check for incoming pending requests OR if hosted by user OR if requested by user
                             return (hostIdStr === user.id) || // Includes hosted + incoming
                                 (a.requests?.some(r => r.userId === user.id));
@@ -556,7 +564,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* INCOMING (Host View) */}
                         {sharedOutings.filter(o => {
                             if (!o.hostId) return false;
-                            const hostIdStr = typeof o.hostId === 'object' ? (o.hostId._id || o.hostId.id) : o.hostId;
+                            const hostIdStr = getSafeId(o.hostId);
                             return hostIdStr === user.id && o.requests?.some(r => r.status === 'pending');
                         }).flatMap(outing =>
                             (outing.requests || []).filter(r => r.status === 'pending').map(req => (
@@ -589,7 +597,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* OUTGOING (User View) + HOSTED (Creator View) */}
                         {sharedOutings.map(outing => {
                             if (!outing.hostId) return null; // Safe check
-                            const hostIdStr = typeof outing.hostId === 'object' ? (outing.hostId as any)._id : outing.hostId;
+                            const hostIdStr = getSafeId(outing.hostId);
                             const isHost = hostIdStr === user.id;
                             const myRequest = outing.requests?.find(r => r.parentId === user.id);
 
@@ -632,7 +640,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* Empty State */}
                         {(!sharedOutings.some(o => {
                             if (!o.hostId) return false;
-                            const hostIdStr = typeof o.hostId === 'object' ? (o.hostId._id || o.hostId.id) : o.hostId;
+                            const hostIdStr = getSafeId(o.hostId);
                             // Check for incoming pending requests OR if hosted by user OR if requested by user
                             return (hostIdStr === user.id) ||
                                 (o.requests?.some(r => r.parentId === user.id));
@@ -652,7 +660,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                     <div className="p-4 space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                         {/* MY REQUESTS (Requester View) */}
                         {skillRequests?.filter(s => {
-                            const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+                            const rId = getSafeId(s.requesterId);
                             return rId === user.id;
                         }).map(task => {
                             const offers = task.offers || [];
@@ -661,7 +669,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
 
                             // If there's an accepted offer, show "Hosted" style
                             if (acceptedOffer) {
-                                const helperName = acceptedOffer.helperName || (typeof acceptedOffer.helperId === 'object' ? (acceptedOffer.helperId as any).fullName : 'Helper');
+                                const helperName = acceptedOffer.helperName || ((acceptedOffer.helperId && typeof acceptedOffer.helperId === 'object') ? (acceptedOffer.helperId as any).fullName : 'Helper');
                                 return (
                                     <div key={`my-skill-${task.id}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border-color)] shadow-sm border-l-4 border-l-pink-500">
                                         <div className="flex justify-between items-center mb-2">
@@ -690,8 +698,8 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                             // If pending offers, show "Action Needed" cards for EACH offer
                             if (pendingOffers.length > 0) {
                                 return pendingOffers.map(offer => {
-                                    const hId = typeof offer.helperId === 'object' ? (offer.helperId as any)._id : offer.helperId;
-                                    const hName = offer.helperName || (typeof offer.helperId === 'object' ? (offer.helperId as any).fullName : 'User');
+                                    const hId = getSafeId(offer.helperId);
+                                    const hName = offer.helperName || ((offer.helperId && typeof offer.helperId === 'object') ? (offer.helperId as any).fullName : 'User');
                                     return (
                                         <div key={`offer-${task.id}-${hId}`} className="bg-[var(--bg-card)] p-3 rounded-lg border border-l-4 border-l-yellow-400 border-[var(--border-color)] shadow-sm">
                                             <div className="flex justify-between items-start mb-2">
@@ -734,11 +742,11 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         {/* MY OFFERS (Helper View) */}
                         {/* MY OFFERS (Helper View) */}
                         {skillRequests?.filter(s => s.offers?.some(o => {
-                            const hId = typeof o.helperId === 'object' ? (o.helperId as any)._id || (o.helperId as any).id : o.helperId;
+                            const hId = getSafeId(o.helperId);
                             return hId === user.id;
                         })).map(task => {
                             const myOffer = task.offers.find(o => {
-                                const hId = typeof o.helperId === 'object' ? (o.helperId as any)._id || (o.helperId as any).id : o.helperId;
+                                const hId = getSafeId(o.helperId);
                                 return hId === user.id;
                             });
 
@@ -779,10 +787,10 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
 
                         {/* Empty State */}
                         {(!skillRequests?.some(s => {
-                            const rId = typeof s.requesterId === 'object' ? (s.requesterId as any)._id || (s.requesterId as any).id : s.requesterId;
+                            const rId = getSafeId(s.requesterId);
                             return rId === user.id;
                         }) && !skillRequests?.some(s => s.offers?.some(o => {
-                            const hId = typeof o.helperId === 'object' ? (o.helperId as any)._id || (o.helperId as any).id : o.helperId;
+                            const hId = getSafeId(o.helperId);
                             return hId === user.id;
                         }))) && (
                                 <div className="text-center py-8 px-4 text-[var(--text-light)] text-sm italic">
