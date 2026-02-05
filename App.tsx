@@ -919,6 +919,7 @@ const App: React.FC = () => {
         onDeleteOutings={handleDeleteAllOutings}
         onDeleteSkillRequests={handleDeleteAllSkillRequests}
         onUpdateOffer={handleUpdateSkillOfferStatus}
+        onSubscribe={() => navigateTo(Screen.Subscription)}
       /> : null;
       case Screen.NannyListing: return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
       case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen

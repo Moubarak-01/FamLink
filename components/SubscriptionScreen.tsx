@@ -32,6 +32,7 @@ const PaymentForm: React.FC<{ plan: { id: Plan, name: string, price: number }, o
     { id: 'sunset', color: '#f43f5e' },
     { id: 'gold', color: '#ffd700' },
     { id: 'royal', color: '#5b21b6' },
+    { id: 'holographic', color: 'linear-gradient(135deg, #ff0f7b, #f89b29)' },
   ];
 
   const validateAndSet = (field: 'cardName' | 'cardNumber' | 'expiryDate' | 'cvv', value: string, regex: RegExp, errorMessage: string) => {

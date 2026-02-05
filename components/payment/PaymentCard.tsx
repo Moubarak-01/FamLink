@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export type CardTheme = 'midnight' | 'ocean' | 'sunset' | 'gold' | 'royal';
+export type CardTheme = 'midnight' | 'ocean' | 'sunset' | 'gold' | 'royal' | 'holographic';
 
 export interface PaymentCardProps {
     cardNumber: string;
@@ -82,6 +82,10 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
         royal: {
             background: 'radial-gradient(ellipse at 10% 90%, #06b6d4 0%, transparent 40%), radial-gradient(ellipse at 90% 10%, #8b5cf6 0%, transparent 40%), radial-gradient(ellipse at 50% 50%, #3b0764 0%, transparent 60%), linear-gradient(135deg, #0c0a20 0%, #1e1b4b 30%, #312e81 60%, #0c0a20 100%)',
             boxShadow: '0 25px 80px -15px rgba(139, 92, 246, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1)',
+        },
+        holographic: {
+            background: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12px), repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12px), radial-gradient(circle at 10% 20%, #ff0f7b 0%, transparent 50%), radial-gradient(circle at 90% 80%, #f89b29 0%, transparent 50%), radial-gradient(circle at 50% 50%, #45caff 0%, transparent 50%), linear-gradient(to bottom right, #2c3e50, #000000)',
+            boxShadow: '0 25px 80px -15px rgba(255, 15, 123, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2)',
         }
     };
 
@@ -229,7 +233,8 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
                             <div className="w-full h-10 bg-white rounded flex items-center justify-end px-3 relative overflow-hidden">
                                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 2px, transparent 2px, transparent 6px)' }}></div>
                                 <span className="text-black font-mono font-bold tracking-widest text-lg z-10">
-                                    {cvv || '***'}
+                                    {/* MASKING: Always display *** irrespective of actual value */}
+                                    {cvv ? '***' : '***'}
                                 </span>
                             </div>
                         </div>

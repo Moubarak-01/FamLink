@@ -1,51 +1,68 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { UserType } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface WelcomeScreenProps {
-  onSelectUserType: (type: UserType) => void;
-  onLogin: () => void;
+    onSelectUserType: (type: UserType) => void;
+    onLogin: () => void;
 }
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onSelectUserType, onLogin }) => {
-  const { t } = useLanguage();
-  return (
-    <div className="p-8 text-center">
-      <div className="mb-6">
-        <span className="text-5xl">🌸</span>
-      </div>
-      <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-3">{t('welcome_title')}</h2>
-      <p className="text-[var(--text-secondary)] mb-8 max-w-lg mx-auto">
-        {t('welcome_subtitle')}
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-          onClick={() => onSelectUserType('parent')}
-          className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300 ease-in-out"
-        >
-          <div className="text-2xl mb-1">🏡</div>
-          <h3 className="font-semibold">{t('welcome_parent_button')}</h3>
-          <p className="text-sm font-light">{t('welcome_parent_subtext')}</p>
-        </button>
-        <button
-          onClick={() => onSelectUserType('nanny')}
-          className="bg-[var(--accent-secondary)] hover:bg-[var(--accent-secondary-hover)] text-white font-bold py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-300 ease-in-out"
-        >
-          <div className="text-2xl mb-1">💼</div>
-          <h3 className="font-semibold">{t('welcome_nanny_button')}</h3>
-          <p className="text-sm font-light">{t('welcome_nanny_subtext')}</p>
-        </button>
-      </div>
-      <div className="mt-8">
-        <p className="text-sm text-[var(--text-secondary)]">
-            {t('welcome_already_account')}{' '}
-            <button onClick={onLogin} className="font-medium text-[var(--text-accent)] hover:text-[var(--accent-primary)]">
-                {t('button_login')}
-            </button>
-        </p>
-      </div>
-    </div>
-  );
+    const { t } = useLanguage();
+
+    return (
+        <div className="flex flex-col items-center justify-center p-6 w-full">
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center mb-8"
+            >
+                <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-3">
+                    {t('welcome_title')}
+                </h1>
+                <p className="text-[var(--text-secondary)] text-base max-w-sm mx-auto leading-relaxed">
+                    {t('welcome_subtitle')}
+                </p>
+            </motion.div>
+
+            <div className="flex flex-col gap-4 w-full max-w-sm">
+                {/* Parent Button */}
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onSelectUserType('parent')}
+                    className="group relative w-full p-6 h-32 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg overflow-hidden flex flex-col items-center justify-center gap-1"
+                >
+                    <div className="text-3xl mb-1">🏠</div>
+                    <div className="text-xl font-bold">{t('welcome_parent_button')}</div>
+                    <div className="text-pink-100 text-sm font-medium opacity-90">{t('welcome_parent_subtext')}</div>
+                </motion.button>
+
+                {/* Nanny Button */}
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onSelectUserType('nanny')}
+                    className="group relative w-full p-6 h-32 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg overflow-hidden flex flex-col items-center justify-center gap-1"
+                >
+                    <div className="text-3xl mb-1">💼</div>
+                    <div className="text-xl font-bold">{t('welcome_nanny_button')}</div>
+                    <div className="text-purple-100 text-sm font-medium opacity-90">{t('welcome_nanny_subtext')}</div>
+                </motion.button>
+            </div>
+
+            <div className="mt-8 text-[var(--text-secondary)] text-sm font-medium">
+                {t('welcome_already_account')}{' '}
+                <button
+                    onClick={onLogin}
+                    className="text-[var(--accent-primary)] font-bold hover:underline ml-1"
+                >
+                    {t('button_login')}
+                </button>
+            </div>
+        </div>
+    );
 };
 
 export default WelcomeScreen;

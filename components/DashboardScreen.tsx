@@ -55,6 +55,7 @@ interface DashboardScreenProps {
     onDeleteSkillRequests?: () => void; // <-- ADDED
     onUpdateOffer?: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void; // <-- FIXED: Added missing prop definition
     onOpenChat: (type: 'activity' | 'outing' | 'skill' | 'booking', item: any) => void;
+    onSubscribe: () => void; // <-- ADDED: Standalone subscription flow
 }
 
 
@@ -319,7 +320,8 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking,
     onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus,
     onDeleteActivities, onDeleteOutings, onDeleteSkillRequests, onUpdateOffer, // <-- Correctly destructured
-    onOpenChat // <-- NEW Unified Chat Handler
+    onOpenChat, // <-- NEW Unified Chat Handler
+    onSubscribe // <-- ADDED
 }) => {
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
@@ -348,6 +350,28 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         <p>{t('profile_form_mandatory_prompt')}</p>
                     </div>
                     <button onClick={onEditProfile} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">{t('button_edit_profile')}</button>
+                </div>
+            )}
+
+            {/* Subscribe Now Card - Visible only if subscription is inactive/missing */}
+            {(!user.subscription || user.subscription.status !== 'active') && (
+                <div className="mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                    {/* Decorative background circle */}
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
+
+                    <div className="z-10">
+                        <h3 className="text-2xl font-bold mb-2">Unlock Premium Features 🌟</h3>
+                        <p className="opacity-90 max-w-lg">
+                            Get unlimited access to verified nannies, detailed background checks, and priority support.
+                            Start your journey with FamLink Premium today.
+                        </p>
+                    </div>
+                    <button
+                        onClick={onSubscribe}
+                        className="z-10 whitespace-nowrap bg-white text-indigo-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
+                    >
+                        Subscribe Now
+                    </button>
                 </div>
             )}
 
