@@ -6,7 +6,7 @@
 **An AI-powered community platform connecting parents with trusted care providers**
 <hr />
 
-![Version](https://img.shields.io/badge/version-2.4-pink?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.5-pink?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 ![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs)
 ![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?style=for-the-badge&logo=mongodb)
@@ -130,7 +130,7 @@ npm run dev
 
 ---
 
-## ✅ Project Status: v2.4 (Feb 2026)
+## ✅ Project Status: v2.5 (Feb 2026)
 
 | Layer | Status | Description |
 |:------|:------:|:------------|
@@ -142,31 +142,39 @@ npm run dev
 
 ---
 
-## 🆕 Latest Updates (v2.4: Security & Video Chat)
+## 🆕 Latest Updates (v2.5: Premium Payment Experience)
 
-### 1. 🛡️ Cookie-Guard Security Architecture
+### 1. 💳 Interactive 3D Payment Card
+A stunning, premium credit card component with live interactivity.
+- **3D Flip Animation**: Card flips to reveal CVV field on focus (Framer Motion spring physics).
+- **Live Input Masking**: Shows first 4 + last 2 digits only (e.g., `4012 **** **87`).
+- **Auto Brand Detection**: Dynamically displays Visa, Mastercard, Amex, or Discover logos.
+- **5 Premium Themes**: Midnight, Ocean, Sunset, Gold, Royal — each with fluid marble/abstract art gradients.
+- **Strict Validation**: CVV limited to exactly 3 digits.
+
+### 2. 🛡️ Cookie-Guard Security Architecture
 Migrated the entire authentication system from LocalStorage to **HttpOnly Cookies**.
 - **Impact**: Zero-exposure of JWTs to client-side scripts (XSS protection).
 - **Compliance**: `SameSite=Lax` (Dev) / `SameSite=None` + `Secure` (Prod).
 - **Backend**: Strict validation via `class-validator` and `cookie-parser`.
 
-### 2. 📹 Peer-to-Peer Video Chat
+### 3. 📹 Peer-to-Peer Video Chat
 Direct, high-quality video calling between Parents and Nannies.
 - **Tech**: WebRTC (PeerJS) + Socket.io (Signaling).
 - **Features**: Picture-in-Picture, Mute/Video Toggle, Global Call Notifications.
 
-### 3. 📅 Google Calendar Integration
+### 4. 📅 Google Calendar Integration
 Two-way synchronization for bookings.
 - **Sync**: Automatically adds accepted FamLink bookings to your personal Google Calendar.
 - **OAuth2**: Secure, verified Google connection via Settings.
 
-### 4. 🌐 Advanced Localization & Notifications
+### 5. 🌐 Advanced Localization & Notifications
 Deep internationalization for dynamic content.
 - **Dynamic Localization**: All system notifications (Bookings, Outings, Tasks) now support placeholder interpolation (e.g., "{{nannyName}} accepted your request").
 - **Language Coverage**: Full support for 6 languages with RTL optimization for Arabic.
 - **Chat Reactions**: WhatsApp-style reaction notifications ("User reacted with emoji") are now fully localized.
 
-### 5. ⚡ Previous Highlights
+### 6. ⚡ Previous Highlights
 - **Universal Real-time Updates**: Instant UI reflection for Tasks, Bookings, and Outings.
 - **Redesigned UI**: Enhanced Nanny Cards with quick-action buttons.
 
