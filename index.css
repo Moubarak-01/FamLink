@@ -4,18 +4,18 @@
        =========================================== */
 
     /* 1. DYNAMIC IMMERSIVE CANVAS - Light Mode (Base) */
-    /* Soft, warm-white base (#FFFBF9) with airy pastel mesh of Champagne Pink and Soft Mint */
-    --bg-page-base: #FFFBF9;
+    /* Vibrant, clean base (#FFFFFF) with high-saturation vivid mesh */
+    --bg-page-base: #FFFFFF;
     --bg-page-light-mesh:
-        radial-gradient(at 0% 0%, hsla(15, 100%, 95%, 0.8) 0, transparent 50%),
-        /* Champagne Pink */
-        radial-gradient(at 50% 10%, hsla(160, 50%, 95%, 0.6) 0, transparent 50%),
-        /* Soft Mint */
-        radial-gradient(at 100% 0%, hsla(270, 60%, 96%, 0.5) 0, transparent 50%);
-    /* Light Lavender */
+        radial-gradient(at 0% 0%, hsla(340, 100%, 85%, 0.6) 0, transparent 50%),
+        /* Vibrant Pink */
+        radial-gradient(at 50% 10%, hsla(190, 100%, 80%, 0.5) 0, transparent 50%),
+        /* Vibrant Cyan */
+        radial-gradient(at 100% 0%, hsla(260, 100%, 85%, 0.5) 0, transparent 50%);
+    /* Vibrant Violet */
 
     /* Glass Variables - Light */
-    --glass-bg-light: rgba(255, 255, 255, 0.4);
+    --glass-bg-light: rgba(255, 255, 255, 0.6);
     --glass-border-light: rgba(0, 0, 0, 0.05);
     --text-main-light: #0f172a;
 

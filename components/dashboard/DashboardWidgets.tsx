@@ -120,16 +120,16 @@ export const ParentBookingCard: React.FC<{ request: BookingRequest & { nanny?: U
     if (request.status === 'pending') statusColor = 'bg-yellow-600';
 
     return (
-        <div className="bg-[#1f2937] p-5 rounded-xl shadow-lg border border-gray-700 relative overflow-hidden text-white">
+        <div className="bg-[var(--bg-card)] p-5 rounded-xl shadow-lg border border-[var(--border-color)] relative overflow-hidden">
             <div className="flex justify-center mb-3">
                 {nannyPhoto ? (
-                    <img src={nannyPhoto} alt={nannyName} className="w-16 h-16 rounded-full object-cover border-2 border-gray-600" />
+                    <img src={nannyPhoto} alt={nannyName} className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border-color)]" />
                 ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-500 flex items-center justify-center border-2 border-gray-600"><span className="text-2xl">👤</span></div>
+                    <div className="w-16 h-16 rounded-full bg-gray-500 flex items-center justify-center border-2 border-[var(--border-color)]"><span className="text-2xl">👤</span></div>
                 )}
             </div>
-            <h4 className="text-xl font-bold mb-1 text-center">{t('booking_request_to')} {nannyName.split(' ')[0]}</h4>
-            <div className="text-gray-300 text-sm space-y-1 mb-4 text-center">
+            <h4 className="text-xl font-bold mb-1 text-center text-[var(--text-primary)]">{t('booking_request_to')} {nannyName.split(' ')[0]}</h4>
+            <div className="text-[var(--text-secondary)] text-sm space-y-1 mb-4 text-center">
                 <p><span className="font-semibold">{t('booking_label_date')}:</span> {formatDateSafe(request.date, language)}</p>
                 <p><span className="font-semibold">{t('booking_label_time')}:</span> {request.startTime} - {request.endTime}</p>
             </div>
