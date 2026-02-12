@@ -220,7 +220,7 @@ export interface Subscription {
 }
 
 export enum Screen {
-  Welcome, SignUp, Login, ForgotPassword, Questionnaire, Loading, Result,
+  Landing, Welcome, SignUp, Login, ForgotPassword, Questionnaire, Loading, Result,
   NannyProfileForm, ParentProfileForm, Subscription, SubscriptionStatus,
   Dashboard, NannyListing, NannyProfileDetail, CommunityActivities,
   ChildOutings, SkillMarketplace, VerifyEmail,

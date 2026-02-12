@@ -601,7 +601,9 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-4 overflow-y-auto space-y-4 ai-scrollbar bg-[var(--bg-subtle)]"
+            data-lenis-prevent
+            onWheel={(e) => e.stopPropagation()}
+            className="flex-1 p-4 overflow-y-auto space-y-4 ai-scrollbar bg-[var(--bg-subtle)] overscroll-contain"
           >
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -641,7 +643,12 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
 
             {/* Quick Action Chips (Horizontal Scroll + Hidden Scrollbar) */}
             {!isThinking && (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none mask-fade-right" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div
+                className="flex gap-2 overflow-x-auto pb-1 scrollbar-none mask-fade-right"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                data-lenis-prevent
+                onWheel={(e) => e.stopPropagation()}
+              >
                 {QUICK_ACTIONS.map((chip, idx) => (
                   <button
                     key={idx}
@@ -674,6 +681,8 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                     onKeyDown={handleKeyDown}
                     placeholder={t('ai_input_placeholder')}
                     rows={1}
+                    data-lenis-prevent
+                    onWheel={(e) => e.stopPropagation()}
                     className="flex-grow bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none appearance-none text-sm text-[var(--text-primary)] placeholder-gray-400 resize-none max-h-[100px] py-1"
                     style={{ minHeight: '24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     spellCheck={false}

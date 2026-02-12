@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Answer, Screen, UserType, Subscription, Plan, User, NannyProfile, Rating, BookingRequest, Task, Activity, SharedOuting, OutingRequest, SkillRequest, SkillOffer, Child, ActivityCategory, SkillCategory, ChatMessage, Notification, NotificationType } from './types';
 import Header from './components/Header';
 import WelcomeScreen from './components/WelcomeScreen';
+import LandingPage from './components/LandingPage';
+import SmoothScroll from './components/SmoothScroll';
 import Questionnaire from './components/Questionnaire';
 import ResultScreen from './components/ResultScreen';
 // FIX: Corrected import to use the service instance, resolving the Uncaught SyntaxError
@@ -107,7 +109,7 @@ const RatingModal: React.FC<{ targetUser?: User, nanny?: User, onClose: () => vo
 };
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Welcome);
+  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Landing);
   const [screenHistory, setScreenHistory] = useState<Screen[]>([]);
   const [approvedNannies, setApprovedNannies] = useState<User[]>([]);
 
@@ -874,6 +876,7 @@ const App: React.FC = () => {
       /> : null;
     }
     switch (currentScreen) {
+      case Screen.Landing: return <LandingPage onFinish={() => navigateTo(Screen.Welcome)} />;
       case Screen.Welcome: return <WelcomeScreen onSelectUserType={handleSelectUserType} onLogin={() => navigateTo(Screen.Login)} />;
       case Screen.SignUp: return <SignUpScreen userType={userTypeForSignup} onSignUp={handleSignUp} onBack={goBack} onLogin={() => navigateTo(Screen.Login)} error={error} />;
       case Screen.Login: return <LoginScreen onLogin={handleLogin} onBack={goBack} onSignUp={() => navigateTo(Screen.SignUp)} onForgotPassword={() => navigateTo(Screen.ForgotPassword)} error={error} />;
@@ -968,6 +971,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center">
+      {currentScreen !== Screen.Landing && <SmoothScroll />}
       {contactNannyInfo && <ContactModal nanny={contactNannyInfo} onClose={() => setContactNannyInfo(null)} onOpenChat={handleOpenContactChat} />}
       {ratingTargetUser && <RatingModal targetUser={ratingTargetUser} onClose={() => setRatingTargetUser(null)} onSubmit={(rating, comment) => handleSubmitRating(ratingTargetUser.id, rating, comment)} />}
       {bookingNannyInfo && currentUser && (
@@ -1041,19 +1045,21 @@ const App: React.FC = () => {
       )}
 
       {/* Passing the correct toggle handler to the Header component */}
-      <Header
-        isAuthenticated={!!currentUser}
-        user={currentUser}
-        onLogout={handleLogout}
-        onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined}
-        onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined}
-        // FIX: The header button now toggles the state directly
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
-        notifications={currentUser ? notifications.filter(n => !n.read) : []}
-        onClearNotifications={handleClearNotifications}
-        onNotificationClick={handleNotificationClick}
-        noiseReductionEnabled={noiseReductionEnabled}
-      />
+      {currentScreen !== Screen.Landing && (
+        <Header
+          isAuthenticated={!!currentUser}
+          user={currentUser}
+          onLogout={handleLogout}
+          onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined}
+          onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined}
+          // FIX: The header button now toggles the state directly
+          onOpenSettings={() => setIsSettingsModalOpen(true)}
+          notifications={currentUser ? notifications.filter(n => !n.read) : []}
+          onClearNotifications={handleClearNotifications}
+          onNotificationClick={handleNotificationClick}
+          noiseReductionEnabled={noiseReductionEnabled}
+        />
+      )}
       <main className={`w-full mx-auto p-4 pt-20 sm:p-6 sm:pt-24 md:p-8 md:pt-28 flex-grow transition-all duration-500 ${isWideScreen ? 'max-w-[95%] xl:max-w-[1400px]' : 'max-w-xl'}`}>
         <div className={`transition-all duration-500 ${isWideScreen ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
           {renderScreen()}
@@ -1068,7 +1074,9 @@ const App: React.FC = () => {
         />
       )}
 
-      <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
+      {currentScreen !== Screen.Landing && (
+        <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
+      )}
     </div>
   );
 };
