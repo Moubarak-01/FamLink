@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
-import ThreeDCharacter from './ThreeDCharacter';
+// Removed duplicate import
 
 interface AuthLayoutProps {
     children: React.ReactNode;

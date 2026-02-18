@@ -109,7 +109,7 @@ const RatingModal: React.FC<{ targetUser?: User, nanny?: User, onClose: () => vo
 };
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Landing);
+  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Welcome);
   const [screenHistory, setScreenHistory] = useState<Screen[]>([]);
   const [approvedNannies, setApprovedNannies] = useState<User[]>([]);
 

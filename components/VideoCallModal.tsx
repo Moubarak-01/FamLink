@@ -262,6 +262,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         });
 
         return () => {
+            console.log("🧹 [VideoCall] Cleaning up socket listeners");
             stopAllSounds();
             stopCallTimer();
             cleanupReceived();
@@ -279,7 +280,11 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         try {
             const constraints = {
                 video: callType === 'video',
-                audio: true
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                }
             };
             const currentStream = await navigator.mediaDevices.getUserMedia(constraints);
             setStream(currentStream);
@@ -332,7 +337,11 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             const isVoiceCall = incomingCall?.callType === 'voice';
             const constraints = {
                 video: !isVoiceCall,
-                audio: true
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                }
             };
 
             const currentStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -352,6 +361,12 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                 stream: currentStream
             });
 
+            // CRITICAL: Handle potential race condition where signal arrives before peer is ready
+            if (incomingCall && incomingCall.signal) {
+                console.log("📥 [VideoCall] Signaling incoming offer IMMEDIATELY...");
+                peer.signal(incomingCall.signal);
+            }
+
             peer.on('signal', (data) => {
                 console.log("📡 [VideoCall] Generated Signal (Answer):", data.type);
                 if (incomingCall) {
@@ -369,11 +384,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                 leaveCall();
             });
 
-            if (incomingCall) {
-                console.log("📥 [VideoCall] Signaling incoming offer...");
-                peer.signal(incomingCall.signal);
-            }
-
+            // Signal handling moved up to ensure immediate processing
             connectionRef.current = peer;
             activePeer = peer;
         } catch (err) {

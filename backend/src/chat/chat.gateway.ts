@@ -314,6 +314,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       targets.forEach(socketId => {
         this.server.to(socketId).emit('call_accepted', data.signal);
       });
+    } else {
+      console.warn(`⚠️ [Gateway] Caller ${data.to} not found/connected during answer_call`);
     }
   }
 

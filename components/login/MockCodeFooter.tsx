@@ -13,19 +13,15 @@ export default function MockCodeFooter() {
                 <div className="text-gray-300">
                     <span className="text-pink-400">export default</span> <span className="text-blue-400">function</span> <span className="text-yellow-300">Login</span>() {'{'}
                     <br />
-                    &nbsp;&nbsp;<span className="text-purple-400">const</span> [theme, setTheme] = <span className="text-blue-300">useState</span>(<span className="text-green-300">'dark'</span>);
+                    &nbsp;&nbsp;<span className="text-purple-400">const</span> {'{'} login {'}'} = <span className="text-blue-300">useAuth</span>();
                     <br />
                     &nbsp;&nbsp;<span className="text-purple-400">return</span> (
                     <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-yellow-300">Canvas</span>&gt;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-yellow-300">AuthLayout</span> title="Welcome Back"&gt;
                     <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-yellow-300">Suspense</span> <span className="text-blue-300">fallback</span>={'{null}'}&gt;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-yellow-300">LoginForm</span> <span className="text-blue-300">onSubmit</span>={'{handleLogin}'} /&gt;
                     <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span className="text-blue-300">ThreeDCharacter</span> /&gt;
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span className="text-yellow-300">Suspense</span>&gt;
-                    <br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span className="text-yellow-300">Canvas</span>&gt;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span className="text-yellow-300">AuthLayout</span>&gt;
                     <br />
                     &nbsp;&nbsp;);
                     <br />

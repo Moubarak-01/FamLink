@@ -54,11 +54,17 @@ cd FamLink
 ### 2. Install Dependencies
 
 ```bash
-# Frontend dependencies
-npm install
+# Frontend dependencies (Use legacy-peer-deps due to framer-motion-3d conflict)
+npm install --legacy-peer-deps
 
 # Backend dependencies
 cd backend
+npm install
+npm install
+cd ..
+
+# Local Whisper dependencies
+cd local-whisper
 npm install
 cd ..
 ```
@@ -82,10 +88,11 @@ VITE_OPENROUTER_API_KEY=your_key_here
 
 ```env
 # MongoDB Connection
-MONGO_URI=mongodb://localhost:27017/famlink
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?appName=Cluster0
+# OR for local: mongodb://localhost:27017/famlink
 
-# JWT Secret (CHANGE IN PRODUCTION!)
-JWT_SECRET=your_jwt_secret_here
+# JWT Secret
+JWT_SECRET=your_secure_jwt_secret
 
 # Server Port
 PORT=3001
@@ -93,12 +100,22 @@ PORT=3001
 # Google Calendar OAuth
 GOOGLE_CLIENT_ID=your_id
 GOOGLE_CLIENT_SECRET=your_secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/calendar/callback
+
+# Google Calendar Redirect URI (Important for OAuth)
+GOOGLE_REDIRECT_URI=http://localhost:3001/calendar/callback
 
 # Stripe Payment Processing
-STRIPE_SECRET_KEY=your_key_here
+STRIPE_SECRET_KEY=sk_test_...
 
-# GeoDB API (Get from RapidAPI)
-GEODB_API_KEY=your_rapidapi_key_here
+# GeoDB API (RapidAPI)
+GEODB_API_KEY=your_api_key
+GEODB_API_HOST=wft-geo-db.p.rapidapi.com
+
+# Email Service (Resend) - REQUIRED to prevent crash
+MAIL_API_KEY=re_123...
+BASE_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:5173
 ```
 
 ### 4. Start the Application
@@ -115,6 +132,41 @@ npm run start:dev
 npm run dev
 ```
 > App opens at `http://localhost:5173` (Vite) or `http://localhost:3000`
+
+**Terminal 3 - Local Whisper Service (Voice AI):**
+```bash
+cd local-whisper
+npm install
+npm run setup  # Only needed once to download models
+npm start
+```
+> Service starts on `http://localhost:3002`
+
+---
+
+## 🔧 Troubleshooting & Common Issues
+
+### 1. `ERESOLVE` unable to resolve dependency tree (Frontend)
+**Error:** `Could not resolve dependency: peer @react-three/fiber@"8.2.2" from framer-motion-3d@11.18.2`
+**Fix:** The frontend must be installed with the legacy peer deps flag:
+```bash
+npm install --legacy-peer-deps
+```
+
+### 2. Backend Crashing with `Missing API key`
+**Error:** `Error: Missing API key. Pass it to the constructor new Resend("re_123")`
+**Fix:** You are missing the `MAIL_API_KEY` in `backend/.env`. Add it (even a dummy value like `re_123` works for dev start) to fix the crash.
+
+### 3. MongoDB Connection Refused
+**Error:** `MongooseServerSelectionError: connect ECONNREFUSED ::1:27017`
+**Fix:**
+- Ensure your MongoDB server is running.
+- If using Atlas, ensure your `MONGO_URI` is correct and your IP is whitelisted.
+- If using local MongoDB, try replacing `localhost` with `127.0.0.1` in the URI.
+
+### 4. Google Auth Errors
+**Error:** `redirect_uri_mismatch`
+**Fix:** Ensure `GOOGLE_CALLBACK_URL` in `.env` matches exactly what is registered in your Google Cloud Console (e.g., `http://localhost:3001/calendar/callback`).
 
 ---
 
