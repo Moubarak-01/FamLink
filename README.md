@@ -113,8 +113,6 @@ GEODB_API_HOST=wft-geo-db.p.rapidapi.com
 
 # Email Service (Resend) - REQUIRED to prevent crash
 MAIL_API_KEY=re_123...
-BASE_URL=http://localhost:3001
-FRONTEND_URL=http://localhost:5173
 ```
 
 ### 4. Start the Application
@@ -473,6 +471,6 @@ Harmonized the `GOOGLE_CALLBACK_URL` in `.env` to match exactly what is register
 
 Made with ❤️ for families everywhere
 
-**FamLink** - *Empowering Mothers, Protecting Children*
+**FamLink** - *Relieve Parents, Empower Families.*
 
 </div>
