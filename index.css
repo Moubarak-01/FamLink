@@ -204,3 +204,39 @@ code {
     outline: none;
     box-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
 }
+
+/* ===========================================
+   DYNAMIC GLASSMORPHISM (Theme-Adaptive)
+   =========================================== */
+.dynamic-glass {
+    background: var(--auth-card-bg);
+    border: 1px solid var(--auth-card-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    transition: background 700ms ease-in-out, border-color 700ms ease-in-out, box-shadow 700ms ease-in-out;
+}
+
+.dark .dynamic-glass {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.dynamic-glass-input {
+    background: var(--auth-input-bg);
+    border: 1px solid var(--auth-input-border);
+    color: var(--auth-input-text);
+    border-radius: 12px;
+    transition: all 0.3s ease-in-out;
+}
+
+.dynamic-glass-input::placeholder {
+    color: var(--auth-input-placeholder);
+}
+
+.dynamic-glass-input:focus {
+    background: transparent;
+    border-color: var(--accent-primary, #ec4899);
+    outline: none;
+    box-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
+}

@@ -51,29 +51,29 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
 
     return (
         <header
-            className="w-full backdrop-blur-md border-b fixed top-0 left-0 right-0 z-[1000] transition-colors duration-300"
+            className="w-full backdrop-blur-md border-b relative z-[1000] transition-colors duration-300"
             style={{
                 backgroundColor: 'var(--header-bg)',
                 borderColor: 'var(--header-border)'
             }}
         >
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 py-3 flex justify-between items-center">
-                <div className="flex items-center gap-3">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 py-2 sm:py-3 flex justify-between items-center">
+                <div className="flex items-center gap-2 sm:gap-4">
                     <img
                         src="/famlink-icon.png"
                         alt={t('app_name') || "FamLink"}
-                        className="h-10 w-10 object-contain"
+                        className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                     />
                     <div className="flex flex-col justify-center -space-y-0.5">
-                        <h1 className="text-2xl font-bold text-[var(--accent-primary)] tracking-tight leading-none">
+                        <h1 className="text-lg sm:text-2xl font-bold text-[var(--accent-primary)] tracking-tight leading-none">
                             FamLink
                         </h1>
-                        <p className="text-[0.85rem] font-normal text-slate-500 dark:text-slate-400 tracking-[-0.01em] leading-tight">
+                        <p className="block text-[0.65rem] sm:text-[0.85rem] font-normal text-slate-500 dark:text-slate-400 tracking-[-0.01em] leading-tight max-w-[100px] sm:max-w-none">
                             {t('header_tagline')}
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-6">
 
                     {/* Noise Reduction Indicator */}
                     {noiseReductionEnabled && (
@@ -87,16 +87,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                     <LanguageSelector />
                     <ThemeToggleButton />
                     {isAuthenticated && user && (
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 sm:gap-4">
 
                             {/* Notification Bell */}
                             <div className="relative" ref={notifRef}>
                                 <button
                                     onClick={() => setShowNotifications(!showNotifications)}
-                                    className="p-2 rounded-full bg-[var(--header-icon-bg)] text-[var(--header-icon-fg)] hover:text-[var(--accent-primary)] transition-colors relative"
+                                    className="p-1.5 sm:p-3 rounded-full bg-[var(--header-icon-bg)] text-[var(--header-icon-fg)] hover:text-[var(--accent-primary)] transition-colors relative"
                                     title={t('title_notifications')}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                     </svg>
                                     {unreadCount > 0 && (
@@ -145,10 +145,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                 <div className="relative" ref={menuRef}>
                                     <button
                                         onClick={() => setShowMenu(!showMenu)}
-                                        className="p-2 rounded-full bg-[var(--header-icon-bg)] text-[var(--header-icon-fg)] hover:text-[var(--accent-primary)] transition-colors relative"
+                                        className="p-1.5 sm:p-3 rounded-full bg-[var(--header-icon-bg)] text-[var(--header-icon-fg)] hover:text-[var(--accent-primary)] transition-colors relative"
                                         title={t('button_settings')}
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
@@ -193,7 +193,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
                                 </div>
                             )}
 
-                            <button onClick={onLogout} className="text-sm font-medium text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors">
+                            <button onClick={onLogout} className="hidden sm:block text-sm font-medium text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors">
                                 {t('button_logout')}
                             </button>
                         </div>

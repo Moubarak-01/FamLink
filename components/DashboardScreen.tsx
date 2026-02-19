@@ -376,44 +376,44 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
             )}
 
             <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-8"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
             >
-                <motion.div variants={itemVariants} className="bg-[var(--bg-pink-card)] rounded-xl border border-[var(--border-pink-card)] p-5 flex flex-col justify-between">
-                    <div><h4 className="text-lg font-semibold text-[var(--text-pink-card-header)] mb-1">{t('dashboard_find_nanny_card_title')}</h4><p className="text-sm text-[var(--text-pink-card-body)] mb-4">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('button_search_nannies')}</button>
+                <motion.div variants={itemVariants} className="bg-[var(--bg-pink-card)] rounded-3xl border border-white/10 p-5 sm:p-6 flex flex-col justify-between shadow-lg">
+                    <div><h4 className="text-base sm:text-lg font-bold text-[var(--text-pink-card-header)] mb-1 leading-tight sm:leading-relaxed">{t('dashboard_find_nanny_card_title')}</h4><p className="block text-xs text-[var(--text-pink-card-body)] mb-3 leading-snug sm:leading-relaxed">{t('dashboard_find_nanny_card_subtitle')}</p></div><button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm">{t('button_search_nannies')}</button>
                 </motion.div>
                 {/* Connect with Parents (Activities) Card */}
-                <motion.div variants={itemVariants} className="bg-[var(--bg-purple-card)] rounded-xl border border-[var(--border-purple-card)] p-5 flex flex-col justify-between relative">
+                <motion.div variants={itemVariants} className="bg-[var(--bg-purple-card)] rounded-3xl border border-white/10 p-5 sm:p-6 flex flex-col justify-between relative shadow-lg">
                     {hasHostedActivities && (
                         <button
                             onClick={onDeleteActivities}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                            className="absolute top-3 right-3 text-gray-500 hover:text-red-500 p-2 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
                             title="Delete all hosted activities"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
                         </button>
                     )}
-                    <div><h4 className="text-lg font-semibold text-[var(--text-purple-card-header)] mb-1">{t('dashboard_community_title')}</h4><p className="text-sm text-[var(--text-purple-card-body)] mb-4">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_community_button')}</button>
+                    <div><h4 className="text-base sm:text-lg font-bold text-[var(--text-purple-card-header)] mb-1 leading-tight sm:leading-relaxed">{t('dashboard_community_title')}</h4><p className="block text-xs text-[var(--text-purple-card-body)] mb-3 leading-snug sm:leading-relaxed">{t('dashboard_community_subtitle')}</p></div><button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm">{t('dashboard_community_button')}</button>
                 </motion.div>
                 {/* Child Outing Sharing Card */}
-                <motion.div variants={itemVariants} className="bg-[var(--bg-teal-card)] rounded-xl border border-[var(--border-teal-card)] p-5 flex flex-col justify-between relative">
+                <motion.div variants={itemVariants} className="bg-[var(--bg-teal-card)] rounded-3xl border border-white/10 p-5 sm:p-6 flex flex-col justify-between relative shadow-lg">
                     {hasHostedOutings && (
                         <button
                             onClick={onDeleteOutings}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-red-500 p-1 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                            className="absolute top-3 right-3 text-gray-500 hover:text-red-500 p-2 rounded-full bg-white/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-700 transition-colors"
                             title="Delete all hosted outings"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 01-2 0v6a1 1 0 112 0V8z" clipRule="evenodd" /></svg>
                         </button>
                     )}
-                    <div><h4 className="text-lg font-semibold text-[var(--text-teal-card-header)] mb-1">{t('dashboard_child_sharing_title')}</h4><p className="text-sm text-[var(--text-teal-card-body)] mb-4">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_child_sharing_button')}</button>
+                    <div><h4 className="text-base sm:text-lg font-bold text-[var(--text-teal-card-header)] mb-1 leading-tight sm:leading-relaxed">{t('dashboard_child_sharing_title')}</h4><p className="block text-xs text-[var(--text-teal-card-body)] mb-3 leading-snug sm:leading-relaxed">{t('dashboard_child_sharing_subtitle')}</p></div><button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm">{t('dashboard_child_sharing_button')}</button>
                 </motion.div>
                 {/* Skill Sharing & Help Card */}
-                <motion.div variants={itemVariants} className="bg-[var(--bg-blue-card)] rounded-xl border border-[var(--border-blue-card)] p-5 flex flex-col justify-between relative">
+                <motion.div variants={itemVariants} className="bg-[var(--bg-blue-card)] rounded-3xl border border-white/10 p-5 sm:p-6 flex flex-col justify-between relative shadow-lg">
                     {/* Button Removed per user request */}
-                    <div><h4 className="text-lg font-semibold text-[var(--text-blue-card-header)] mb-1">{t('dashboard_skill_sharing_title')}</h4><p className="text-sm text-[var(--text-blue-card-body)] mb-4">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition-colors text-sm">{t('dashboard_skill_sharing_button')}</button>
+                    <div><h4 className="text-base sm:text-lg font-bold text-[var(--text-blue-card-header)] mb-1 leading-tight sm:leading-relaxed">{t('dashboard_skill_sharing_title')}</h4><p className="block text-xs text-[var(--text-blue-card-body)] mb-3 leading-snug sm:leading-relaxed">{t('dashboard_skill_sharing_subtitle')}</p></div><button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm">{t('dashboard_skill_sharing_button')}</button>
                 </motion.div>
             </motion.div>
 

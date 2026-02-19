@@ -9,37 +9,37 @@ interface NannyListingScreenProps {
 }
 
 const NannyCard: React.FC<{ nanny: User, onViewProfile: (nannyId: string) => void }> = ({ nanny, onViewProfile }) => {
-    const { t } = useLanguage();
-    if (!nanny.profile) return null;
+  const { t } = useLanguage();
+  if (!nanny.profile) return null;
 
-    const { id, fullName, profile } = nanny;
-    // FIX: Destructure ratingCount
-    const { rating, ratingCount, location, description, experience, availability } = profile; 
+  const { id, fullName, profile } = nanny;
+  // FIX: Destructure ratingCount
+  const { rating, ratingCount, location, description, experience, availability } = profile;
 
-    return (
-        <div onClick={() => onViewProfile(id)} className="bg-[var(--bg-card)] rounded-lg shadow-md overflow-hidden flex flex-col sm:flex-row items-center gap-6 p-5 border border-[var(--border-color)] hover:shadow-xl hover:border-[var(--border-accent)] cursor-pointer transition-all duration-300">
-            <img src={nanny.photo} alt={fullName} className="w-24 h-24 rounded-full object-cover border-4 border-pink-200" />
-            <div className="flex-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start gap-4 mb-1">
-                    <h3 className="text-xl font-bold text-[var(--text-primary)]">{fullName}</h3>
-                    <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                        <span>⭐</span>
-                        {/* UPDATE HERE: Use ratingCount instead of ratings.length */}
-                        <span>{rating > 0 ? `${rating.toFixed(1)} (${ratingCount || 0})` : t('nanny_card_new')}</span>
-                    </div>
-                </div>
-                <p className="text-sm text-[var(--text-light)] font-medium mb-2">{typeof location === 'string' ? location : location.address}</p>
-                <p className="text-[var(--text-secondary)] text-sm mb-3 line-clamp-2">{description}</p>
-                <div className="flex flex-wrap gap-2 justify-center sm:justify-start text-xs">
-                    <span className="bg-purple-100 text-purple-700 font-semibold px-2 py-1 rounded-full">🕒 {experience} {t('nanny_card_years_experience')}</span>
-                    <span className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded-full">{availability}</span>
-                </div>
-            </div>
-            <button className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-2 px-6 rounded-full shadow-md transform hover:scale-105 transition-transform">
-                {t('button_view_profile')}
-            </button>
+  return (
+    <div onClick={() => onViewProfile(id)} className="bg-[var(--bg-card)] rounded-3xl shadow-lg flex flex-col sm:flex-row items-center gap-6 p-6 border border-white/10 hover:shadow-xl hover:scale-[1.01] cursor-pointer transition-all duration-300">
+      <img src={nanny.photo} alt={fullName} className="w-24 h-24 rounded-full object-cover border-4 border-pink-200" />
+      <div className="flex-1 text-center sm:text-left space-y-2">
+        <div className="flex items-center justify-center sm:justify-start gap-4">
+          <h3 className="text-xl font-bold text-[var(--text-primary)]">{fullName}</h3>
+          <div className="flex items-center gap-1 text-yellow-500 font-bold">
+            <span>⭐</span>
+            {/* UPDATE HERE: Use ratingCount instead of ratings.length */}
+            <span>{rating > 0 ? `${rating.toFixed(1)} (${ratingCount || 0})` : t('nanny_card_new')}</span>
+          </div>
         </div>
-    );
+        <p className="text-sm text-[var(--text-light)] font-medium">{typeof location === 'string' ? location : location.address}</p>
+        <p className="text-[var(--text-secondary)] text-sm line-clamp-2 leading-relaxed">{description}</p>
+        <div className="flex flex-wrap gap-2 justify-center sm:justify-start text-xs pt-1">
+          <span className="bg-purple-100 text-purple-700 font-semibold px-3 py-1.5 rounded-full">🕒 {experience} {t('nanny_card_years_experience')}</span>
+          <span className="bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full">{availability}</span>
+        </div>
+      </div>
+      <button className="bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-3 px-8 rounded-full shadow-md transform hover:scale-105 transition-transform">
+        {t('button_view_profile')}
+      </button>
+    </div>
+  );
 }
 
 const NannyListingScreen: React.FC<NannyListingScreenProps> = ({ nannies, onBack, onViewProfile }) => {
@@ -74,14 +74,14 @@ const NannyListingScreen: React.FC<NannyListingScreenProps> = ({ nannies, onBack
           aria-label="Search nannies"
         />
       </div>
-      
+
       <div className="space-y-6">
         {filteredNannies.length > 0 ? (
-            filteredNannies.map(nanny => <NannyCard key={nanny.id} nanny={nanny} onViewProfile={onViewProfile} />)
+          filteredNannies.map(nanny => <NannyCard key={nanny.id} nanny={nanny} onViewProfile={onViewProfile} />)
         ) : (
-            <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                <p className="text-[var(--text-light)] font-medium">{searchQuery ? t('search_no_results') : t('nanny_listing_no_nannies')}</p>
-            </div>
+          <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+            <p className="text-[var(--text-light)] font-medium">{searchQuery ? t('search_no_results') : t('nanny_listing_no_nannies')}</p>
+          </div>
         )}
       </div>
 

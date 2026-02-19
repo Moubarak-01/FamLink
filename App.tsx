@@ -968,6 +968,7 @@ const App: React.FC = () => {
   const showAiAssistant = currentUser && (currentUser.userType === 'parent' || (currentUser.userType === 'nanny' && currentUser.assessmentResult?.decision === 'Approved' && currentUser.profile));
 
   const isWideScreen = [Screen.Dashboard, Screen.NannyListing, Screen.CommunityActivities, Screen.ChildOutings, Screen.SkillMarketplace].includes(currentScreen);
+  const isAuthScreen = [Screen.Welcome, Screen.Login, Screen.SignUp, Screen.ForgotPassword, Screen.VerifyEmail].includes(currentScreen);
 
   return (
     <div className="min-h-screen flex flex-col items-center">
@@ -1020,7 +1021,7 @@ const App: React.FC = () => {
       {currentUser && !activeChat && (
         <button
           onClick={() => setShowCallHistory(true)}
-          className="fixed bottom-24 left-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center text-2xl"
+          className="fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center text-2xl"
           title={t('calls_tab') || 'Calls'}
         >
           📞
@@ -1060,8 +1061,8 @@ const App: React.FC = () => {
           noiseReductionEnabled={noiseReductionEnabled}
         />
       )}
-      <main className={`w-full mx-auto p-4 pt-20 sm:p-6 sm:pt-24 md:p-8 md:pt-28 flex-grow transition-all duration-500 ${isWideScreen ? 'max-w-[95%] xl:max-w-[1400px]' : 'max-w-xl'}`}>
-        <div className={`transition-all duration-500 ${isWideScreen ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
+      <main className={`w-full mx-auto flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
+        <div className={`transition-all duration-500 ${isWideScreen || isAuthScreen ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
           {renderScreen()}
         </div>
       </main>
