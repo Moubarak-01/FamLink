@@ -11,45 +11,88 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { CallLogService } from './call-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { JwtService } from '@nestjs/jwt'; // <--- Import JwtService
+import { ConfigService } from '@nestjs/config'; // <--- Import ConfigService for CORS URL
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({
+  cors: {
+    origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'http://localhost:5173'],
+    credentials: true,
+  }
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private connectedUsers = new Map<string, string[]>();
-  private activeCalls = new Map<string, { callLogId: string, startTime: number }>(); // Track active calls
+  private activeCalls = new Map<string, { callLogId: string, startTime: number }>();
 
   constructor(
     private readonly chatService: ChatService,
     private readonly callLogService: CallLogService,
     private readonly notificationsService: NotificationsService,
+    private readonly jwtService: JwtService, // <--- Inject
   ) { }
 
   async handleConnection(client: Socket) {
-    const userId = client.handshake.query.userId as string;
-    if (userId) {
-      const sockets = this.connectedUsers.get(userId) || [];
-      sockets.push(client.id);
-      this.connectedUsers.set(userId, sockets);
+    try {
+      // 1. Extract Token (Auth Object > Query > Header)
+      let token = client.handshake.auth?.token || client.handshake.query?.token;
 
-      client.join(`user_${userId}`);
+      // Fallback: Check 'cookie' header if using cookies
+      if (!token && client.request.headers.cookie) {
+        // Simple extraction, actual parsing might be needed if multiple cookies
+        const cookies = client.request.headers.cookie.split(';');
+        const jwtCookie = cookies.find(c => c.trim().startsWith('jwt='));
+        if (jwtCookie) {
+          token = jwtCookie.split('=')[1];
+        }
+      }
 
-      // Update DB status to Online
-      await this.chatService.updateUserStatus(userId, 'online');
-      this.server.emit('user_presence', { userId, status: 'online' });
+      if (!token) {
+        console.warn(`[Gateway] Connection attempted without token: ${client.id}`);
+        // We might allow anonymous for some cases, but for Chat we strictly require auth
+        client.disconnect();
+        return;
+      }
 
-      const updatedMessages = await this.chatService.markUndeliveredMessagesAsDelivered(userId);
-      updatedMessages.forEach(msg => {
-        this.server.to(`user_${msg.senderId}`).emit('message_status_update', {
-          messageId: msg._id.toString(),
-          roomId: msg.roomId,
-          status: 'delivered'
+      // 2. Verify Token
+      const payload = this.jwtService.verify(token);
+      const userId = payload.sub;
+
+      // 3. Store Identity
+      client.data.userId = userId;
+      client.data.user = payload;
+
+      // 4. Existing Logic
+      if (userId) {
+        const sockets = this.connectedUsers.get(userId) || [];
+        sockets.push(client.id);
+        this.connectedUsers.set(userId, sockets);
+
+        client.join(`user_${userId}`);
+
+        // Update DB status to Online
+        await this.chatService.updateUserStatus(userId, 'online');
+        this.server.emit('user_presence', { userId, status: 'online' });
+
+        const updatedMessages = await this.chatService.markUndeliveredMessagesAsDelivered(userId);
+        updatedMessages.forEach(msg => {
+          this.server.to(`user_${msg.senderId}`).emit('message_status_update', {
+            messageId: msg._id.toString(),
+            roomId: msg.roomId,
+            status: 'delivered'
+          });
         });
-      });
+
+        console.log(`✅ [Gateway] User connected: ${userId} (${client.id})`);
+      }
+    } catch (err) {
+      console.error(`❌ [Gateway] Auth failed for socket ${client.id}:`, err.message);
+      client.disconnect();
     }
   }
 
   async handleDisconnect(client: Socket) {
-    const userId = client.handshake.query.userId as string;
+    const userId = client.data.userId; // Use authenticated ID
     if (userId && this.connectedUsers.has(userId)) {
       const sockets = this.connectedUsers.get(userId).filter(id => id !== client.id);
       if (sockets.length === 0) {
@@ -71,14 +114,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join_room')
-  async handleJoinRoom(@MessageBody() payload: { roomId: string, userId: string }, @ConnectedSocket() client: Socket) {
+  async handleJoinRoom(@MessageBody() payload: { roomId: string }, @ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
     client.join(payload.roomId);
-    const updatedIds = await this.chatService.markMessagesAsSeen(payload.roomId, payload.userId);
+    const updatedIds = await this.chatService.markMessagesAsSeen(payload.roomId, userId);
     if (updatedIds.length > 0) {
       this.server.to(payload.roomId).emit('messages_status_update', {
         roomId: payload.roomId,
         status: 'seen',
-        userId: payload.userId
+        userId: userId
       });
     }
   }
@@ -89,14 +133,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('typing')
-  handleTyping(@MessageBody() data: { roomId: string, userId: string, userName: string }, @ConnectedSocket() client: Socket) {
-    client.to(data.roomId).emit('user_typing', data);
+  handleTyping(@MessageBody() data: { roomId: string, userName: string }, @ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    client.to(data.roomId).emit('user_typing', { ...data, userId });
   }
 
   // UPDATED: Now accepts and broadcasts 'userName' so the client knows who stopped typing
   @SubscribeMessage('stop_typing')
-  handleStopTyping(@MessageBody() data: { roomId: string, userId: string, userName: string }, @ConnectedSocket() client: Socket) {
-    client.to(data.roomId).emit('user_stop_typing', data);
+  handleStopTyping(@MessageBody() data: { roomId: string, userName: string }, @ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    client.to(data.roomId).emit('user_stop_typing', { ...data, userId });
   }
 
   @SubscribeMessage('mark_delivered')
@@ -112,12 +158,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('send_message')
-  async handleMessage(@MessageBody() data: { roomId: string, message: { senderId: string, text: string, mac: string, replyTo?: string } }, @ConnectedSocket() client: Socket) {
+  async handleMessage(@MessageBody() data: { roomId: string, message: { text: string, mac: string, replyTo?: string } }, @ConnectedSocket() client: Socket) {
     console.log(`🔔 [Gateway] send_message event received from socket ${client.id}`);
-    console.log(`🔔 [Gateway] Payload: roomId=${data.roomId}, senderId=${data.message.senderId}`);
+    const senderId = client.data.userId; // Securely get senderId from Auth
+    console.log(`🔔 [Gateway] Payload: roomId=${data.roomId}, senderId=${senderId}`);
 
     try {
-      const { senderId, text, mac, replyTo } = data.message;
+      const { text, mac, replyTo } = data.message;
       const savedMessage = await this.chatService.saveMessage(data.roomId, senderId, text, mac, replyTo);
 
       let initialStatus = 'sent';
@@ -186,13 +233,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('add_reaction')
-  async handleAddReaction(@MessageBody() data: { roomId: string, messageId: string, userId: string, emoji: string }) {
-    const message = await this.chatService.addReaction(data.messageId, data.userId, data.emoji);
-    this.server.to(data.roomId).emit('reaction_added', data);
+  async handleAddReaction(@MessageBody() data: { roomId: string, messageId: string, emoji: string }, @ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    const message = await this.chatService.addReaction(data.messageId, userId, data.emoji);
+    this.server.to(data.roomId).emit('reaction_added', { ...data, userId });
 
     // Send notification to message author if someone ELSE reacted
-    if (message && message.senderId.toString() !== data.userId) {
-      const reactor = await this.chatService.getUserById(data.userId);
+    if (message && message.senderId.toString() !== userId) {
+      const reactor = await this.chatService.getUserById(userId);
       const reactorName = reactor ? reactor.fullName : 'Someone';
 
       await this.notificationsService.create(
@@ -206,23 +254,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('remove_reaction')
-  async handleRemoveReaction(@MessageBody() data: { roomId: string, messageId: string, userId: string, emoji: string }) {
-    await this.chatService.removeReaction(data.messageId, data.userId, data.emoji);
-    this.server.to(data.roomId).emit('reaction_removed', data);
+  async handleRemoveReaction(@MessageBody() data: { roomId: string, messageId: string, emoji: string }, @ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    await this.chatService.removeReaction(data.messageId, userId, data.emoji);
+    this.server.to(data.roomId).emit('reaction_removed', { ...data, userId });
   }
 
   @SubscribeMessage('delete_message')
-  async handleDeleteMessage(@MessageBody() data: { roomId: string, messageId: string, userId: string, deleteForMe: boolean }) {
-    await this.chatService.deleteMessage(data.messageId, data.userId, !data.deleteForMe);
+  async handleDeleteMessage(@MessageBody() data: { roomId: string, messageId: string, deleteForMe: boolean }, @ConnectedSocket() client: Socket) {
+    const userId = client.data.userId;
+    await this.chatService.deleteMessage(data.messageId, userId, !data.deleteForMe);
 
     if (!data.deleteForMe) {
       // Broadcast to everyone (content removed)
       this.server.to(data.roomId).emit('message_deleted', { roomId: data.roomId, messageId: data.messageId });
     } else {
       // Just tell the user's clients
-      const userSockets = this.connectedUsers.get(data.userId) || [];
+      const userSockets = this.connectedUsers.get(userId) || [];
       userSockets.forEach(socketId => {
-        this.server.to(socketId).emit('message_deleted_for_me', { roomId: data.roomId, messageId: data.messageId, userId: data.userId });
+        this.server.to(socketId).emit('message_deleted_for_me', { roomId: data.roomId, messageId: data.messageId, userId: userId });
       });
     }
   }
@@ -245,18 +295,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('call_user')
   async handleCallUser(
-    @MessageBody() data: { userToCall: string, signalData: any, from: string, name: string, callType?: 'video' | 'voice' },
+    @MessageBody() data: { userToCall: string, signalData: any, name: string, callType?: 'video' | 'voice' },
     @ConnectedSocket() client: Socket
   ) {
-    console.log(`📞 [Gateway] Call (${data.callType || 'video'}) from ${data.from} to ${data.userToCall}`);
+    const from = client.data.userId;
+    console.log(`📞 [Gateway] Call (${data.callType || 'video'}) from ${from} to ${data.userToCall}`);
 
     // Create call log entry
     try {
-      const callerInfo = await this.chatService.getUserById(data.from);
+      const callerInfo = await this.chatService.getUserById(from);
       const receiverInfo = await this.chatService.getUserById(data.userToCall);
 
       const callLog = await this.callLogService.createCallLog({
-        callerId: data.from,
+        callerId: from,
         callerName: data.name || callerInfo?.fullName || 'Unknown',
         callerPhoto: callerInfo?.photo,
         receiverId: data.userToCall,
@@ -266,7 +317,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       // Store active call reference with caller-receiver key
-      const callKey = `${data.from}_${data.userToCall}`;
+      const callKey = `${from}_${data.userToCall}`;
       this.activeCalls.set(callKey, {
         callLogId: callLog._id.toString(),
         startTime: Date.now()
@@ -277,7 +328,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.server.to(`user_${data.userToCall}`).emit('call_received', {
         signal: data.signalData,
-        from: data.from,
+        from: from,
         name: data.name,
         callType: data.callType || 'video'
       });
@@ -286,7 +337,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Still emit the call even if logging fails
       this.server.to(`user_${data.userToCall}`).emit('call_received', {
         signal: data.signalData,
-        from: data.from,
+        from: from,
         name: data.name,
         callType: data.callType || 'video'
       });
@@ -298,7 +349,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { to: string, signal: any },
     @ConnectedSocket() client: Socket
   ) {
-    const answererId = client.handshake.query.userId as string;
+    const answererId = client.data.userId;
     console.log(`✅ [Gateway] Call answered by ${answererId} for caller ${data.to}`);
 
     // Update call log to 'in_progress' (will be 'completed' on end)
@@ -334,7 +385,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { to: string, callLogId?: string, duration?: number },
     @ConnectedSocket() client: Socket
   ) {
-    const enderId = client.handshake.query.userId as string;
+    const enderId = client.data.userId;
     console.log(`🛑 [Gateway] Call ended by ${enderId} for ${data.to}`);
 
     // Try to find and update the call log
@@ -373,7 +424,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { callerId: string },
     @ConnectedSocket() client: Socket
   ) {
-    const rejecterId = client.handshake.query.userId as string;
+    const rejecterId = client.data.userId;
     console.log(`❌ [Gateway] Call rejected by ${rejecterId} from ${data.callerId}`);
 
     const callKey = `${data.callerId}_${rejecterId}`;

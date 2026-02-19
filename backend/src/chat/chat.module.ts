@@ -5,6 +5,7 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { CallLogController } from './call-log.controller';
 import { CallLogService } from './call-log.service';
+import { AuthModule } from '../auth/auth.module'; // <-- Add Import
 import { Message, MessageSchema } from '../schemas/message.schema';
 import { CallLog, CallLogSchema } from '../schemas/call-log.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -16,6 +17,7 @@ import { User, UserSchema } from '../schemas/user.schema';
 
 @Module({
   imports: [
+    AuthModule, // <-- Import AuthModule to use JwtService
     MongooseModule.forFeature([
       { name: Message.name, schema: MessageSchema },
       { name: CallLog.name, schema: CallLogSchema },

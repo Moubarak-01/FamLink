@@ -48,9 +48,13 @@ class SocketService {
             this.socket = null;
         }
 
-        this.socket = io('http://localhost:3001', {
+        const token = localStorage.getItem('authToken');
+
+        const SOCKET_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
+        this.socket = io(SOCKET_URL, {
             transports: ['websocket'],
-            query: { userId: currentUserId },
+            auth: { token }, // Send JWT for authentication
+            query: { userId: currentUserId }, // Keep for backward compatibility if needed, but Gateway will prefer token
             reconnectionAttempts: 5
         });
 

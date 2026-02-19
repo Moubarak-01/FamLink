@@ -9,10 +9,20 @@ export class FirebaseService implements OnModuleInit {
 
     onModuleInit() {
         try {
-            const serviceAccountPath = path.resolve(process.cwd(), 'firebase-adminsdk.json');
             if (!admin.apps.length) {
+                let serviceAccount: admin.ServiceAccount;
+
+                if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+                    // Production (Render): Read from stringified JSON environment variable
+                    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+                } else {
+                    // Local Development: Fallback to file
+                    const serviceAccountPath = path.resolve(process.cwd(), 'firebase-adminsdk.json');
+                    serviceAccount = require(serviceAccountPath);
+                }
+
                 admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccountPath),
+                    credential: admin.credential.cert(serviceAccount),
                 });
                 this.logger.log('Firebase Admin Initialized successfully');
             }

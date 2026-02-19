@@ -30,9 +30,5 @@ export class BookingsController {
     return this.bookingsService.remove(id, req.user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Delete()
-  removeAll() {
-    return this.bookingsService.removeAll();
-  }
+  // Removed insecure removeAll endpoint
 }

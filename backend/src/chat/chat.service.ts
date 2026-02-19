@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from '../schemas/message.schema';
@@ -144,6 +144,13 @@ export class ChatService {
   // UPDATED: Handle "Delete for Me" vs "Delete for Everyone"
   async deleteMessage(messageId: string, userId: string, forEveryone: boolean): Promise<MessageDocument> {
     if (forEveryone) {
+      const message = await this.messageModel.findById(messageId);
+      if (!message) throw new NotFoundException('Message not found');
+
+      if (message.senderId.toString() !== userId) {
+        throw new ForbiddenException('You can only delete your own messages for everyone');
+      }
+
       return this.messageModel.findByIdAndUpdate(
         messageId,
         {

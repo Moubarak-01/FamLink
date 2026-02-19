@@ -24,13 +24,12 @@ async function bootstrap() {
   }));
 
   // Enable CORS for frontend communication
-  // origin: true allows any origin (useful for local dev with varying ports)
   app.enableCors({
     origin: (requestOrigin, callback) => {
       const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:5173',
-        process.env.FRONTEND_URL || 'https://famlink.com', // Replace with actual prod URL
+        process.env.FRONTEND_URL, // Production URL from env
       ].filter(Boolean); // Remove empty strings if env var is missing
 
       // Allow requests with no origin (like mobile apps or curl requests)
