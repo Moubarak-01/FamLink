@@ -157,7 +157,7 @@ npm run dev
 | **Frontend** | ✅ | Complete UI, API integration, Real-time Chat, Video Calls, Interactive Maps |
 | **Backend** | ✅ | NestJS server with Secure Auth (Cookies), WebSocket Gateway, OAuth2, Payment Logic |
 | **AI Services** | ✅ | Three-tier AI waterfall: OpenRouter → Gemini → Perplexity |
-| **Security** | ✅ | HttpOnly Cookies, Helmet, Rate Limiting, Class Validator |
+| **Security** | ✅ | HttpOnly Cookies, Strict CORS, JWT WebSockets, Helmet, Rate Limiting |
 | **Testing** | 🔄 | Jest configuration in place, Cypress e2e setup |
 
 ---
