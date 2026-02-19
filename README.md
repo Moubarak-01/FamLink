@@ -119,27 +119,18 @@ FRONTEND_URL=http://localhost:5173
 
 ### 4. Start the Application
 
-**Terminal 1 - Backend:**
+**Terminal 1 - Backend & Voice AI:**
 ```bash
 cd backend
 npm run start:dev
 ```
-> Server starts on `http://localhost:3001`
+> Starts NestJS Server (`http://localhost:3001`) AND Local Whisper Service (`http://localhost:3002`)
 
 **Terminal 2 - Frontend:**
 ```bash
 npm run dev
 ```
-> App opens at `http://localhost:5173` (Vite) or `http://localhost:3000`
-
-**Terminal 3 - Local Whisper Service (Voice AI):**
-```bash
-cd local-whisper
-npm install
-npm run setup  # Only needed once to download models
-npm start
-```
-> Service starts on `http://localhost:3002`
+> App opens at `http://localhost:5173` or `http://localhost:3000`
 
 ---
 
@@ -153,8 +144,13 @@ npm start
 | **OpenRouter** | `VITE_OPENROUTER_API_KEY` | [Get Key](https://openrouter.ai/keys) | Free-tier AI model aggregator |
 | **Stripe** | `STRIPE_SECRET_KEY` | [Get Key](https://dashboard.stripe.com/apikeys) | Payment processing |
 | **GeoDB** | `GEODB_API_KEY` | [Get Key](https://rapidapi.com/wirefreethought/api/geodb-cities) | Location autocomplete |
+| **Resend** | `MAIL_API_KEY` | [Get Key](https://resend.com/api-keys) | Email notifications |
+| **Google Cloud** | `GOOGLE_CLIENT_ID` | [Get Key](https://console.cloud.google.com/apis/credentials) | Calendar OAuth & Auth |
+| **MongoDB** | `MONGO_URI` | [Get Key](https://cloud.mongodb.com/) | Database Connection |
 
 ---
+
+
 
 ## ✅ Project Status: v2.5 (Feb 2026)
 
@@ -211,141 +207,201 @@ Deep internationalization for dynamic content.
 <details>
 <summary><strong>1. The "Cookie-Guard" Migration</strong></summary>
 
-**Problem:** Storing JWTs in LocalStorage made the app vulnerable to XSS attacks.
-**Solution:** Refactored the entire full-stack auth flow. Backend now sets HttpOnly cookies. Frontend uses `withCredentials: true` and verifies session via `/users/profile` endpoint instead of checking storage.
+**Problem:** 
+Storing JWTs in LocalStorage made the app vulnerable to XSS attacks.
+
+**Solution:** 
+Refactored the entire full-stack auth flow. Backend now sets HttpOnly cookies. Frontend uses `withCredentials: true` and verifies session via `/users/profile` endpoint instead of checking storage.
 </details>
 
 <details>
 <summary><strong>2. The "Invalid Hook" Recursion</strong></summary>
 
-**Problem:** A copy-paste error nested a `useEffect` inside another `useEffect` in the main App component, causing a "Rules of Hooks" violation crash.
-**Solution:** Identified and removed the nested hook architecture, ensuring stable rendering.
+**Problem:** 
+A copy-paste error nested a `useEffect` inside another `useEffect` in the main App component, causing a "Rules of Hooks" violation crash.
+
+**Solution:** 
+Identified and removed the nested hook architecture, ensuring stable rendering.
 </details>
 
 <details>
 <summary><strong>3. The "Yesterday" Date Bug</strong></summary>
 
-**Problem:** Activity dates selected as "Feb 1st" were saving as `2026-02-01` (Midnight UTC), displaying as "Jan 31st" in US times.
-**Solution:** Updated frontend storage logic to append `T12:00:00` (Noon) to date strings, ensuring timezone stability.
+**Problem:** 
+Activity dates selected as "Feb 1st" were saving as `2026-02-01` (Midnight UTC), displaying as "Jan 31st" in US times.
+
+**Solution:** 
+Updated frontend storage logic to append `T12:00:00` (Noon) to date strings, ensuring timezone stability.
 </details>
 
 <details>
 <summary><strong>4. OpenRouter Free Tier Volatility</strong></summary>
 
-**Problem:** Free models like `llama-3.3-70b-instruct:free` often go offline.
-**Solution:** Built a robust **Waterfall System** in `geminiService.ts`. It tries the user's preferred model first, then silently fails over to Gemini/Perplexity.
+**Problem:** 
+Free models like `llama-3.3-70b-instruct:free` often go offline.
+
+**Solution:** 
+Built a robust **Waterfall System** in `geminiService.ts`. It tries the user's preferred model first, then silently fails over to Gemini/Perplexity.
 </details>
 
 <details>
 <summary><strong>5. The Reactivity Problem</strong></summary>
 
-**Problem:** Deleting chat history or clearing bookings required a page refresh.
-**Solution:** Implemented **TanStack React Query** with aggressive invalidation strategies for instant UI updates.
+**Problem:** 
+Deleting chat history or clearing bookings required a page refresh.
+
+**Solution:** 
+Implemented **TanStack React Query** with aggressive invalidation strategies for instant UI updates.
 </details>
 
 <details>
 <summary><strong>6. The "Static" Chat Feel</strong></summary>
 
-**Problem:** Messages appeared instantly with no weight.
-**Solution:** Integrated **Framer Motion** `AnimatePresence`. Added a custom "Dancing Dots" component and spring physics to message bubbles.
+**Problem:** 
+Messages appeared instantly with no weight.
+
+**Solution:** 
+Integrated **Framer Motion** `AnimatePresence`. Added a custom "Dancing Dots" component and spring physics to message bubbles.
 </details>
 
 <details>
 <summary><strong>7. Duplicate Locale Keys</strong></summary>
 
-**Problem:** `ar.ts` and other locale files had duplicate keys causing TypeScript errors and unpredictable translation behavior.
-**Solution:** Built an automated audit script to identify duplicates across all language files; manually resolved by removing redundant entries.
+**Problem:** 
+`ar.ts` and other locale files had duplicate keys causing TypeScript errors and unpredictable translation behavior.
+
+**Solution:** 
+Built an automated audit script to identify duplicates across all language files; manually resolved by removing redundant entries.
 </details>
 
 <details>
 <summary><strong>8. The "Button Clear History" Bug</strong></summary>
 
-**Problem:** The call history button displayed "Button Clear History" (the raw key) instead of "Clear History" in English.
-**Solution:** Identified that the key was present in other languages but missing in `en.ts`. Added the correct translation to the English locale file to fix the UI fallback issue.
+**Problem:** 
+The call history button displayed "Button Clear History" (the raw key) instead of "Clear History" in English.
+
+**Solution:** 
+Identified that the key was present in other languages but missing in `en.ts`. Added the correct translation to the English locale file to fix the UI fallback issue.
 </details>
 
 <details>
 <summary><strong>9. Static Notification Messages</strong></summary>
 
-**Problem:** While the UI was localized, system notifications were hardcoded in the backend. Setting the language to French still showed English notifications in the bell icon.
-**Solution:** Refactored the notification system to store metadata (JSON data) in the database. The frontend now uses these parameters to render fully localized, dynamic messages for all notification types.
+**Problem:** 
+While the UI was localized, system notifications were hardcoded in the backend. Setting the language to French still showed English notifications in the bell icon.
+
+**Solution:** 
+Refactored the notification system to store metadata (JSON data) in the database. The frontend now uses these parameters to render fully localized, dynamic messages for all notification types.
 </details>
 
 <details>
 <summary><strong>10. The Query Key Mismatch (Real-time Tasks)</strong></summary>
 
-**Problem:** When a nanny completed a task, the parent's dashboard didn't update. Users had to manually refresh the page to see changes.
-**Solution:** The socket listener was invalidating `['userTasks']` but the React Query hook used `['tasks', userId]`. Fixed by changing the invalidation to `['tasks']` which matches the hook's query key prefix.
+**Problem:** 
+When a nanny completed a task, the parent's dashboard didn't update. Users had to manually refresh the page to see changes.
+
+**Solution:** 
+The socket listener was invalidating `['userTasks']` but the React Query hook used `['tasks', userId]`. Fixed by changing the invalidation to `['tasks']` which matches the hook's query key prefix.
 </details>
 
 <details>
 <summary><strong>11. Unreachable Socket Emit (Bookings)</strong></summary>
 
-**Problem:** New booking requests weren't triggering real-time updates for nannies.
-**Solution:** Found a duplicate `return` statement in `bookings.service.ts` that made the `socket.emit('bookings_update')` call unreachable. Removed the duplicate return.
+**Problem:** 
+New booking requests weren't triggering real-time updates for nannies.
+
+**Solution:** 
+Found a duplicate `return` statement in `bookings.service.ts` that made the `socket.emit('bookings_update')` call unreachable. Removed the duplicate return.
 </details>
 
 <details>
 <summary><strong>12. Stale Read Receipts</strong></summary>
 
-**Problem:** Chat "blue ticks" would only update if you re-entered the room.
-**Solution:** Added a live `onMessage` listener that checks if the user is currently viewing the room. If yes, it fires a `mark_seen` event immediately, turning the sender's ticks blue in real-time.
+**Problem:** 
+Chat "blue ticks" would only update if you re-entered the room.
+
+**Solution:** 
+Added a live `onMessage` listener that checks if the user is currently viewing the room. If yes, it fires a `mark_seen` event immediately, turning the sender's ticks blue in real-time.
 </details>
 
 <details>
 <summary><strong>13. Notification Click Missing Invalidation</strong></summary>
 
-**Problem:** Clicking task/outing/skill notifications navigated to the correct screen but often showed stale data.
-**Solution:** Added `queryClient.invalidateQueries()` calls for each notification type before navigation, ensuring fresh data is forced to load.
+**Problem:** 
+Clicking task/outing/skill notifications navigated to the correct screen but often showed stale data.
+
+**Solution:** 
+Added `queryClient.invalidateQueries()` calls for each notification type before navigation, ensuring fresh data is forced to load.
 </details>
 
 <details>
 <summary><strong>14. Nanny Visibility on Parent Dashboard</strong></summary>
 
-**Problem:** Nannies weren't appearing on the parent dashboard even after completing their profiles until a manual refresh.
-**Solution:** The `approvedNannies` state was initialized but never populated on app startup. Added a `useEffect` hook to fetch nannies via `userService.getNannies()` when a user logs in.
+**Problem:** 
+Nannies weren't appearing on the parent dashboard even after completing their profiles until a manual refresh.
+
+**Solution:** 
+The `approvedNannies` state was initialized but never populated on app startup. Added a `useEffect` hook to fetch nannies via `userService.getNannies()` when a user logs in.
 </details>
 
 <details>
 <summary><strong>15. Silent Remove Button</strong></summary>
 
-**Problem:** The "Remove Nanny" button had no visual feedback - it worked but users thought nothing happened.
-**Solution:** Added confirmation dialog (`window.confirm`) and success alert to `handleRemoveNanny`, providing clear feedback and styled the buttons with hover animations.
+**Problem:** 
+The "Remove Nanny" button had no visual feedback - it worked but users thought nothing happened.
+
+**Solution:** 
+Added confirmation dialog (`window.confirm`) and success alert to `handleRemoveNanny`, providing clear feedback and styled the buttons with hover animations.
 </details>
 
 <details>
 <summary><strong>16. The "Rollup Shim" Build Failure</strong></summary>
 
-**Problem:** Production builds were failing with `Rollup failed to resolve import "vite-plugin-node-polyfills/shims/process"`, stopping deployment.
-**Solution:** The default polyfill configuration wasn't resolving correctly in the nested `node_modules` structure. We implemented a custom `alias` strategy in `vite.config.ts` to point explicitly to the `dist/index.js` entry point of the process shim, ensuring a clean and stable build.
+**Problem:** 
+Production builds were failing with `Rollup failed to resolve import "vite-plugin-node-polyfills/shims/process"`, stopping deployment.
+
+**Solution:** 
+The default polyfill configuration wasn't resolving correctly in the nested `node_modules` structure. We implemented a custom `alias` strategy in `vite.config.ts` to point explicitly to the `dist/index.js` entry point of the process shim, ensuring a clean and stable build.
 </details>
 
 <details>
 <summary><strong>17. The "Legacy Peer Deps" Conflict</strong></summary>
 
-**Problem:** `npm install` failed with `ERESOLVE` due to a peer dependency conflict between `@react-three/fiber` and `framer-motion-3d`.
-**Solution:** Initially used `--legacy-peer-deps` as a workaround. Ultimately resolved by removing the unused 3D libraries entirely, allowing for a standard, clean installation.
+**Problem:** 
+`npm install` failed with `ERESOLVE` due to a peer dependency conflict between `@react-three/fiber` and `framer-motion-3d`.
+
+**Solution:** 
+Initially used `--legacy-peer-deps` as a workaround. Ultimately resolved by removing the unused 3D libraries entirely, allowing for a standard, clean installation.
 </details>
 
 <details>
 <summary><strong>18. The "Missing API Key" Crash</strong></summary>
 
-**Problem:** The backend would crash on startup with `Error: Missing API key` from the Resend email service.
-**Solution:** Identified that `MAIL_API_KEY` was missing from `.env`. Added strict environment validation and provided a dummy key (`re_123`) for development environments to bypass the crash.
+**Problem:** 
+The backend would crash on startup with `Error: Missing API key` from the Resend email service.
+
+**Solution:** 
+Identified that `MAIL_API_KEY` was missing from `.env`. Added strict environment validation and provided a dummy key (`re_123`) for development environments to bypass the crash.
 </details>
 
 <details>
 <summary><strong>19. MongoDB Connection Refused</strong></summary>
 
-**Problem:** Local development often hit `MongooseServerSelectionError: connect ECONNREFUSED ::1:27017` due to IPv6/IPv4 mismatch.
-**Solution:** Explicitly configured the connection string to use `127.0.0.1` instead of `localhost`, ensuring reliable connection to the local MongoDB instance.
+**Problem:** 
+Local development often hit `MongooseServerSelectionError: connect ECONNREFUSED ::1:27017` due to IPv6/IPv4 mismatch.
+
+**Solution:** 
+Explicitly configured the connection string to use `127.0.0.1` instead of `localhost`, ensuring reliable connection to the local MongoDB instance.
 </details>
 
 <details>
 <summary><strong>20. The "Redirect URI Mismatch" Error</strong></summary>
 
-**Problem:** Google OAuth login failed with `redirect_uri_mismatch` after deployment.
-**Solution:** Harmonized the `GOOGLE_CALLBACK_URL` in `.env` to match exactly what is registered in the Google Cloud Console, correcting the discrepancy between local `localhost` and production URLs.
+**Problem:** 
+Google OAuth login failed with `redirect_uri_mismatch` after deployment.
+
+**Solution:** 
+Harmonized the `GOOGLE_CALLBACK_URL` in `.env` to match exactly what is registered in the Google Cloud Console, correcting the discrepancy between local `localhost` and production URLs.
 </details>
 
 ---
