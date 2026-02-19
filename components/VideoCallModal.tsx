@@ -26,6 +26,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
     const [incomingCall, setIncomingCall] = useState<{ from: string, name: string, signal: any, callType: 'video' | 'voice' } | null>(null);
     const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'receiving' | 'connecting' | 'connected'>('idle');
     const [stream, setStream] = useState<MediaStream | null>(null);
+    const streamRef = useRef<MediaStream | null>(null); // To access stream in cleanup/callbacks
     const [muted, setMuted] = useState(false);
     const [cameraOff, setCameraOff] = useState(false);
 
@@ -168,7 +169,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             });
 
             if (myVideo.current) myVideo.current.srcObject = newStream;
-            setStream(newStream);
+            updateStream(newStream);
             setCurrentDeviceIndex(nextIndex);
 
             if (connectionRef.current) {
@@ -269,15 +270,31 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         });
 
         return () => {
-            console.log("🧹 [VideoCall] Cleaning up socket listeners");
+            console.log("🧹 [VideoCall] Cleaning up socket listeners & stream");
             stopAllSounds();
             stopCallTimer();
             cleanupReceived();
             cleanupAccepted();
             cleanupIce();
             cleanupEnded();
+
+            // Force stop tracks on unmount using ref
+            if (streamRef.current) {
+                console.log("📷 Force stopping tracks on unmount");
+                streamRef.current.getTracks().forEach(track => {
+                    track.stop();
+                    track.enabled = false;
+                });
+                streamRef.current = null;
+            }
         };
     }, []);
+
+    // Helper to keep ref in sync
+    const updateStream = (newStream: MediaStream | null) => {
+        setStream(newStream);
+        streamRef.current = newStream;
+    };
 
     // ============================================================
     // startCall — CALLER side (initiator: true, trickle: true)
@@ -298,7 +315,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                 }
             };
             const currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            setStream(currentStream);
+            updateStream(currentStream);
             if (myVideo.current) myVideo.current.srcObject = currentStream;
 
             if (callType === 'video') {
@@ -406,7 +423,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             };
 
             const currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            setStream(currentStream);
+            updateStream(currentStream);
             if (myVideo.current) myVideo.current.srcObject = currentStream;
 
             if (!isVoiceCall) {
@@ -499,7 +516,16 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         connectionRef.current = null;
         activePeer = null;
 
-        if (stream) {
+        // Use ref to ensure we stop tracks even if state is stale
+        if (streamRef.current) {
+            console.log("📷 Stopping all media tracks...");
+            streamRef.current.getTracks().forEach(track => {
+                track.stop();
+                track.enabled = false;
+            });
+            updateStream(null);
+        } else if (stream) {
+            // Fallback
             stream.getTracks().forEach(track => track.stop());
             setStream(null);
         }

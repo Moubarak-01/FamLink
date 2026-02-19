@@ -54,12 +54,11 @@ cd FamLink
 ### 2. Install Dependencies
 
 ```bash
-# Frontend dependencies (Use legacy-peer-deps due to framer-motion-3d conflict)
-npm install --legacy-peer-deps
+# Frontend dependencies
+npm install
 
 # Backend dependencies
 cd backend
-npm install
 npm install
 cd ..
 
@@ -144,31 +143,6 @@ npm start
 
 ---
 
-## 🔧 Troubleshooting & Common Issues
-
-### 1. `ERESOLVE` unable to resolve dependency tree (Frontend)
-**Error:** `Could not resolve dependency: peer @react-three/fiber@"8.2.2" from framer-motion-3d@11.18.2`
-**Fix:** The frontend must be installed with the legacy peer deps flag:
-```bash
-npm install --legacy-peer-deps
-```
-
-### 2. Backend Crashing with `Missing API key`
-**Error:** `Error: Missing API key. Pass it to the constructor new Resend("re_123")`
-**Fix:** You are missing the `MAIL_API_KEY` in `backend/.env`. Add it (even a dummy value like `re_123` works for dev start) to fix the crash.
-
-### 3. MongoDB Connection Refused
-**Error:** `MongooseServerSelectionError: connect ECONNREFUSED ::1:27017`
-**Fix:**
-- Ensure your MongoDB server is running.
-- If using Atlas, ensure your `MONGO_URI` is correct and your IP is whitelisted.
-- If using local MongoDB, try replacing `localhost` with `127.0.0.1` in the URI.
-
-### 4. Google Auth Errors
-**Error:** `redirect_uri_mismatch`
-**Fix:** Ensure `GOOGLE_CALLBACK_URL` in `.env` matches exactly what is registered in your Google Cloud Console (e.g., `http://localhost:3001/calendar/callback`).
-
----
 
 ## 🔑 API Keys Reference
 
@@ -337,6 +311,41 @@ Deep internationalization for dynamic content.
 
 **Problem:** The "Remove Nanny" button had no visual feedback - it worked but users thought nothing happened.
 **Solution:** Added confirmation dialog (`window.confirm`) and success alert to `handleRemoveNanny`, providing clear feedback and styled the buttons with hover animations.
+</details>
+
+<details>
+<summary><strong>16. The "Rollup Shim" Build Failure</strong></summary>
+
+**Problem:** Production builds were failing with `Rollup failed to resolve import "vite-plugin-node-polyfills/shims/process"`, stopping deployment.
+**Solution:** The default polyfill configuration wasn't resolving correctly in the nested `node_modules` structure. We implemented a custom `alias` strategy in `vite.config.ts` to point explicitly to the `dist/index.js` entry point of the process shim, ensuring a clean and stable build.
+</details>
+
+<details>
+<summary><strong>17. The "Legacy Peer Deps" Conflict</strong></summary>
+
+**Problem:** `npm install` failed with `ERESOLVE` due to a peer dependency conflict between `@react-three/fiber` and `framer-motion-3d`.
+**Solution:** Initially used `--legacy-peer-deps` as a workaround. Ultimately resolved by removing the unused 3D libraries entirely, allowing for a standard, clean installation.
+</details>
+
+<details>
+<summary><strong>18. The "Missing API Key" Crash</strong></summary>
+
+**Problem:** The backend would crash on startup with `Error: Missing API key` from the Resend email service.
+**Solution:** Identified that `MAIL_API_KEY` was missing from `.env`. Added strict environment validation and provided a dummy key (`re_123`) for development environments to bypass the crash.
+</details>
+
+<details>
+<summary><strong>19. MongoDB Connection Refused</strong></summary>
+
+**Problem:** Local development often hit `MongooseServerSelectionError: connect ECONNREFUSED ::1:27017` due to IPv6/IPv4 mismatch.
+**Solution:** Explicitly configured the connection string to use `127.0.0.1` instead of `localhost`, ensuring reliable connection to the local MongoDB instance.
+</details>
+
+<details>
+<summary><strong>20. The "Redirect URI Mismatch" Error</strong></summary>
+
+**Problem:** Google OAuth login failed with `redirect_uri_mismatch` after deployment.
+**Solution:** Harmonized the `GOOGLE_CALLBACK_URL` in `.env` to match exactly what is registered in the Google Cloud Console, correcting the discrepancy between local `localhost` and production URLs.
 </details>
 
 ---
