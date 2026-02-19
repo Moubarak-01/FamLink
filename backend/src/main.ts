@@ -50,6 +50,22 @@ async function bootstrap() {
   const { spawn } = require('child_process');
   const path = require('path');
   const fs = require('fs');
+  const net = require('net');
+
+  // Helper: check if a port is already in use
+  const isPortInUse = (port: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const tester = net.createServer()
+        .once('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') resolve(true);
+          else resolve(false);
+        })
+        .once('listening', () => {
+          tester.once('close', () => resolve(false)).close();
+        })
+        .listen(port);
+    });
+  };
 
   // Resolve path to local-whisper/server.js relative to process.cwd()
   // User runs "npm run start:dev" from "famlink/backend"
@@ -64,25 +80,32 @@ async function bootstrap() {
   console.log(`[DEBUG] Resolved Whisper Path: ${serverJsPath}`);
 
   if (fs.existsSync(serverJsPath)) {
-    console.log(`\n🎙️  Starting Local Whisper Service from: ${localWhisperPath}`);
+    const whisperPort = 3002;
+    const portBusy = await isPortInUse(whisperPort);
 
-    // Spawn the node process
-    const whisperProcess = spawn('node', ['server.js'], {
-      cwd: localWhisperPath, // Important: Run inside the local-whisper folder
-      stdio: 'inherit',      // Pipe output directly to this console
-      shell: true
-    });
+    if (portBusy) {
+      console.log(`🎙️  Local Whisper Service already running on port ${whisperPort} — skipping spawn.`);
+    } else {
+      console.log(`\n🎙️  Starting Local Whisper Service from: ${localWhisperPath}`);
 
-    whisperProcess.on('error', (err) => {
-      console.error('❌ Failed to start Local Whisper Service:', err);
-    });
+      // Spawn the node process
+      const whisperProcess = spawn('node', ['server.js'], {
+        cwd: localWhisperPath, // Important: Run inside the local-whisper folder
+        stdio: 'inherit',      // Pipe output directly to this console
+        shell: true
+      });
 
-    // Ensure it dies when the backend dies
-    process.on('exit', () => whisperProcess.kill());
-    process.on('SIGINT', () => {
-      whisperProcess.kill();
-      process.exit();
-    });
+      whisperProcess.on('error', (err) => {
+        console.error('❌ Failed to start Local Whisper Service:', err);
+      });
+
+      // Ensure it dies when the backend dies
+      process.on('exit', () => whisperProcess.kill());
+      process.on('SIGINT', () => {
+        whisperProcess.kill();
+        process.exit();
+      });
+    }
   } else {
     console.warn(`⚠️  Local Whisper Service not found at: ${serverJsPath}`);
   }

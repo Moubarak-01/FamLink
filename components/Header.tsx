@@ -51,9 +51,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
 
     return (
         <header
-            className="w-full backdrop-blur-md border-b relative z-[1000] transition-colors duration-300"
+            className="w-full backdrop-blur-md border-b border-white/10 bg-gradient-to-br from-white/10 to-white/5 relative z-[1000] transition-colors duration-300"
             style={{
-                backgroundColor: 'var(--header-bg)',
                 borderColor: 'var(--header-border)'
             }}
         >

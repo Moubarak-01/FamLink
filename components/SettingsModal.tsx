@@ -74,6 +74,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, noiseReductionEn
                 <span className="text-[var(--text-secondary)]">{t('settings_shortcut_clear_history')}</span>
                 <kbd className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono shadow-sm">Ctrl + D</kbd>
               </div>
+              {/* NEW: Cmd+K / Ctrl+K to toggle AI */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[var(--text-secondary)]">{t('settings_shortcut_toggle_ai')}</span>
+                <kbd className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded px-2 py-1 text-xs text-[var(--text-primary)] font-mono shadow-sm">Cmd + K</kbd>
+              </div>
             </div>
             {/* Danger Zone */}
             <div className="border-t border-[var(--border-color)] pt-4 mt-6">

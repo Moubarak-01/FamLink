@@ -318,6 +318,11 @@ const App: React.FC = () => {
         setIsSettingsModalOpen(prev => !prev);
       }
 
+      // Toggle AI Assistant (Cmd+K / Ctrl+K)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        aiAssistantRef.current?.toggle();
+      }
       // Shift + N toggles open/close
       if (e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();

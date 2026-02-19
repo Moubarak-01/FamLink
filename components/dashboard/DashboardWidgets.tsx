@@ -81,18 +81,35 @@ export const AddedNannyCard: React.FC<{ nanny: User, currentUser: User, tasks: T
     const hasRated = nanny.ratings?.some(r => r.parentId === currentUser.id);
 
     return (
-        <div className="bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex flex-wrap items-center gap-4 transition-all duration-300 hover:shadow-md">
-            <img src={nanny.photo} alt={nanny.fullName} className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border-accent)]" />
+        <div className="group bg-[var(--bg-card)] p-4 rounded-lg shadow-sm border border-[var(--border-color)] flex flex-wrap items-center gap-4 transition-all duration-300 hover:shadow-md relative">
+            <div className="relative">
+                <img src={nanny.photo} alt={nanny.fullName} className="w-16 h-16 rounded-full object-cover border-2 border-[var(--border-accent)]" />
+                {/* Online Indicator - Mocking logic for now as requested */}
+                {nanny.isOnline !== false && (
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[var(--bg-card)] rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" title="Online"></span>
+                )}
+            </div>
             <div className="flex-grow">
                 <h4 className="font-bold text-[var(--text-primary)]">{nanny.fullName}</h4>
                 <p className="text-sm text-[var(--text-light)]">{t('nanny_profile_experience')}: {nanny.profile.experience} {t('nanny_profile_years')}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-                <button onClick={() => onView(nanny.id)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_view_profile')}</button>
-                <button onClick={() => onContact(nanny)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">{t('button_contact')}</button>
-                <button onClick={() => onRate(nanny)} disabled={!!hasRated} className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:text-gray-400">{hasRated ? t('button_rated') : t('button_rate')}</button>
-                <button onClick={() => onAddTask()} className="text-xs font-semibold text-green-600 dark:text-green-400 hover:underline">{t('button_add_task')}</button>
-                <button onClick={() => onRemove(nanny.id)} className="text-xs font-semibold text-red-500 dark:text-red-400 hover:underline">{t('button_remove')}</button>
+            {/* Progressive Disclosure: Hidden until hover */}
+            <div className="flex flex-wrap gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button onClick={() => onView(nanny.id)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline flex items-center gap-1">
+                    <span>📄</span> {t('button_view_profile')}
+                </button>
+                <button onClick={() => onContact(nanny)} className="text-xs font-semibold text-[var(--text-accent)] hover:underline">
+                    {t('button_contact')}
+                </button>
+                <button onClick={() => onRate(nanny)} disabled={!!hasRated} className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:text-gray-400">
+                    {hasRated ? t('button_rated') : t('button_rate')}
+                </button>
+                <button onClick={() => onAddTask()} className="text-xs font-semibold text-green-600 dark:text-green-400 hover:underline">
+                    {t('button_add_task')}
+                </button>
+                <button onClick={() => onRemove(nanny.id)} className="text-xs font-semibold text-red-500 dark:text-red-400 hover:underline flex items-center gap-1">
+                    <span>🗑️</span> {t('button_remove')}
+                </button>
             </div>
             <div className="mt-3 pt-3 border-t border-[var(--border-color)] w-full">
                 <h5 className="text-sm font-semibold text-[var(--text-secondary)] mb-1">{t('dashboard_tasks_for_nanny', { name: nanny.fullName.split(' ')[0] })}</h5>

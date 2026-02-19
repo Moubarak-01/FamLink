@@ -194,9 +194,18 @@ Deep internationalization for dynamic content.
 - **Language Coverage**: Full support for 6 languages with RTL optimization for Arabic.
 - **Chat Reactions**: WhatsApp-style reaction notifications ("User reacted with emoji") are now fully localized.
 
-### 6. ⚡ Previous Highlights
+### 7. ✨ UI/UX Overhaul (Feb 19 Update)
+Major aesthetic and functional upgrade inspired by premium design systems (Stripe, Lusion).
+- **Magnetic Cards**: Dashboard elements now have a tactile "magnetic" pull, following the cursor for a weighted, physical feel.
+- **Contextual AI Palette**: Implemented `Cmd+K` (or `Ctrl+K`) global shortcut to instantly toggle the AI Assistant from anywhere.
+- **Staggered Motion**: Dashboard elements now enter with a smooth, staggered animation sequence using Framer Motion.
+- **Refined Glassmorphism**: Updated the design language with subtle borders (`border-white/10`) and premium gradients (`bg-gradient-to-br`) for a deeper, modern look.
+- **Progressive Disclosure**: Nanny cards are cleaner, hiding complex actions until hover, with a pulsing "Online" indicator for active users.
+
+### 8. ⚡ Previous Highlights
+- **Interactive 3D Payment Card**: A stunning, premium credit card component with live interactivity.
+- **Cookie-Guard Security**: HTTPOnly Cookie architecture.
 - **Universal Real-time Updates**: Instant UI reflection for Tasks, Bookings, and Outings.
-- **Redesigned UI**: Enhanced Nanny Cards with quick-action buttons.
 
 ---
 
@@ -429,6 +438,20 @@ Harmonized the `GOOGLE_CALLBACK_URL` in `.env` to match exactly what is register
 | **Class Validator** | 0.14 | DTO Validation |
 | **Google APIs** | 126.0 | Calendar Integration |
 | **Stripe** | 14.0 | Payment processing |
+
+---
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|:---------|:-------|
+| **Cmd + K** / **Ctrl + K** | Toggle AI Assistant |
+| **Shift + N** | Toggle AI Sidebar |
+| **Shift + P** | Open Settings |
+| **Shift + A** | Toggle UI Visibility |
+| **Ctrl + D** | Clear Chat History |
 
 ---
 

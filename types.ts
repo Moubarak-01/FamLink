@@ -134,6 +134,7 @@ export interface User {
   interests?: ActivityCategory[];
   children?: Child[];
   skillsToTeach?: SkillCategory[];
+  isOnline?: boolean;
 }
 
 export type ActivityCategory = 'walks' | 'playdates' | 'workout' | 'shopping' | 'studying' | 'dads' | 'other' | string;

@@ -26,6 +26,37 @@ interface ParentDashboardProps {
     onOpenBookingChat: (request: BookingRequest) => void; // Add this
 }
 
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.1 }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+};
+
+import { motion } from 'framer-motion';
+import { useMagnetic } from '../../hooks/useMagnetic';
+
+const MagneticCard: React.FC<{ children: React.ReactNode, onClick?: () => void, className?: string, variants?: any }> = ({ children, onClick, className, variants }) => {
+    const { ref, style } = useMagnetic();
+    return (
+        <motion.div
+            ref={ref as any}
+            variants={variants}
+            onClick={onClick}
+            style={style}
+            className={className}
+        >
+            {children}
+        </motion.div>
+    );
+};
+
 const ParentDashboard: React.FC<ParentDashboardProps> = ({
     user, addedNannies, bookingRequests, allTasks, sharedOutings, skillRequests,
     onRemoveNanny, onContactNanny, onViewNanny, onRateNanny, onOpenTaskModal, onKeepTask,
@@ -38,59 +69,63 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
     const myTasks = allTasks.filter(t => t.parentId === user.id);
 
     return (
-        <>
+        <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
             {/* Navigation Cards */}
             {/* Navigation Cards (Redesigned 2x2 Grid) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
 
                 {/* Find Nanny Card */}
-                <div className="bg-[var(--bg-pink-card)] rounded-2xl border border-[var(--border-pink-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                <MagneticCard variants={itemVariants} className="bg-[var(--bg-pink-card)] rounded-2xl border border-[var(--border-pink-card)] p-8 flex flex-col justify-between min-h-[280px] transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-500/20 cursor-pointer" onClick={onSearchNannies}>
                     <div>
                         <h4 className="text-2xl font-bold text-[var(--text-pink-card-header)] mb-3">{t('dashboard_find_nanny_card_title')}</h4>
                         <p className="text-base text-[var(--text-pink-card-body)] mb-6 leading-relaxed">{t('dashboard_find_nanny_card_subtitle')}</p>
                     </div>
-                    <button onClick={onSearchNannies} className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                    <button className="w-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md pointer-events-none">
                         {t('button_search_nannies')}
                     </button>
-                </div>
+                </MagneticCard>
 
                 {/* Community Card */}
-                <div className="bg-[var(--bg-purple-card)] rounded-2xl border border-[var(--border-purple-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                <MagneticCard variants={itemVariants} className="bg-[var(--bg-purple-card)] rounded-2xl border border-[var(--border-purple-card)] p-8 flex flex-col justify-between min-h-[280px] transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer" onClick={onViewActivities}>
                     <div>
                         <h4 className="text-2xl font-bold text-[var(--text-purple-card-header)] mb-3">{t('dashboard_community_title')}</h4>
                         <p className="text-base text-[var(--text-purple-card-body)] mb-6 leading-relaxed">{t('dashboard_community_subtitle')}</p>
                     </div>
-                    <button onClick={onViewActivities} className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                    <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md pointer-events-none">
                         {t('dashboard_community_button')}
                     </button>
-                </div>
+                </MagneticCard>
 
                 {/* Child Outing Card */}
-                <div className="bg-[var(--bg-teal-card)] rounded-2xl border border-[var(--border-teal-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                <MagneticCard variants={itemVariants} className="bg-[var(--bg-teal-card)] rounded-2xl border border-[var(--border-teal-card)] p-8 flex flex-col justify-between min-h-[280px] transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-teal-500/20 cursor-pointer" onClick={onViewOutings}>
                     <div>
                         <h4 className="text-2xl font-bold text-[var(--text-teal-card-header)] mb-3">{t('dashboard_child_sharing_title')}</h4>
                         <p className="text-base text-[var(--text-teal-card-body)] mb-6 leading-relaxed">{t('dashboard_child_sharing_subtitle')}</p>
                     </div>
-                    <button onClick={onViewOutings} className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                    <button className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md pointer-events-none">
                         {t('dashboard_child_sharing_button')}
                     </button>
-                </div>
+                </MagneticCard>
 
                 {/* Skill Sharing Card */}
-                <div className="bg-[var(--bg-blue-card)] rounded-2xl border border-[var(--border-blue-card)] p-8 flex flex-col justify-between min-h-[280px] hover:shadow-lg transition-shadow">
+                <MagneticCard variants={itemVariants} className="bg-[var(--bg-blue-card)] rounded-2xl border border-[var(--border-blue-card)] p-8 flex flex-col justify-between min-h-[280px] transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 cursor-pointer" onClick={onViewSkillMarketplace}>
                     <div>
                         <h4 className="text-2xl font-bold text-[var(--text-blue-card-header)] mb-3">{t('dashboard_skill_sharing_title')}</h4>
                         <p className="text-base text-[var(--text-blue-card-body)] mb-6 leading-relaxed">{t('dashboard_skill_sharing_subtitle')}</p>
                     </div>
-                    <button onClick={onViewSkillMarketplace} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-transform hover:scale-[1.02] text-lg shadow-md">
+                    <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-md pointer-events-none">
                         {t('dashboard_skill_sharing_button')}
                     </button>
-                </div>
+                </MagneticCard>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* My Booking Requests */}
-                <div>
+                <motion.div variants={itemVariants}>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
                         {bookingRequests.length > 0 && (
@@ -112,10 +147,10 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                             <p className="text-[var(--text-light)]">{t('dashboard_no_booking_requests')}</p>
                         </div>
                     )}
-                </div>
+                </motion.div>
 
                 {/* My Added Nannies */}
-                <div>
+                <motion.div variants={itemVariants}>
                     <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_added_nannies')}</h3>
                     {addedNannies.length > 0 ? (
                         <div className="space-y-4">
@@ -139,11 +174,11 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                             <p className="text-[var(--text-light)]">{t('dashboard_no_added_nannies')}</p>
                         </div>
                     )}
-                </div>
+                </motion.div>
             </div>
 
             {/* Task Management */}
-            <div className="mt-8">
+            <motion.div variants={itemVariants} className="mt-8">
                 <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_tasks')}</h3>
                 {myTasks.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4">
@@ -162,10 +197,10 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         <p className="text-[var(--text-light)]">You haven't assigned any tasks yet.</p>
                     </div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Requests */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                 <div>
                     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_outing_requests')}</h3>
                     {myOutingRequests.length > 0 ? (
@@ -210,8 +245,8 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         </div>
                     )}
                 </div>
-            </div>
-        </>
+            </motion.div>
+        </motion.div>
     );
 };
 
