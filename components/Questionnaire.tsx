@@ -40,7 +40,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   }, [answers]);
   const { t, language } = useLanguage();
 
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
 
   // Initialize questions once on mount to prevent reshuffling on language change
   useEffect(() => {

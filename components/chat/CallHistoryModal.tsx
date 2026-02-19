@@ -104,6 +104,8 @@ const CallHistoryModal: React.FC<CallHistoryModalProps> = ({ isOpen, onClose, cu
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
                     className="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden border border-[var(--border-color)]"
                     onClick={(e) => e.stopPropagation()}
+                    onWheel={(e) => e.stopPropagation()}
+                    data-lenis-prevent
                 >
                     {/* Header */}
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 flex items-center justify-between">
@@ -129,7 +131,7 @@ const CallHistoryModal: React.FC<CallHistoryModalProps> = ({ isOpen, onClose, cu
                     </div>
 
                     {/* Call List */}
-                    <div className="overflow-y-auto max-h-[60vh] p-2">
+                    <div className="overflow-y-auto max-h-[60vh] p-2 overscroll-contain">
                         {loading ? (
                             <div className="flex items-center justify-center py-12">
                                 <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full"></div>

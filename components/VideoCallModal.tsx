@@ -4,9 +4,7 @@ import Peer from 'simple-peer';
 import { socketService } from '../services/socketService';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// Add to global window for simple-peer buffer/process polyfill requirement
-import * as process from 'process';
-window.process = process;
+// NOTE: process/Buffer polyfills are handled by vite-plugin-node-polyfills in vite.config.ts
 
 interface VideoCallProps {
     currentUserId: string;
@@ -26,14 +24,14 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
     // UI State
     const [callActive, setCallActive] = useState(false);
     const [incomingCall, setIncomingCall] = useState<{ from: string, name: string, signal: any, callType: 'video' | 'voice' } | null>(null);
-    const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'receiving' | 'connected'>('idle');
+    const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'receiving' | 'connecting' | 'connected'>('idle');
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [muted, setMuted] = useState(false);
     const [cameraOff, setCameraOff] = useState(false);
 
-    // NEW: WhatsApp-style features
-    const [isLocalMain, setIsLocalMain] = useState(false); // Swap video windows
-    const [callDuration, setCallDuration] = useState(0); // Call timer
+    // WhatsApp-style features
+    const [isLocalMain, setIsLocalMain] = useState(false);
+    const [callDuration, setCallDuration] = useState(0);
     const [pipPosition, setPipPosition] = useState<'top-right' | 'top-left' | 'bottom-right' | 'bottom-left'>('top-right');
     const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
     const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
@@ -50,6 +48,9 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
     const callTimerRef = useRef<NodeJS.Timeout | null>(null);
     const callStartTimeRef = useRef<number | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Ref to track the call target for signaling (avoids stale closure issues)
+    const callTargetRef = useRef<string | null>(null);
 
     // --- Audio Tone Functions ---
     const playTone = (type: 'ring' | 'dial') => {
@@ -159,21 +160,17 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         const nextDevice = videoDevices[nextIndex];
 
         try {
-            // Stop current video track
             stream.getVideoTracks().forEach(track => track.stop());
 
-            // Get new stream with different camera
             const newStream = await navigator.mediaDevices.getUserMedia({
                 video: { deviceId: { exact: nextDevice.deviceId } },
                 audio: true
             });
 
-            // Update local video
             if (myVideo.current) myVideo.current.srcObject = newStream;
             setStream(newStream);
             setCurrentDeviceIndex(nextIndex);
 
-            // Replace track in peer connection
             if (connectionRef.current) {
                 const videoTrack = newStream.getVideoTracks()[0];
                 const sender = (connectionRef.current as any)._pc?.getSenders()?.find((s: any) => s.track?.kind === 'video');
@@ -223,7 +220,6 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             connectionTimeoutRef.current = setTimeout(() => {
                 console.log("⏰ Call timed out after 60s");
                 leaveCall();
-                // Optional: Show toast or alert
                 alert(t('call_timeout') || 'Call timed out');
             }, 60000);
         } else {
@@ -238,22 +234,33 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         const cleanupReceived = socketService.onCallReceived((data) => {
             console.log("📞 [VideoCall] Incoming call from:", data.name, "Type:", data.callType);
             setIncomingCall({ from: data.from, name: data.name, signal: data.signal, callType: data.callType || 'video' });
-            if (callStatus === 'idle') {
-                setCallStatus('receiving');
-                startRingPattern();
-            }
+            setCallStatus('receiving');
+            startRingPattern();
         });
 
         const cleanupAccepted = socketService.onCallAccepted((signal) => {
-            console.log("✅ [VideoCall] Call Accepted by peer");
+            console.log("✅ [VideoCall] Call Accepted — received answer SDP from peer");
             stopAllSounds();
-            setCallStatus('connected');
-            startCallTimer();
-            connectionRef.current?.signal(signal);
+            // Don't set 'connected' yet — wait for peer 'connect' event
+            // Just feed the answer signal to the peer
+            if (connectionRef.current) {
+                try {
+                    connectionRef.current.signal(signal);
+                } catch (e) {
+                    console.error("❌ Error signaling accepted:", e);
+                }
+            }
         });
 
         const cleanupIce = socketService.onIceCandidateReceived((candidate) => {
-            connectionRef.current?.signal(candidate);
+            console.log("🧊 [VideoCall] Received ICE candidate from peer");
+            if (connectionRef.current) {
+                try {
+                    connectionRef.current.signal(candidate);
+                } catch (e) {
+                    console.error("❌ Error signaling ICE candidate:", e);
+                }
+            }
         });
 
         const cleanupEnded = socketService.onCallEnded(() => {
@@ -272,9 +279,13 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         };
     }, []);
 
+    // ============================================================
+    // startCall — CALLER side (initiator: true, trickle: true)
+    // ============================================================
     const startCall = async (userToCallId: string) => {
         setCallStatus('calling');
         setCallActive(true);
+        callTargetRef.current = userToCallId;
         startDialPattern();
 
         try {
@@ -290,51 +301,101 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             setStream(currentStream);
             if (myVideo.current) myVideo.current.srcObject = currentStream;
 
-            // Enumerate devices AFTER getting permission (required for labels)
             if (callType === 'video') {
                 await enumerateVideoDevices();
             }
 
-            console.log(`🎥 [VideoCall] Got local stream (Type: ${callType}), initializing Peer...`);
+            console.log(`🎥 [VideoCall] Got local stream (Type: ${callType}), initializing Peer (trickle: true)...`);
 
             const peer = new Peer({
                 initiator: true,
-                trickle: false,
-                stream: currentStream
+                trickle: true,  // ← THE FIX: Send signals incrementally
+                stream: currentStream,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
             });
 
+            let offerSent = false;
+
             peer.on('signal', (data) => {
-                console.log("📡 [VideoCall] Generated Signal (Offer):", data.type);
-                socketService.callUser(userToCallId, data, currentUserId, currentUserName, callType);
+                if (data.type === 'offer') {
+                    console.log("📡 [VideoCall] Generated Offer SDP — sending to receiver");
+                    socketService.callUser(userToCallId, data, currentUserId, currentUserName, callType);
+                    offerSent = true;
+                } else if ((data as any).candidate) {
+                    // ICE candidate — send it via the dedicated ICE channel
+                    console.log("🧊 [VideoCall] Sending ICE candidate to receiver");
+                    socketService.sendIceCandidate(userToCallId, data);
+                } else {
+                    // Fallback: other signal types
+                    console.log("📡 [VideoCall] Sending other signal type:", (data as any).type);
+                    if (!offerSent) {
+                        socketService.callUser(userToCallId, data, currentUserId, currentUserName, callType);
+                        offerSent = true;
+                    } else {
+                        socketService.sendIceCandidate(userToCallId, data);
+                    }
+                }
+            });
+
+            // P2P link established — NOW we are truly connected
+            peer.on('connect', () => {
+                console.log("🔗 [VideoCall] P2P Connection ESTABLISHED (Caller)");
+                stopAllSounds();
+                setCallStatus('connected');
+                startCallTimer();
             });
 
             peer.on('stream', (remoteStream) => {
-                console.log("📺 [VideoCall] Received Remote Stream");
+                console.log("📺 [VideoCall] Received Remote Stream (Caller)");
                 if (userVideo.current) userVideo.current.srcObject = remoteStream;
             });
 
             peer.on('error', (err) => {
-                console.error("❌ [VideoCall] Peer Error:", err);
+                console.error("❌ [VideoCall] Peer Error (Caller):", err);
                 leaveCall();
+            });
+
+            peer.on('close', () => {
+                console.log("🔌 [VideoCall] Peer Connection Closed (Caller)");
             });
 
             connectionRef.current = peer;
             activePeer = peer;
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to get media:", err);
+            alert(t('alert_media_failed') || `Call failed: ${err.message || err.name}`);
             stopAllSounds();
             leaveCall();
         }
     };
 
+    // ============================================================
+    // answerCall — RECEIVER side (initiator: false, trickle: true)
+    // ============================================================
     const answerCall = async () => {
         stopAllSounds();
-        setCallStatus('connected');
+        // Don't set 'connected' yet — set 'connecting' so user sees feedback
+        setCallStatus('connecting');
         setCallActive(true);
-        startCallTimer();
+
+        // Capture incomingCall in a local variable to avoid stale closure
+        const currentIncomingCall = incomingCall;
+        if (!currentIncomingCall) {
+            console.error("❌ answerCall called but incomingCall is null!");
+            leaveCall();
+            return;
+        }
+
+        callTargetRef.current = currentIncomingCall.from;
 
         try {
-            const isVoiceCall = incomingCall?.callType === 'voice';
+            const isVoiceCall = currentIncomingCall.callType === 'voice';
             const constraints = {
                 video: !isVoiceCall,
                 audio: {
@@ -348,47 +409,81 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             setStream(currentStream);
             if (myVideo.current) myVideo.current.srcObject = currentStream;
 
-            // Enumerate devices AFTER getting permission (required for labels)
             if (!isVoiceCall) {
                 await enumerateVideoDevices();
             }
 
-            console.log("🎥 [VideoCall] Got local stream for Answer, initializing Peer...");
+            console.log("🎥 [VideoCall] Got local stream for Answer, initializing Peer (trickle: true)...");
 
             const peer = new Peer({
                 initiator: false,
-                trickle: false,
-                stream: currentStream
-            });
-
-            // CRITICAL: Handle potential race condition where signal arrives before peer is ready
-            if (incomingCall && incomingCall.signal) {
-                console.log("📥 [VideoCall] Signaling incoming offer IMMEDIATELY...");
-                peer.signal(incomingCall.signal);
-            }
-
-            peer.on('signal', (data) => {
-                console.log("📡 [VideoCall] Generated Signal (Answer):", data.type);
-                if (incomingCall) {
-                    socketService.answerCall({ signal: data, to: incomingCall.from });
+                trickle: true,   // ← THE FIX
+                stream: currentStream,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
                 }
             });
 
+            let answerSent = false;
+
+            peer.on('signal', (data) => {
+                if (data.type === 'answer') {
+                    console.log("📡 [VideoCall] Generated Answer SDP — sending to caller:", currentIncomingCall.from);
+                    socketService.answerCall({ signal: data, to: currentIncomingCall.from });
+                    answerSent = true;
+                } else if ((data as any).candidate) {
+                    console.log("🧊 [VideoCall] Sending ICE candidate to caller");
+                    socketService.sendIceCandidate(currentIncomingCall.from, data);
+                } else {
+                    console.log("📡 [VideoCall] Sending other signal type:", (data as any).type);
+                    if (!answerSent) {
+                        socketService.answerCall({ signal: data, to: currentIncomingCall.from });
+                        answerSent = true;
+                    } else {
+                        socketService.sendIceCandidate(currentIncomingCall.from, data);
+                    }
+                }
+            });
+
+            // P2P link established — NOW we are truly connected
+            peer.on('connect', () => {
+                console.log("🔗 [VideoCall] P2P Connection ESTABLISHED (Receiver)");
+                setCallStatus('connected');
+                startCallTimer();
+            });
+
             peer.on('stream', (remoteStream) => {
-                console.log("📺 [VideoCall] Received Remote Stream (Answer side)");
+                console.log("📺 [VideoCall] Received Remote Stream (Receiver)");
                 if (userVideo.current) userVideo.current.srcObject = remoteStream;
             });
 
             peer.on('error', (err) => {
-                console.error("❌ [VideoCall] Peer Error:", err);
+                console.error("❌ [VideoCall] Peer Error (Receiver):", err);
                 leaveCall();
             });
 
-            // Signal handling moved up to ensure immediate processing
+            peer.on('close', () => {
+                console.log("🔌 [VideoCall] Peer Connection Closed (Receiver)");
+            });
+
+            // Feed the caller's offer into our peer — this triggers SDP answer generation
+            console.log("📥 [VideoCall] Feeding caller's offer to peer...");
+            peer.signal(currentIncomingCall.signal);
+
             connectionRef.current = peer;
             activePeer = peer;
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to get media:", err);
+            const isVoiceCall = currentIncomingCall.callType === 'voice';
+            if (!isVoiceCall) {
+                alert(t('alert_camera_failed') || `Camera failed: ${err.message}. Try Audio call.`);
+            } else {
+                alert(t('alert_audio_failed') || `Microphone failed: ${err.name}`);
+            }
             leaveCall();
         }
     };
@@ -402,16 +497,18 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
         connectionRef.current?.destroy();
         connectionRef.current = null;
+        activePeer = null;
 
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             setStream(null);
         }
 
-        if (incomingCall) {
-            socketService.endCall(incomingCall.from);
-        } else if (outgoingCallTarget) {
-            socketService.endCall(outgoingCallTarget);
+        // Notify the other party
+        const target = callTargetRef.current;
+        if (target) {
+            socketService.endCall(target);
+            callTargetRef.current = null;
         }
 
         onClose();
@@ -483,13 +580,12 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                 )}
 
                 {/* Video/Voice Area */}
-                {(callStatus === 'connected' || callStatus === 'calling') && (
+                {(callStatus === 'connected' || callStatus === 'calling' || callStatus === 'connecting') && (
                     <>
-                        {/* Main Interaction Area */}
                         {/* Main Interaction Area */}
                         <div className="absolute inset-0 bg-gray-950 flex flex-col items-center justify-center">
 
-                            {/* Video Elements - Always rendered for stream handling */}
+                            {/* Video Elements */}
                             <div className={`absolute inset-0 bg-black ${activeCallType === 'voice' ? 'opacity-0 pointer-events-none' : ''}`}>
                                 <video
                                     playsInline
@@ -499,13 +595,17 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                                     className="w-full h-full object-cover transition-all duration-300"
                                 />
                                 {/* Overlay for calling/connecting state */}
-                                {callStatus === 'calling' && (
+                                {(callStatus === 'calling' || callStatus === 'connecting') && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black/60 z-10 backdrop-blur-sm">
                                         <div className="w-28 h-28 mb-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-6xl animate-pulse">
                                             📞
                                         </div>
-                                        <p className="text-2xl font-semibold mb-2">{t('call_ringing')}</p>
-                                        <p className="text-gray-400">{t('call_waiting_status')}</p>
+                                        <p className="text-2xl font-semibold mb-2">
+                                            {callStatus === 'calling' ? (t('call_ringing') || 'Ringing...') : (t('call_connecting') || 'Connecting...')}
+                                        </p>
+                                        <p className="text-gray-400">
+                                            {callStatus === 'calling' ? (t('call_waiting_status') || 'Waiting for answer...') : (t('call_establishing') || 'Establishing connection...')}
+                                        </p>
                                     </div>
                                 )}
                             </div>

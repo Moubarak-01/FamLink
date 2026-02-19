@@ -112,6 +112,7 @@ export interface Notification {
   createdAt?: string;
   timestamp?: number;
   relatedId?: string;
+  data?: any; // Added for translation params
 }
 
 export interface User {

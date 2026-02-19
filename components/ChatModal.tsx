@@ -146,6 +146,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
             }
         }
 
+        // Lock body scroll when modal is open
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        }
+
+
         const unsubPresence = socketService.onPresenceUpdate((data) => {
             if (data.userId === otherUserId) {
                 if (data.status === 'online') {
@@ -411,7 +419,12 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
           background-color: rgba(156, 163, 175, 0.8);
         }
       `}</style>
-            <div className="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden border border-[var(--border-color)]" onClick={e => e.stopPropagation()}>
+            <div
+                className="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden border border-[var(--border-color)]"
+                onClick={e => e.stopPropagation()}
+                onWheel={e => e.stopPropagation()}
+                data-lenis-prevent
+            >
 
                 {/* Header - Sticky */}
                 <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex justify-between items-center z-10 shrink-0 shadow-sm">
@@ -489,7 +502,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <div
                     ref={scrollContainerRef}
                     onScroll={handleScroll}
-                    className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col relative"
+                    className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
                 >
                     <div className="space-y-2 pt-2 pb-2">
                         <AnimatePresence initial={false} mode='popLayout'>

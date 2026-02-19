@@ -36,6 +36,7 @@ const openrouterApiKey = getApiKey(OPENROUTER_API_KEY_ENV);
 const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 // --- TELEMETRY HELPER ---
+// @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const logTelemetry = async (event: string, model: string | undefined, success: boolean, error?: string) => {

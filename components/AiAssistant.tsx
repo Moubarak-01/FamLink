@@ -608,7 +608,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'user' ? (
-                  <div className="bg-[var(--accent-primary)] text-white px-5 py-3 rounded-2xl rounded-br-sm ml-auto max-w-[85%] shadow-sm">
+                  <div className="bg-[var(--accent-primary)] text-white px-5 py-3 rounded-2xl rounded-br-sm ml-auto max-w-[85%] shadow-sm break-words whitespace-pre-wrap overflow-hidden">
                     <MessageContent content={msg.text} isUser={true} />
                   </div>
                 ) : (
@@ -618,7 +618,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                       <img src="/famlink-icon.png" alt="AI" className="w-full h-full object-contain" />
                     </div>
                     {/* Message Bubble - Sharp top-left */}
-                    <div className="bg-[var(--bg-card)] text-[var(--text-primary)] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm border border-[var(--border-color)]">
+                    <div className="bg-[var(--bg-card)] text-[var(--text-primary)] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm border border-[var(--border-color)] break-words whitespace-pre-wrap overflow-hidden">
                       <MessageContent content={msg.text} isUser={false} />
                     </div>
                   </div>

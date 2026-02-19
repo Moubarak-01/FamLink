@@ -44,7 +44,9 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
 
-  // --- AUTO-START LOCAL WHISPER SERVICE ---
+  /* --- AUTO-START LOCAL WHISPER SERVICE ENABLED ---
+  // User explicitly requested backend to start Whisper
+  */
   const { spawn } = require('child_process');
   const path = require('path');
   const fs = require('fs');
@@ -85,6 +87,7 @@ async function bootstrap() {
     console.warn(`⚠️  Local Whisper Service not found at: ${serverJsPath}`);
   }
   // ----------------------------------------
+
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

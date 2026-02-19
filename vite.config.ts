@@ -13,8 +13,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       nodePolyfills({
-        // consistent with simple-peer requirements
-        include: ['process', 'stream', 'util'],
         globals: {
           Buffer: true,
           global: true,
@@ -29,6 +27,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        'vite-plugin-node-polyfills/shims/process': path.resolve(__dirname, 'node_modules/vite-plugin-node-polyfills/shims/process/dist/index.js'),
       }
     }
   };
