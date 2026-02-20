@@ -430,7 +430,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
             >
 
                 {/* Header - Sticky */}
-                <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex justify-between items-center z-10 shrink-0 shadow-sm">
+                <div className="p-4 border-b border-[var(--border-color)] bg-[var(--chat-nav-bg)] flex justify-between items-center z-10 shrink-0 shadow-sm">
                     <div className="flex items-center gap-3 overflow-hidden">
                         {otherUserId && (
                             <img
@@ -440,7 +440,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             />
                         )}
                         <div className="min-w-0">
-                            <h2 className="text-lg font-bold text-[var(--text-primary)] truncate flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-black dark:text-[var(--text-primary)] truncate flex items-center gap-2">
                                 {title}
                             </h2>
                             {bookingRequest && (
@@ -505,7 +505,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <div
                     ref={scrollContainerRef}
                     onScroll={handleScroll}
-                    className="flex-1 p-4 overflow-y-auto bg-[var(--bg-card)] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
+                    className="flex-1 p-4 overflow-y-auto bg-[var(--chat-bg)] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
                 >
                     <div className="space-y-2 pt-2 pb-2">
                         <AnimatePresence initial={false} mode='popLayout'>
@@ -518,7 +518,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                         {/* Date Header */}
                                         {showDateHeader && (
                                             <div className="flex justify-center my-4">
-                                                <span className="bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 text-xs px-4 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                                                <span className="bg-[var(--chat-nav-bg)] opacity-90 text-[var(--text-secondary)] text-xs px-4 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
                                                     {formatDateHeader(msg.timestamp || Date.now())}
                                                 </span>
                                             </div>
@@ -563,7 +563,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.8, y: 20 }}
                                 onClick={scrollToBottom}
-                                className="fixed bottom-32 right-8 w-12 h-12 rounded-full bg-[var(--bg-card)] shadow-xl border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all z-30"
+                                className="fixed bottom-32 right-8 w-12 h-12 rounded-full bg-[var(--chat-nav-bg)] shadow-xl border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all z-30"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -582,7 +582,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                 className="self-start ml-4 mb-2"
                             >
-                                <div className="flex items-center gap-1 bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-none shadow-md border border-gray-100 dark:border-gray-700 w-fit">
+                                <div className="flex items-center gap-1 bg-[var(--chat-bubble-received)] px-4 py-3 rounded-2xl rounded-bl-none shadow-md border border-[var(--border-color)] w-fit">
                                     {[0, 1, 2].map((i) => (
                                         <motion.div
                                             key={i}
@@ -603,7 +603,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 </div>
 
                 {/* Input Area - Sticky */}
-                <div className="bg-white dark:bg-[var(--bg-card)] border-t border-[var(--border-color)] shrink-0 z-10">
+                <div className="bg-[var(--chat-nav-bg)] border-t border-[var(--border-color)] shrink-0 z-10">
                     {replyToId && <ReplyPreview replyToId={replyToId} messages={allMessages} onCancel={() => setReplyToId(null)} />}
                     <form onSubmit={handleSendMessage} className="p-3 flex gap-2 items-end">
                         <textarea
@@ -621,10 +621,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             }}
                             placeholder={t('placeholder_chat_input')}
                             rows={1}
-                            className={`flex-1 px-4 py-3 bg-gray-50 dark:bg-[var(--bg-input)] border rounded-full shadow-sm 
-                                            transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[45px] max-h-[100px]
-                                            focus:outline-none focus:bg-white dark:focus:bg-[#1a1a1a] 
-                                            border-gray-200 dark:border-[var(--border-input)] focus:border-pink-300 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
+                            className={`flex-1 px-4 py-3 bg-[var(--chat-input-bg)] border rounded-full shadow-sm 
+                                            transition-all duration-300 text-[var(--chat-text-primary)] placeholder-gray-500 resize-none min-h-[45px] max-h-[100px]
+                                            focus:outline-none focus:bg-[var(--chat-input-bg)]
+                                            border-[var(--border-input)] focus:border-[var(--accent-primary)] focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
                                         `}
                         />
                         <button

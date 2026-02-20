@@ -97,7 +97,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
                 {replyContext && (
                     <div
                         onClick={(e) => { e.stopPropagation(); onScrollToMessage(replyContext.id); }}
-                        className={`mb-1 p-1.5 rounded cursor-pointer text-xs border-l-4 bg-black/5 dark:bg-white/10 ${isMe ? 'border-green-600' : 'border-[var(--accent-primary)]'} hover:bg-black/10 dark:hover:bg-white/20 transition-colors`}
+                        className={`mb-1 p-1.5 rounded cursor-pointer text-xs border-l-4 bg-[var(--chat-bubble-reply)] ${isMe ? 'border-green-600' : 'border-[var(--accent-primary)]'} hover:opacity-80 transition-opacity`}
                     >
                         <p className="font-bold opacity-90">{replyContext.senderName}</p>
                         <p className="opacity-70 line-clamp-1 text-[11px]">
@@ -108,9 +108,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
 
                 {/* Main Bubble */}
                 <div
-                    // IMPLEMENTATION: Use neutral rounding classes, and add the CSS hook class
                     className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors ${tailClass} overflow-hidden
-            ${isMe ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-gray-100' : 'bg-white dark:bg-[#202c33] text-gray-900 dark:text-gray-100'}
+            ${isMe ? 'bg-[var(--chat-bubble-sent)] text-[var(--chat-text-primary)]' : 'bg-[var(--chat-bubble-received)] text-[var(--chat-text-primary)] border border-[var(--border-color)]'}
             ${message.deleted ? 'italic opacity-70' : ''}`}
                     onClick={handleBubbleClick}
                     onContextMenu={(e) => { e.preventDefault(); setShowActions(true); }}
@@ -188,7 +187,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

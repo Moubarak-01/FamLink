@@ -698,7 +698,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                                     className={`w-full h-full object-cover ${cameraOff && !isLocalMain ? 'hidden' : ''}`}
                                 />
                                 {cameraOff && !isLocalMain && (
-                                    <div className="w-full h-full flex items-center justify-center text-white text-sm bg-gray-800">
+                                    <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-white text-sm bg-gray-100 dark:bg-gray-800">
                                         {t('camera_off_status')}
                                     </div>
                                 )}

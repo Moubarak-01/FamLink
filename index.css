@@ -17,30 +17,30 @@
     /* Glass Variables - Light */
     --glass-bg-light: rgba(255, 255, 255, 0.6);
     --glass-border-light: rgba(0, 0, 0, 0.05);
-    --text-main-light: #0f172a;
+    --text-main-light: #000000;
 
     /* AUTH VARIABLES - LIGHT */
     --auth-card-bg: rgba(255, 255, 255, 0.6);
     --auth-card-border: rgba(255, 255, 255, 0.4);
     --auth-input-bg: rgba(0, 0, 0, 0.03);
     --auth-input-border: rgba(0, 0, 0, 0.05);
-    --auth-input-text: #0f172a;
+    --auth-input-text: #000000;
     --auth-input-placeholder: #94a3b8;
 
     /* 3. HIGH-CONTRAST INTERACTIVE ELEMENTS - Light Mode Buttons */
-    --btn-primary-bg-light: #1e293b;
+    --btn-primary-bg-light: #000000;
     /* Deep Navy/Charcoal */
     --btn-primary-text-light: #ffffff;
 
     --btn-secondary-bg-light: rgba(0, 0, 0, 0.05);
     --btn-secondary-hover-light: rgba(0, 0, 0, 0.1);
-    --btn-secondary-text-light: #1e293b;
+    --btn-secondary-text-light: #000000;
 
     /* GENERIC INPUT VARIABLES - LIGHT */
     --bg-input: #ffffff;
     --border-input: #cbd5e1;
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
+    --text-primary: #000000;
+    --text-secondary: #475569;
     --bg-card: #ffffff;
     --ring-accent: rgba(236, 72, 153, 0.5);
     --border-accent: #ec4899;
@@ -79,7 +79,15 @@
     --text-blue-card-header: #1e40af;
     --text-blue-card-body: #3b82f6;
 
-    /* ---- SURFACE UTILITIES ---- */
+    /* ---- STATUS BADGES ---- */
+    --bg-status-green: #dcfce7;
+    --text-status-green: #166534;
+    --bg-status-red: #fee2e2;
+    --text-status-red: #991b1b;
+    --bg-status-yellow: #fef9c3;
+    --text-status-yellow: #854d0e;
+
+    /* ---- SURFACE VARIANTS ---- */
     --bg-card-subtle: #f8fafc;
     --bg-accent-light: #fdf2f8;
 }
@@ -163,8 +171,16 @@
     --text-blue-card-header: #93c5fd;
     --text-blue-card-body: #60a5fa;
 
-    /* ---- SURFACE UTILITIES ---- */
-    --bg-card-subtle: rgba(255, 255, 255, 0.04);
+    /* ---- STATUS BADGES ---- */
+    --bg-status-green: rgba(34, 197, 94, 0.15);
+    --text-status-green: #86efac;
+    --bg-status-red: rgba(239, 68, 68, 0.15);
+    --text-status-red: #fca5a5;
+    --bg-status-yellow: rgba(234, 179, 8, 0.15);
+    --text-status-yellow: #fde047;
+
+    /* ---- SURFACE VARIANTS ---- */
+    --bg-card-subtle: rgba(255, 255, 255, 0.05);
     --bg-accent-light: rgba(236, 72, 153, 0.1);
 }
 
