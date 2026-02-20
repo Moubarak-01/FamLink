@@ -26,13 +26,19 @@ async function bootstrap() {
   // Enable CORS for frontend communication
   app.enableCors({
     origin: (requestOrigin, callback) => {
+      // Allow requests with no origin (health checks, server-to-server, mobile apps)
+      if (!requestOrigin) {
+        callback(null, true);
+        return;
+      }
+
       const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:5173',
         process.env.FRONTEND_URL, // Production URL from env
       ].filter(Boolean); // Remove empty strings if env var is missing
 
-      // Production: Strictly Enforce Origin
+      // Strictly Enforce Origin for browser requests
       if (allowedOrigins.includes(requestOrigin)) {
         callback(null, true);
       } else {
@@ -43,70 +49,63 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
 
-  /* --- AUTO-START LOCAL WHISPER SERVICE ENABLED ---
-  // User explicitly requested backend to start Whisper
+  /* --- AUTO-START LOCAL WHISPER SERVICE (Local Dev Only) ---
+  // Whisper uses Windows .exe binaries — skip entirely in production (Render)
   */
-  const { spawn } = require('child_process');
-  const path = require('path');
-  const fs = require('fs');
-  const net = require('net');
+  if (process.env.NODE_ENV !== 'production' && !process.env.RENDER) {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    const fs = require('fs');
+    const net = require('net');
 
-  // Helper: check if a port is already in use
-  const isPortInUse = (port: number): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const tester = net.createServer()
-        .once('error', (err: any) => {
-          if (err.code === 'EADDRINUSE') resolve(true);
-          else resolve(false);
-        })
-        .once('listening', () => {
-          tester.once('close', () => resolve(false)).close();
-        })
-        .listen(port);
-    });
-  };
+    // Helper: check if a port is already in use
+    const isPortInUse = (port: number): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const tester = net.createServer()
+          .once('error', (err: any) => {
+            if (err.code === 'EADDRINUSE') resolve(true);
+            else resolve(false);
+          })
+          .once('listening', () => {
+            tester.once('close', () => resolve(false)).close();
+          })
+          .listen(port);
+      });
+    };
 
-  // Resolve path to local-whisper/server.js relative to process.cwd()
-  // User runs "npm run start:dev" from "famlink/backend"
-  // So local-whisper is "../local-whisper"
+    const localWhisperPath = path.resolve(process.cwd(), '..', 'local-whisper');
+    const serverJsPath = path.join(localWhisperPath, 'server.js');
 
-  console.log(`[DEBUG] Current process.cwd(): ${process.cwd()}`);
+    if (fs.existsSync(serverJsPath)) {
+      const whisperPort = 3002;
+      const portBusy = await isPortInUse(whisperPort);
 
-  // Try sibling directory first (standard dev structure)
-  const localWhisperPath = path.resolve(process.cwd(), '..', 'local-whisper');
-  const serverJsPath = path.join(localWhisperPath, 'server.js');
+      if (portBusy) {
+        console.log(`🎙️  Local Whisper Service already running on port ${whisperPort} — skipping spawn.`);
+      } else {
+        console.log(`\n🎙️  Starting Local Whisper Service from: ${localWhisperPath}`);
 
-  console.log(`[DEBUG] Resolved Whisper Path: ${serverJsPath}`);
+        const whisperProcess = spawn('node', ['server.js'], {
+          cwd: localWhisperPath,
+          stdio: 'inherit',
+          shell: true
+        });
 
-  if (fs.existsSync(serverJsPath)) {
-    const whisperPort = 3002;
-    const portBusy = await isPortInUse(whisperPort);
+        whisperProcess.on('error', (err) => {
+          console.error('❌ Failed to start Local Whisper Service:', err);
+        });
 
-    if (portBusy) {
-      console.log(`🎙️  Local Whisper Service already running on port ${whisperPort} — skipping spawn.`);
+        process.on('exit', () => whisperProcess.kill());
+        process.on('SIGINT', () => {
+          whisperProcess.kill();
+          process.exit();
+        });
+      }
     } else {
-      console.log(`\n🎙️  Starting Local Whisper Service from: ${localWhisperPath}`);
-
-      // Spawn the node process
-      const whisperProcess = spawn('node', ['server.js'], {
-        cwd: localWhisperPath, // Important: Run inside the local-whisper folder
-        stdio: 'inherit',      // Pipe output directly to this console
-        shell: true
-      });
-
-      whisperProcess.on('error', (err) => {
-        console.error('❌ Failed to start Local Whisper Service:', err);
-      });
-
-      // Ensure it dies when the backend dies
-      process.on('exit', () => whisperProcess.kill());
-      process.on('SIGINT', () => {
-        whisperProcess.kill();
-        process.exit();
-      });
+      console.warn(`⚠️  Local Whisper Service not found at: ${serverJsPath}`);
     }
   } else {
-    console.warn(`⚠️  Local Whisper Service not found at: ${serverJsPath}`);
+    console.log('🎙️  Skipping Local Whisper Service (production environment).');
   }
   // ----------------------------------------
 
