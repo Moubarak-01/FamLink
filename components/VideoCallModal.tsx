@@ -326,11 +326,12 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                 await enumerateVideoDevices();
             }
 
-            console.log(`🎥 [VideoCall] Got local stream (Type: ${callType}), initializing Peer (trickle: true)...`);
+            const logPrefix = callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+            console.log(`🎥 ${logPrefix} Got local stream (Type: ${callType}), initializing Peer (trickle: true)...`);
 
             const peer = new Peer({
                 initiator: true,
-                trickle: false,  // ← CHANGED: Send signals in one block to improve NAT piercing
+                trickle: true,  // ← REVERTED to true: Standard ICE gathering for faster piercing
                 stream: currentStream,
                 config: {
                     iceServers: [
@@ -362,17 +363,16 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             let offerSent = false;
 
             peer.on('signal', (data) => {
+                const logPrefix = callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
                 if (data.type === 'offer') {
-                    console.log("📡 [VideoCall] Generated Offer SDP — sending to receiver");
+                    console.log(`📡 ${logPrefix} Generated Offer SDP — sending to receiver`);
                     socketService.callUser(userToCallId, data, currentUserId, currentUserName, callType);
                     offerSent = true;
                 } else if ((data as any).candidate) {
-                    // ICE candidate — send it via the dedicated ICE channel
-                    console.log("🧊 [VideoCall] Sending ICE candidate to receiver");
+                    console.log(`🧊 ${logPrefix} Sending ICE candidate to receiver`);
                     socketService.sendIceCandidate(userToCallId, data);
                 } else {
-                    // Fallback: other signal types
-                    console.log("📡 [VideoCall] Sending other signal type:", (data as any).type);
+                    console.log(`📡 ${logPrefix} Sending other signal type:`, (data as any).type);
                     if (!offerSent) {
                         socketService.callUser(userToCallId, data, currentUserId, currentUserName, callType);
                         offerSent = true;
@@ -384,15 +384,20 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
             // P2P link established — NOW we are truly connected
             peer.on('connect', () => {
-                console.log("🔗 [VideoCall] P2P Connection ESTABLISHED (Caller)");
+                const logPrefix = callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+                console.log(`🔗 ${logPrefix} P2P Connection ESTABLISHED (Caller)`);
                 stopAllSounds();
                 setCallStatus('connected');
                 startCallTimer();
             });
 
             peer.on('stream', (remoteStream) => {
-                console.log("📺 [VideoCall] Received Remote Stream (Caller)");
-                if (userVideo.current) userVideo.current.srcObject = remoteStream;
+                const logPrefix = callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+                console.log(`📺 ${logPrefix} Received Remote Stream (Caller)`);
+                if (userVideo.current) {
+                    userVideo.current.srcObject = remoteStream;
+                    userVideo.current.play().catch(e => console.error("❌ Error auto-playing remote stream (Caller):", e));
+                }
             });
 
             peer.on('error', (err) => {
@@ -452,11 +457,12 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                 await enumerateVideoDevices();
             }
 
-            console.log("🎥 [VideoCall] Got local stream for Answer, initializing Peer (trickle: true)...");
+            const logPrefix = !isVoiceCall ? '[VideoCall]' : '[VoiceCall]';
+            console.log(`🎥 ${logPrefix} Got local stream for Answer, initializing Peer (trickle: true)...`);
 
             const peer = new Peer({
                 initiator: false,
-                trickle: false,   // ← CHANGED: Disable trickle to bundle all candidates in the SDP answer
+                trickle: true,   // ← REVERTED to true
                 stream: currentStream,
                 config: {
                     iceServers: [
@@ -488,15 +494,16 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             let answerSent = false;
 
             peer.on('signal', (data) => {
+                const logPrefix = currentIncomingCall?.callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
                 if (data.type === 'answer') {
-                    console.log("📡 [VideoCall] Generated Answer SDP — sending to caller:", currentIncomingCall.from);
+                    console.log(`📡 ${logPrefix} Generated Answer SDP — sending to caller:`, currentIncomingCall.from);
                     socketService.answerCall({ signal: data, to: currentIncomingCall.from });
                     answerSent = true;
                 } else if ((data as any).candidate) {
-                    console.log("🧊 [VideoCall] Sending ICE candidate to caller");
+                    console.log(`🧊 ${logPrefix} Sending ICE candidate to caller`);
                     socketService.sendIceCandidate(currentIncomingCall.from, data);
                 } else {
-                    console.log("📡 [VideoCall] Sending other signal type:", (data as any).type);
+                    console.log(`📡 ${logPrefix} Sending other signal type:`, (data as any).type);
                     if (!answerSent) {
                         socketService.answerCall({ signal: data, to: currentIncomingCall.from });
                         answerSent = true;
@@ -508,14 +515,19 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
             // P2P link established — NOW we are truly connected
             peer.on('connect', () => {
-                console.log("🔗 [VideoCall] P2P Connection ESTABLISHED (Receiver)");
+                const logPrefix = currentIncomingCall?.callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+                console.log(`🔗 ${logPrefix} P2P Connection ESTABLISHED (Receiver)`);
                 setCallStatus('connected');
                 startCallTimer();
             });
 
             peer.on('stream', (remoteStream) => {
-                console.log("📺 [VideoCall] Received Remote Stream (Receiver)");
-                if (userVideo.current) userVideo.current.srcObject = remoteStream;
+                const logPrefix = currentIncomingCall?.callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+                console.log(`📺 ${logPrefix} Received Remote Stream (Receiver)`);
+                if (userVideo.current) {
+                    userVideo.current.srcObject = remoteStream;
+                    userVideo.current.play().catch(e => console.error("❌ Error auto-playing remote stream (Receiver):", e));
+                }
             });
 
             peer.on('error', (err) => {
