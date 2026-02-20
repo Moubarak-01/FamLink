@@ -108,7 +108,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
 
                 {/* Main Bubble */}
                 <div
-                    className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors ${tailClass} overflow-hidden
+                    className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors ${tailClass} 
             ${isMe ? 'bg-[var(--chat-bubble-sent)] text-[var(--chat-text-primary)]' : 'bg-[var(--chat-bubble-received)] text-[var(--chat-text-primary)] border border-[var(--border-color)]'}
             ${message.deleted ? 'italic opacity-70' : ''}`}
                     onClick={handleBubbleClick}
