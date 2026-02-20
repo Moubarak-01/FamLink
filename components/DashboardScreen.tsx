@@ -174,32 +174,32 @@ const AddedNannyCard: React.FC<{ nanny: User, currentUser: User, tasks: Task[], 
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 <button
                     onClick={() => onView(nanny.id)}
-                    className="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                    className="flex-1 sm:flex-none bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                 >
                     <span>📄</span> {t('dashboard_view_details')}
                 </button>
                 <button
                     onClick={() => onContact(nanny)}
-                    className="flex-1 sm:flex-none bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                    className="flex-1 sm:flex-none bg-white hover:bg-pink-50 dark:bg-gray-800 dark:hover:bg-pink-900/20 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-800 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                 >
                     <span>💬</span> {t('button_contact')}
                 </button>
                 <button
                     onClick={() => onRate(nanny)}
                     disabled={!!hasRated}
-                    className="flex-1 sm:flex-none bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                    className="flex-1 sm:flex-none bg-white hover:bg-yellow-50 dark:bg-gray-800 dark:hover:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-100 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
                 >
                     <span>⭐</span> {hasRated ? t('button_rated') : t('button_rate')}
                 </button>
                 <button
                     onClick={() => onAddTask()}
-                    className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                    className="flex-1 sm:flex-none bg-white hover:bg-green-50 dark:bg-gray-800 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                 >
                     <span>📝</span> {t('button_add_task')}
                 </button>
                 <button
                     onClick={() => onRemove(nanny.id)}
-                    className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                    className="flex-1 sm:flex-none bg-white hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all duration-200 hover:scale-[1.02] active:scale-95 hover:shadow-md"
                 >
                     <span>🗑️</span> {t('button_remove')}
                 </button>
