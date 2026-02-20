@@ -184,7 +184,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 if (message.senderId !== currentUser.id) {
                     socketService.markMessagesAsSeen(roomId, currentUser.id);
                 }
-                return [...prev, message];
+
+                // Ensure timestamp exists to prevent it from jumping to the top of the chat
+                const processedMessage = {
+                    ...message,
+                    timestamp: message.timestamp || Date.now()
+                };
+
+                return [...prev, processedMessage];
             });
 
             if (scrollContainerRef.current) {
@@ -502,7 +509,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <div
                     ref={scrollContainerRef}
                     onScroll={handleScroll}
-                    className="flex-1 p-4 overflow-y-auto bg-[#e5ded8] dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
+                    className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
                 >
                     <div className="space-y-2 pt-2 pb-2">
                         <AnimatePresence initial={false} mode='popLayout'>
