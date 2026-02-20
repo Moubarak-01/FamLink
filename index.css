@@ -44,6 +44,40 @@
     --bg-card: #ffffff;
     --ring-accent: rgba(236, 72, 153, 0.5);
     --border-accent: #ec4899;
+
+    /* ---- ACCENT COLORS (used app-wide) ---- */
+    --accent-primary: #ec4899;
+    --accent-primary-hover: #db2777;
+
+    /* ---- HEADER & NAVIGATION ---- */
+    --header-icon-bg: rgba(0, 0, 0, 0.04);
+    --header-icon-fg: #475569;
+    --header-border: rgba(0, 0, 0, 0.08);
+
+    /* ---- INTERACTIVE STATES ---- */
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --border-color: rgba(0, 0, 0, 0.08);
+
+    /* ---- TEXT UTILITIES ---- */
+    --text-light: #94a3b8;
+    --text-accent: #ec4899;
+
+    /* ---- DASHBOARD FEATURE CARDS (Light = soft pastels) ---- */
+    --bg-pink-card: #fdf2f8;
+    --text-pink-card-header: #9d174d;
+    --text-pink-card-body: #be185d;
+
+    --bg-purple-card: #f5f3ff;
+    --text-purple-card-header: #6b21a8;
+    --text-purple-card-body: #7c3aed;
+
+    --bg-teal-card: #f0fdfa;
+    --text-teal-card-header: #115e59;
+    --text-teal-card-body: #0d9488;
+
+    --bg-blue-card: #eff6ff;
+    --text-blue-card-header: #1e40af;
+    --text-blue-card-body: #3b82f6;
 }
 
 /* 1. DYNAMIC IMMERSIVE CANVAS - Dark Mode (Base) */
@@ -90,6 +124,40 @@
     --bg-card: #1e1e1e;
     --ring-accent: rgba(236, 72, 153, 0.5);
     --border-accent: #ec4899;
+
+    /* ---- ACCENT COLORS (used app-wide) ---- */
+    --accent-primary: #f472b6;
+    --accent-primary-hover: #ec4899;
+
+    /* ---- HEADER & NAVIGATION ---- */
+    --header-icon-bg: rgba(255, 255, 255, 0.08);
+    --header-icon-fg: #cbd5e1;
+    --header-border: rgba(255, 255, 255, 0.08);
+
+    /* ---- INTERACTIVE STATES ---- */
+    --bg-hover: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(255, 255, 255, 0.1);
+
+    /* ---- TEXT UTILITIES ---- */
+    --text-light: #64748b;
+    --text-accent: #f472b6;
+
+    /* ---- DASHBOARD FEATURE CARDS (Dark = deep rich tones) ---- */
+    --bg-pink-card: rgba(236, 72, 153, 0.12);
+    --text-pink-card-header: #f9a8d4;
+    --text-pink-card-body: #f472b6;
+
+    --bg-purple-card: rgba(139, 92, 246, 0.12);
+    --text-purple-card-header: #c4b5fd;
+    --text-purple-card-body: #a78bfa;
+
+    --bg-teal-card: rgba(20, 184, 166, 0.12);
+    --text-teal-card-header: #5eead4;
+    --text-teal-card-body: #2dd4bf;
+
+    --bg-blue-card: rgba(59, 130, 246, 0.12);
+    --text-blue-card-header: #93c5fd;
+    --text-blue-card-body: #60a5fa;
 }
 
 @tailwind base;
