@@ -67,6 +67,9 @@ backend/firebase-adminsdk.json
 !package.json
 !tsconfig.json
 !metadata.json
+!vercel.json
+!nest-cli.json
+!backend/nest-cli.json
 
 # Misc Junk
 *.diff
