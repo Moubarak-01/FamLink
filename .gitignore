@@ -60,6 +60,7 @@ verify_output*.txt
 scripts/
 
 # Security & Credentials
+client_secret*.json
 firebase-adminsdk.json
 backend/firebase-adminsdk.json
 *.json

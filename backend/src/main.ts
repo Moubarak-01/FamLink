@@ -32,8 +32,8 @@ async function bootstrap() {
         process.env.FRONTEND_URL, // Production URL from env
       ].filter(Boolean); // Remove empty strings if env var is missing
 
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!requestOrigin || allowedOrigins.includes(requestOrigin)) {
+      // Production: Strictly Enforce Origin
+      if (allowedOrigins.includes(requestOrigin)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS Error: Origin ${requestOrigin} not allowed`));
