@@ -149,11 +149,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         // Lock body scroll when modal is open
         document.body.style.overflow = 'hidden';
 
-        return () => {
-            document.body.style.overflow = 'unset';
-        }
-
-
         const unsubPresence = socketService.onPresenceUpdate((data) => {
             if (data.userId === otherUserId) {
                 if (data.status === 'online') {
@@ -255,6 +250,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         });
 
         return () => {
+            document.body.style.overflow = 'unset';
             unsubMsg();
             unsubStatus();
             unsubReaction();
