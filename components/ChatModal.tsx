@@ -603,7 +603,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 </div>
 
                 {/* Input Area - Sticky */}
-                <div className="bg-[var(--bg-card)] border-t border-[var(--border-color)] shrink-0 z-10">
+                <div className="bg-white dark:bg-[var(--bg-card)] border-t border-[var(--border-color)] shrink-0 z-10">
                     {replyToId && <ReplyPreview replyToId={replyToId} messages={allMessages} onCancel={() => setReplyToId(null)} />}
                     <form onSubmit={handleSendMessage} className="p-3 flex gap-2 items-end">
                         <textarea
@@ -621,10 +621,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             }}
                             placeholder={t('placeholder_chat_input')}
                             rows={1}
-                            className={`flex-1 px-4 py-3 bg-[var(--bg-input)] border rounded-full shadow-sm 
+                            className={`flex-1 px-4 py-3 bg-gray-50 dark:bg-[var(--bg-input)] border rounded-full shadow-sm 
                                             transition-all duration-300 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[45px] max-h-[100px]
-                                            focus:outline-none focus:bg-pink-50 dark:focus:bg-[#1a1a1a] 
-                                            border-[var(--border-input)] focus:border-pink-300 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
+                                            focus:outline-none focus:bg-white dark:focus:bg-[#1a1a1a] 
+                                            border-gray-200 dark:border-[var(--border-input)] focus:border-pink-300 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)]
                                         `}
                         />
                         <button

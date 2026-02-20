@@ -110,7 +110,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
                 <div
                     // IMPLEMENTATION: Use neutral rounding classes, and add the CSS hook class
                     className={`p-3 rounded-lg shadow-sm text-sm relative cursor-pointer transition-colors ${tailClass} overflow-hidden
-            ${isMe ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-800 dark:text-gray-100' : 'bg-white dark:bg-[#202c33] text-gray-800 dark:text-gray-100'}
+            ${isMe ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-gray-900 dark:text-gray-100' : 'bg-white dark:bg-[#202c33] text-gray-900 dark:text-gray-100'}
             ${message.deleted ? 'italic opacity-70' : ''}`}
                     onClick={handleBubbleClick}
                     onContextMenu={(e) => { e.preventDefault(); setShowActions(true); }}

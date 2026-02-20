@@ -14,7 +14,7 @@ const ReplyPreview: React.FC<ReplyPreviewProps> = ({ replyToId, messages, onCanc
   if (!referencedMsg) return null;
 
   return (
-    <div className="flex items-center justify-between bg-[var(--bg-card-subtle)] p-2 rounded-t-lg border-t border-l border-r border-[var(--border-color)] mx-3 mt-2 mb-0 animate-slide-up">
+    <div className="flex items-center justify-between bg-gray-50 dark:bg-[var(--bg-card-subtle)] p-2 rounded-t-lg border-t border-l border-r border-[var(--border-color)] mx-3 mt-2 mb-0 animate-slide-up">
       <div className="border-l-4 border-[var(--accent-primary)] pl-2 max-w-[90%]">
         <p className="text-xs font-bold text-[var(--accent-primary)] mb-0.5">{referencedMsg.senderName}</p>
         <p className="text-xs text-[var(--text-secondary)] line-clamp-1 overflow-hidden text-ellipsis">
