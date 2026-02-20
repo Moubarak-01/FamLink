@@ -27,6 +27,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       localStorage.setItem('theme', theme);
       document.documentElement.setAttribute('data-theme', theme);
+      // Tailwind uses darkMode: 'class', so we MUST toggle the 'dark' class
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     } catch (error) {
       console.error("Failed to set theme in localStorage", error);
     }

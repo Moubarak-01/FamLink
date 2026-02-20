@@ -227,10 +227,10 @@ const ParentBookingCard: React.FC<{ request: EnrichedBookingRequest }> = ({ requ
     const nannyName = request.nanny?.fullName || request.nannyName || 'Nanny';
     const nannyPhoto = request.nanny?.photo || request.nannyPhoto;
 
-    let statusColor = 'bg-gray-600';
-    if (request.status === 'accepted') statusColor = 'bg-green-700';
-    if (request.status === 'declined') statusColor = 'bg-red-600';
-    if (request.status === 'pending') statusColor = 'bg-yellow-600';
+    let statusColor = 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
+    if (request.status === 'accepted') statusColor = 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400';
+    if (request.status === 'declined') statusColor = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400';
+    if (request.status === 'pending') statusColor = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400';
 
     return (
         <div className="bg-[var(--bg-card)] p-5 rounded-xl shadow-lg border border-[var(--border-color)] relative overflow-hidden">

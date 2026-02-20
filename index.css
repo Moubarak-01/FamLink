@@ -78,6 +78,10 @@
     --bg-blue-card: #eff6ff;
     --text-blue-card-header: #1e40af;
     --text-blue-card-body: #3b82f6;
+
+    /* ---- SURFACE UTILITIES ---- */
+    --bg-card-subtle: #f8fafc;
+    --bg-accent-light: #fdf2f8;
 }
 
 /* 1. DYNAMIC IMMERSIVE CANVAS - Dark Mode (Base) */
@@ -158,6 +162,10 @@
     --bg-blue-card: rgba(59, 130, 246, 0.12);
     --text-blue-card-header: #93c5fd;
     --text-blue-card-body: #60a5fa;
+
+    /* ---- SURFACE UTILITIES ---- */
+    --bg-card-subtle: rgba(255, 255, 255, 0.04);
+    --bg-accent-light: rgba(236, 72, 153, 0.1);
 }
 
 @tailwind base;

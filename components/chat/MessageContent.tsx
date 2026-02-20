@@ -48,14 +48,14 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, isUser }) => {
 
         // Custom rendering for code blocks to enable horizontal scrolling if needed
         pre: ({ node, ...props }: any) => (
-            <pre className="bg-gray-800 text-white p-3 rounded-lg overflow-x-auto my-2">
+            <pre className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white p-3 rounded-lg overflow-x-auto my-2">
                 {props.children}
             </pre>
         ),
 
         // Custom link styling
         a: ({ node, ...props }: any) => (
-            <a href={props.href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline transition-colors">
+            <a href={props.href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 underline transition-colors">
                 {props.children}
             </a>
         ),
