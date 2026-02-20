@@ -36,7 +36,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
     const handleReactionClick = (emoji: string) => {
         setShowActions(false);
         setShowFullPicker(false); // Close full picker after selection
-        onReaction(message.id, emoji);
+
+        const existingReaction = message.reactions?.find(r => r.userId === currentUser.id);
+
+        if (existingReaction) {
+            if (existingReaction.emoji === emoji) {
+                onRemoveReaction(message.id, emoji);
+            } else {
+                onRemoveReaction(message.id, existingReaction.emoji);
+                onReaction(message.id, emoji);
+            }
+        } else {
+            onReaction(message.id, emoji);
+        }
     };
 
     const toggleReaction = (emoji: string) => {
@@ -44,6 +56,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
         if (hasReacted) {
             onRemoveReaction(message.id, emoji);
         } else {
+            const existingReaction = message.reactions?.find(r => r.userId === currentUser.id);
+            if (existingReaction) {
+                onRemoveReaction(message.id, existingReaction.emoji);
+            }
             onReaction(message.id, emoji);
         }
     }
