@@ -509,7 +509,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                 <div
                     ref={scrollContainerRef}
                     onScroll={handleScroll}
-                    className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-[#0b141a] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
+                    className="flex-1 p-4 overflow-y-auto bg-[var(--bg-card)] custom-scrollbar scroll-smooth flex flex-col relative overscroll-contain"
                 >
                     <div className="space-y-2 pt-2 pb-2">
                         <AnimatePresence initial={false} mode='popLayout'>
