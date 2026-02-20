@@ -1,6 +1,6 @@
 import { authService } from './authService';
 
-const API_URL = 'http://localhost:3001/api/call-logs';
+const API_URL = (import.meta as any).env?.VITE_API_URL ? `${(import.meta as any).env.VITE_API_URL}/call-logs` : 'http://localhost:3001/api/call-logs';
 
 export interface CallLogEntry {
     id: string;

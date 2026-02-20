@@ -49,6 +49,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
     const callTimerRef = useRef<NodeJS.Timeout | null>(null);
     const callStartTimeRef = useRef<number | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const pendingCandidatesRef = useRef<any[]>([]);
 
     // Ref to track the call target for signaling (avoids stale closure issues)
     const callTargetRef = useRef<string | null>(null);
@@ -255,12 +256,15 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
         const cleanupIce = socketService.onIceCandidateReceived((candidate) => {
             console.log("🧊 [VideoCall] Received ICE candidate from peer");
-            if (connectionRef.current) {
+            if (connectionRef.current && !(connectionRef.current as any).destroyed) {
                 try {
                     connectionRef.current.signal(candidate);
                 } catch (e) {
                     console.error("❌ Error signaling ICE candidate:", e);
                 }
+            } else {
+                console.log("📥 [VideoCall] Buffering ICE candidate (peer not ready)");
+                pendingCandidatesRef.current.push(candidate);
             }
         });
 
@@ -521,6 +525,20 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
             connectionRef.current = peer;
             activePeer = peer;
+
+            // Flush buffered ICE candidates after a tiny delay to ensure offer processing
+            if (pendingCandidatesRef.current.length > 0) {
+                console.log(`🚀 [VideoCall] Flushing ${pendingCandidatesRef.current.length} buffered ICE candidates`);
+                setTimeout(() => {
+                    if (!(peer as any).destroyed) {
+                        pendingCandidatesRef.current.forEach(candidate => {
+                            try { peer.signal(candidate); }
+                            catch (e) { console.error("❌ Error flushing candidate:", e); }
+                        });
+                        pendingCandidatesRef.current = [];
+                    }
+                }, 100);
+            }
         } catch (err: any) {
             console.error("Failed to get media:", err);
             const isVoiceCall = currentIncomingCall.callType === 'voice';
@@ -543,6 +561,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         connectionRef.current?.destroy();
         connectionRef.current = null;
         activePeer = null;
+        pendingCandidatesRef.current = [];
 
         // Use ref to ensure we stop tracks even if state is stale
         if (streamRef.current) {
