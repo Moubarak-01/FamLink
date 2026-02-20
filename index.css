@@ -100,8 +100,9 @@ html,
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    /* Prevent native scroll, let R3F ScrollControls handle it */
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* Allow native scroll, Lenis will smooth it if valid */
     height: 100%;
     width: 100%;
 }
