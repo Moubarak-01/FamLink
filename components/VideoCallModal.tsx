@@ -330,11 +330,15 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
             const peer = new Peer({
                 initiator: true,
-                trickle: true,  // ← THE FIX: Send signals incrementally
+                trickle: false,  // ← CHANGED: Send signals in one block to improve NAT piercing
                 stream: currentStream,
                 config: {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
                         { urls: 'stun:global.stun.twilio.com:3478' },
                         {
                             urls: 'turn:openrelay.metered.ca:80',
@@ -452,11 +456,15 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
             const peer = new Peer({
                 initiator: false,
-                trickle: true,   // ← THE FIX
+                trickle: false,   // ← CHANGED: Disable trickle to bundle all candidates in the SDP answer
                 stream: currentStream,
                 config: {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
                         { urls: 'stun:global.stun.twilio.com:3478' },
                         {
                             urls: 'turn:openrelay.metered.ca:80',
