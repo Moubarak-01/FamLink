@@ -22,5 +22,19 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": [
+    "src",
+    "components",
+    "services",
+    "types.ts",
+    "hooks"
+  ],
+  "exclude": [
+    "node_modules",
+    "backend",
+    "dist",
+    "server",
+    "local-whisper"
+  ]
 }
