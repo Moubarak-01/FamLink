@@ -40,9 +40,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) =>
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center overflow-hidden transition-colors duration-500 pt-[120px] pb-10 relative">
-            {/* Background Gradient */}
-            <div className={`fixed inset-0 z-0 ${isDark ? 'bg-gradient-to-br from-indigo-900/20 via-black to-purple-900/20' : 'bg-gradient-to-br from-pink-50 via-white to-purple-50'}`} />
-
             {/* Auth Form Card */}
             <motion.div
                 className="w-full flex items-center justify-center p-4 relative z-10"
