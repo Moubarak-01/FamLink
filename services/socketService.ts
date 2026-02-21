@@ -48,7 +48,7 @@ class SocketService {
             this.socket = null;
         }
 
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
 
         const SOCKET_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
         this.socket = io(SOCKET_URL, {

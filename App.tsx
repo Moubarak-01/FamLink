@@ -385,6 +385,7 @@ const App: React.FC = () => {
     }
     // Clear local state regardless of backend success
     localStorage.removeItem('rememberedUser');
+    localStorage.removeItem('token');
     setCurrentScreen(Screen.Welcome);
     setScreenHistory([]);
     setCurrentUser(null);
@@ -413,7 +414,7 @@ const App: React.FC = () => {
       setError(err.response?.data?.message || 'Signup failed.');
     }
   };
-  const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
+  const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); if (data.access_token) localStorage.setItem('token', data.access_token); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
   const handleForgotPassword = async (email: string) => { await new Promise(resolve => setTimeout(resolve, 1500)); alert(t('alert_forgot_password_sent')); navigateTo(Screen.Login); };
 
   const submitAssessment = async (finalAnswers: Answer[]) => {

@@ -35,8 +35,12 @@ const transformId = (data: any): any => {
 // Request interceptor for adding the bearer token
 api.interceptors.request.use(
   (config) => {
-    // Cookie-Guard: Token is now in HttpOnly cookie, so we don't need to manually add it header
-    // The browser handles this automatically with `withCredentials: true`
+    // Cookie-Guard: Token is now in HttpOnly cookie, but iOS Safari blocks 3rd-party cookies.
+    // So we also send the token as a Bearer authorization header if available in localStorage.
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -72,6 +76,7 @@ api.interceptors.response.use(
       console.warn("Session expired or unauthorized, logging out...");
       // Cookie is already invalid or missing, just update UI state if needed
       // Redirect logic should happen in the React Component or Provider
+      localStorage.removeItem('token');
     }
 
     // Pass through the actual server error message if available

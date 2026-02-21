@@ -234,14 +234,15 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
 
     useEffect(() => {
         const cleanupReceived = socketService.onCallReceived((data) => {
-            console.log("📞 [VideoCall] Incoming call from:", data.name, "Type:", data.callType);
+            const logPrefix = data.callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+            console.log(`📞 ${logPrefix} Incoming call from:`, data.name, "Type:", data.callType);
             setIncomingCall({ from: data.from, name: data.name, signal: data.signal, callType: data.callType || 'video' });
             setCallStatus('receiving');
             startRingPattern();
         });
 
         const cleanupAccepted = socketService.onCallAccepted((signal) => {
-            console.log("✅ [VideoCall] Call Accepted — received answer SDP from peer");
+            console.log("✅ [Call] Call Accepted — received answer SDP from peer");
             stopAllSounds();
             // Don't set 'connected' yet — wait for peer 'connect' event
             // Just feed the answer signal to the peer
@@ -255,7 +256,7 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
         });
 
         const cleanupIce = socketService.onIceCandidateReceived((candidate) => {
-            console.log("🧊 [VideoCall] Received ICE candidate from peer");
+            console.log("🧊 [Call] Received ICE candidate from peer");
             if (connectionRef.current && !(connectionRef.current as any).destroyed) {
                 try {
                     connectionRef.current.signal(candidate);
@@ -263,18 +264,18 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
                     console.error("❌ Error signaling ICE candidate:", e);
                 }
             } else {
-                console.log("📥 [VideoCall] Buffering ICE candidate (peer not ready)");
+                console.log("📥 [Call] Buffering ICE candidate (peer not ready)");
                 pendingCandidatesRef.current.push(candidate);
             }
         });
 
         const cleanupEnded = socketService.onCallEnded(() => {
-            console.log("🛑 [VideoCall] Call Ended by peer");
+            console.log("🛑 [Call] Call Ended by peer");
             leaveCall();
         });
 
         return () => {
-            console.log("🧹 [VideoCall] Cleaning up socket listeners & stream");
+            console.log("🧹 [Call] Cleaning up socket listeners & stream");
             stopAllSounds();
             stopCallTimer();
             cleanupReceived();
@@ -401,12 +402,14 @@ const VideoCallModal: React.FC<VideoCallProps> = ({ currentUserId, currentUserNa
             });
 
             peer.on('error', (err) => {
-                console.error("❌ [VideoCall] Peer Error (Caller):", err);
+                const logPrefix = callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+                console.error(`❌ ${logPrefix} Peer Error (Caller):`, err);
                 leaveCall();
             });
 
             peer.on('close', () => {
-                console.log("🔌 [VideoCall] Peer Connection Closed (Caller)");
+                const logPrefix = callType === 'voice' ? '[VoiceCall]' : '[VideoCall]';
+                console.log(`🔌 ${logPrefix} Peer Connection Closed (Caller)`);
             });
 
             connectionRef.current = peer;
