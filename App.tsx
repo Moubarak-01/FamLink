@@ -126,6 +126,7 @@ const App: React.FC = () => {
   const { data: bookingRequests = [] } = useBookings(currentUser?.id || '');
 
   // UI State
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [hiddenBookingIds, setHiddenBookingIds] = useState<string[]>([]);
   const [userTypeForSignup, setUserTypeForSignup] = useState<UserType>('parent');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -291,7 +292,11 @@ const App: React.FC = () => {
         }
       } catch (e) {
         // Not logged in or session expired
+        // Strictly wipe lingering states
+        localStorage.removeItem('token');
         // No action needed, user stays on Welcome/Login
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
     checkAuth();
@@ -862,6 +867,14 @@ const App: React.FC = () => {
     const booking = bookingRequests.find(req => req.nannyId === nanny.id && req.parentId === currentUser?.id && req.status === 'accepted');
     if (booking) { setContactNannyInfo(null); setActiveChat({ type: 'booking', item: booking }); } else { alert("You must have an accepted booking with this nanny to chat."); }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--bg-primary)]">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const renderScreen = () => {
     if (viewingNannyId && currentScreen === Screen.NannyProfileDetail) {
