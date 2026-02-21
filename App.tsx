@@ -9,6 +9,8 @@ import ResultScreen from './components/ResultScreen';
 // FIX: Corrected import to use the service instance, resolving the Uncaught SyntaxError
 import { geminiService } from './services/geminiService';
 import LoadingSpinner from './components/LoadingSpinner';
+import DashboardSkeleton from './components/skeletons/DashboardSkeleton';
+import ListSkeleton from './components/skeletons/ListSkeleton';
 import SubscriptionScreen from './components/SubscriptionScreen';
 import DashboardScreen from './components/DashboardScreen';
 import SignUpScreen from './components/SignUpScreen';
@@ -867,8 +869,17 @@ const App: React.FC = () => {
 
   if (isCheckingAuth) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[var(--bg-primary)]">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-[var(--bg-primary)] font-sans relative">
+        {/* Authentic Skeleton Header to prevent massive layout shifts during load */}
+        <header className="fixed w-full top-0 z-50 bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
+          <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div className="w-24 h-6 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-full"></div>
+          </div>
+        </header>
+        <main className="pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+          <DashboardSkeleton />
+        </main>
       </div>
     );
   }
@@ -898,7 +909,7 @@ const App: React.FC = () => {
       case Screen.Login: return <LoginScreen onLogin={handleLogin} onBack={goBack} onSignUp={() => navigateTo(Screen.SignUp)} onForgotPassword={() => navigateTo(Screen.ForgotPassword)} error={error} />;
       case Screen.ForgotPassword: return <ForgotPasswordScreen onBack={goBack} onSubmit={handleForgotPassword} />;
       case Screen.Questionnaire: return currentUser ? <Questionnaire user={currentUser} onSubmit={submitAssessment} error={error} onBack={goBack} /> : null;
-      case Screen.Loading: return <div className="flex flex-col items-center justify-center text-center p-8 min-h-[400px]"><LoadingSpinner /><h2 className="text-2xl font-semibold text-[var(--text-secondary)] mt-6">{t('loading_title')}</h2><p className="text-[var(--text-light)] mt-2">{t('loading_message')}</p></div>;
+      case Screen.Loading: return <div className="pt-8"><ListSkeleton /></div>;
       case Screen.Result: return currentUser?.assessmentResult ? <ResultScreen result={currentUser.assessmentResult} onContinue={handleContinueFromResult} onRestart={() => navigateTo(Screen.Questionnaire, true)} onBack={goBack} isSuspended={!!(currentUser.suspendedUntil && new Date(currentUser.suspendedUntil) > new Date())} /> : null;
       case Screen.NannyProfileForm: return currentUser ? <NannyProfileForm user={currentUser} onSubmit={handleNannyProfileSubmit} onBack={goBack} /> : null;
       case Screen.ParentProfileForm: return currentUser ? <ParentProfileForm user={currentUser} onSubmit={handleParentProfileSubmit} onBack={goBack} /> : null;
