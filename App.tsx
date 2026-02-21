@@ -391,12 +391,9 @@ const App: React.FC = () => {
     // Clear local state regardless of backend success
     localStorage.removeItem('rememberedUser');
     localStorage.removeItem('token');
-    setCurrentScreen(Screen.Welcome);
-    setScreenHistory([]);
-    setCurrentUser(null);
-    setError(null);
-    setViewingNannyId(null);
-    queryClient.clear();
+    // Force a hard reload of the application rather than a soft React state transition
+    // This purges all residual Memory/React Query/Zustand caches and prevents Vercel from recycling old zombie states.
+    window.location.href = '/';
   };
   const handleDeleteAccount = async () => {
     if (!currentUser) return;
