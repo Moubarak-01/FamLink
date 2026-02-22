@@ -55,7 +55,8 @@ interface DashboardScreenProps {
     onDeleteSkillRequests?: () => void; // <-- ADDED
     onUpdateOffer?: (requestId: string, helperId: string, status: 'accepted' | 'declined') => void; // <-- FIXED: Added missing prop definition
     onOpenChat: (type: 'activity' | 'outing' | 'skill' | 'booking', item: any) => void;
-    onSubscribe: () => void; // <-- ADDED: Standalone subscription flow
+    onSubscribe: () => void;
+    onBecomeNanny: () => void;
 }
 
 
@@ -320,8 +321,9 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     onViewSkillMarketplace, onEditProfile, onOpenBookingChat, onCancelBooking,
     onClearAllBookings, onDeleteTask, onKeepTask, onUpdateTaskStatus,
     onDeleteActivities, onDeleteOutings, onDeleteSkillRequests, onUpdateOffer, // <-- Correctly destructured
-    onOpenChat, // <-- NEW Unified Chat Handler
-    onSubscribe // <-- ADDED
+    onOpenChat,
+    onSubscribe,
+    onBecomeNanny
 }) => {
     const { t } = useLanguage();
     const myOutingRequests = sharedOutings.flatMap(o => o.requests.filter(r => r.parentId === user.id).map(r => ({ ...r, outingTitle: o.title, date: o.date })));
@@ -356,7 +358,6 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
             {/* Subscribe Now Card - Visible only if subscription is inactive/missing */}
             {(!user.subscription || user.subscription.status !== 'active') && (
                 <div className="mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
-                    {/* Decorative background circle */}
                     <div className="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
 
                     <div className="z-10">
@@ -371,6 +372,26 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                         className="z-10 whitespace-nowrap bg-white text-indigo-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                         Subscribe Now
+                    </button>
+                </div>
+            )}
+
+            {/* Become a Nanny Upgrade Card */}
+            {user.userType === 'parent' && (
+                <div className="mb-8 bg-gradient-to-r from-pink-500 to-orange-400 rounded-xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                    <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+
+                    <div className="z-10">
+                        <h3 className="text-2xl font-bold mb-2">{t('dashboard_upgrade_nanny_title') || 'Become a Certified FamLink Nanny 🎓'}</h3>
+                        <p className="opacity-90 max-w-lg">
+                            {t('dashboard_upgrade_nanny_desc') || 'Pass our professional assessment to unlock your Nanny profile and start taking bookings. It\'s completely free!'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={onBecomeNanny}
+                        className="z-10 whitespace-nowrap bg-white text-pink-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
+                    >
+                        {t('button_take_assessment') || 'Take the Assessment'}
                     </button>
                 </div>
             )}
@@ -454,6 +475,27 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                     )}
                 </motion.div>
             </motion.div>
+
+            {/* Nanny Booking Requests (Visible only to certified Nannies) */}
+            {user.userType === 'nanny' && (
+                <motion.div
+                    className="mb-8"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_incoming_requests') || 'Incoming Booking Requests'}</h3>
+                    {bookingRequests.filter(req => req.status === 'pending').length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {bookingRequests.filter(req => req.status === 'pending').map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateTaskStatus as any} onOpenChat={onOpenBookingChat} />)}
+                        </div>
+                    ) : (
+                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
+                            <p className="text-[var(--text-light)]">{t('dashboard_no_pending_requests') || 'No incoming requests.'}</p>
+                        </div>
+                    )}
+                </motion.div>
+            )}
 
             {/* Task Management for Parents (Enhanced) */}
             <div className="mt-8">
@@ -828,73 +870,6 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
     );
 };
 
-const NannyDashboard: React.FC<DashboardScreenProps> = ({ user, bookingRequests, userTasks, onUpdateBookingStatus, onUpdateTaskStatus, onOpenBookingChat, onCancelBooking, onKeepTask, onDeleteTask }) => {
-    const { t } = useLanguage();
-    const profileComplete = !!user.profile;
-    const pendingRequests = bookingRequests.filter(req => req.status === 'pending');
-    const pastRequests = bookingRequests.filter(req => req.status !== 'pending');
-
-    return (
-        <>
-            <div className="bg-[var(--bg-card-subtle)] rounded-xl border border-[var(--border-color)] p-6 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div>
-                    <h3 className="text-xl font-bold text-[var(--text-primary)]">{profileComplete ? t('dashboard_nanny_profile_live') : t('dashboard_nanny_complete_profile')}</h3>
-                    <p className="text-sm text-[var(--text-secondary)]">{profileComplete ? t('dashboard_nanny_profile_live_desc') : t('dashboard_nanny_complete_profile_desc')}</p>
-                </div>
-                {!profileComplete && <span className="text-xs text-[var(--text-light)] bg-yellow-100 px-3 py-1 rounded-full">{t('dashboard_status')}: {t('dashboard_user')}</span>}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_incoming_requests')}</h3>
-                    {pendingRequests.length > 0 ? (
-                        <div className="space-y-4">
-                            {pendingRequests.map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateBookingStatus} onOpenChat={onOpenBookingChat} />)}
-                        </div>
-                    ) : (
-                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                            <p className="text-[var(--text-light)]">{t('dashboard_no_pending_requests')}</p>
-                        </div>
-                    )}
-
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mt-8 mb-4">{t('dashboard_booking_history')}</h3>
-                    {pastRequests.length > 0 ? (
-                        <div className="space-y-4">
-                            {pastRequests.map(req => <NannyBookingCard key={req.id} request={req} onUpdate={onUpdateBookingStatus} onOpenChat={onOpenBookingChat} onClear={onCancelBooking} />)}
-                        </div>
-                    ) : (
-                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                            <p className="text-[var(--text-light)]">{t('dashboard_no_booking_history')}</p>
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('dashboard_my_tasks')}</h3>
-                    {userTasks.length > 0 ? (
-                        <div className="space-y-4">
-                            {/* Use InteractiveTaskItem here too for consistency */}
-                            {userTasks.map(task => (
-                                <InteractiveTaskItem
-                                    key={task.id}
-                                    task={task}
-                                    onUpdateStatus={onUpdateTaskStatus}
-                                    onKeep={onKeepTask}
-                                    onDelete={onDeleteTask}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center bg-[var(--bg-card-subtle)] rounded-xl border-2 border-dashed border-[var(--border-color)] p-8">
-                            <p className="text-[var(--text-light)]">{t('dashboard_no_tasks')}</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </>
-    );
-};
-
 const DashboardScreen: React.FC<DashboardScreenProps> = (props) => {
     const { t } = useLanguage();
     const { user, onLogout } = props;
@@ -913,7 +888,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = (props) => {
                     </div>
                 </div>
             </div>
-            {user.userType === 'parent' ? <ParentDashboard {...props} /> : <NannyDashboard {...props} />}
+            <ParentDashboard {...props} />
             <div className="mt-12 pt-6 border-t border-[var(--border-color)] flex justify-center"><button onClick={onLogout} className="text-red-500 hover:text-red-700 font-medium transition-colors">{t('button_logout')}</button></div>
         </div>
     );

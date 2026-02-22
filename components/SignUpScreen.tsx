@@ -5,7 +5,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import AuthLayout, { formContainerVariants, formItemVariants } from './AuthLayout';
 
 interface SignUpScreenProps {
-  userType: UserType;
   onSignUp: (fullName: string, email: string, pass: string, userType: UserType) => void;
   onBack: () => void;
   onLogin: () => void;
@@ -54,7 +53,7 @@ const PasswordStrengthIndicator: React.FC<{ password: string }> = ({ password })
   );
 };
 
-const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack, onLogin, error }) => {
+const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUp, onBack, onLogin, error }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,11 +75,11 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ userType, onSignUp, onBack,
 
     // Tiny delay to show the success message before actual action
     setTimeout(() => {
-      onSignUp(fullName, email, password, userType);
+      onSignUp(fullName, email, password, 'parent');
     }, 1500);
   };
 
-  const title = userType === 'parent' ? t('signup_title_parent') : t('signup_title_nanny');
+  const title = t('signup_title_parent');
 
   return (
     <AuthLayout title={isSuccess ? t('signup_success_title') : title} subtitle={isSuccess ? t('signup_success_subtitle') : t('signup_subtitle')}>

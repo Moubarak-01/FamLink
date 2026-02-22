@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { ASSESSMENT_QUESTIONS } from '../constants';
+import { getRandomParentQuestionIds, getParentAssessmentQuestionsBank } from '../data/parentAssessment';
 import { Answer, Question, User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -40,10 +41,17 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   }, [answers]);
   const { t, language } = useLanguage();
 
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<(number | string)[]>([]);
 
   // Initialize questions once on mount to prevent reshuffling on language change
   useEffect(() => {
+    if (user.userType === 'parent') {
+      // Pull 25 random psychometric IDs from the 80-question bank
+      setSelectedQuestionIds(getRandomParentQuestionIds(25));
+      return;
+    }
+
+    // Nanny Logic
     // Use the current 't' for initial selection structure (IDs don't change based on language)
     const allQuestions = ASSESSMENT_QUESTIONS(t);
 
@@ -52,10 +60,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
     const multipleChoice = allQuestions.filter(q => q.type === 'multiple-choice');
     const openEnded = allQuestions.filter(q => q.type === 'open-ended');
 
-    // Select specific amounts
-    const selectedSingle = shuffleArray([...singleChoice]).slice(0, 10);
-    const selectedMultiple = shuffleArray([...multipleChoice]).slice(0, 3);
-    const selectedOpen = shuffleArray([...openEnded]).slice(0, 2);
+    // Select specific amounts (25 total for nanny assessment)
+    const selectedSingle = shuffleArray([...singleChoice]).slice(0, 13);
+    const selectedMultiple = shuffleArray([...multipleChoice]).slice(0, 7);
+    const selectedOpen = shuffleArray([...openEnded]).slice(0, 5);
 
     // Combine and shuffle final set
     const combined = [...selectedSingle, ...selectedMultiple, ...selectedOpen];
@@ -67,12 +75,19 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   const questions = useMemo(() => {
     if (selectedQuestionIds.length === 0) return [];
 
+    if (user.userType === 'parent') {
+      const allParentQuestions = getParentAssessmentQuestionsBank(t);
+      return selectedQuestionIds.map(id =>
+        allParentQuestions.find(q => q.id === id)
+      ).filter((q): q is any => !!q) as unknown as Question[]; // Mapped gracefully to unify type mapping in component
+    }
+
     const allTranslatedQuestions = ASSESSMENT_QUESTIONS(t);
     // Map the stored IDs to the current language's question objects
     return selectedQuestionIds.map(id =>
       allTranslatedQuestions.find(q => q.id === id)
     ).filter((q): q is Question => !!q);
-  }, [t, selectedQuestionIds]);
+  }, [t, selectedQuestionIds, user.userType]);
 
   // HOOKS MUST BE UNCONDITIONAL - MOVED UP
   const isSuspended = useMemo(() => {
@@ -98,17 +113,20 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   }, [isSuspended, user.suspendedUntil, t]);
 
   const currentQuestion = questions[currentQuestionIndex];
-  const currentAnswer = answers.find(a => a.questionId === currentQuestion?.id)?.answer || (currentQuestion?.type === 'multiple-choice' ? [] : '');
+  const isMultiAnswer = currentQuestion?.type === 'multiple-choice' || currentQuestion?.type === 'multiple_answer';
+  const currentAnswer = answers.find(a => a.questionId === currentQuestion?.id)?.answer || (isMultiAnswer ? [] : '');
 
   const isCurrentQuestionAnswered = useMemo(() => {
     if (!currentQuestion) return false;
-    if (currentQuestion.type === 'multiple-choice') {
+    // Multiple-answer types (nanny: 'multiple-choice', parent: 'multiple_answer')
+    if (currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'multiple_answer') {
       return Array.isArray(currentAnswer) && currentAnswer.length > 0;
     }
-    if (currentQuestion.type === 'open-ended') {
+    // Free-text types (nanny: 'open-ended', parent: 'text_input')
+    if (currentQuestion.type === 'open-ended' || currentQuestion.type === 'text_input') {
       return typeof currentAnswer === 'string' && currentAnswer.trim().length > 3;
     }
-    // single-choice
+    // Single-choice types (nanny: 'single-choice', parent: 'multiple_choice')
     return typeof currentAnswer === 'string' && currentAnswer !== '';
   }, [currentAnswer, currentQuestion]);
 
@@ -183,44 +201,68 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
 
   const progressPercentage = (answers.length / questions.length) * 100;
 
+  // Helper: extract display text from an option (handles both {id, text} objects and plain strings)
+  const getOptionText = (option: any): string => {
+    return typeof option === 'object' && option.text ? option.text : String(option);
+  };
+  // Helper: get the value to store for an option (use 'id' if available, otherwise the string itself)
+  const getOptionValue = (option: any): string => {
+    return typeof option === 'object' && option.id ? option.id : String(option);
+  };
+
   const renderAnswerOptions = () => {
     switch (currentQuestion.type) {
+      // === SINGLE-CHOICE: pick one answer (nanny: 'single-choice', parent: 'multiple_choice') ===
       case 'single-choice':
+      case 'multiple_choice':
         return (
           <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleSingleChoice(option)}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 text-[var(--text-primary)] ${currentAnswer === option
-                  ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
-                  : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
-                  }`}
-              >
-                {option}
-              </button>
-            ))}
+            {currentQuestion.options.map((option: any, index: number) => {
+              const value = getOptionValue(option);
+              const text = getOptionText(option);
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleSingleChoice(value)}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 text-[var(--text-primary)] ${currentAnswer === value
+                    ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
+                    : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
+                    }`}
+                >
+                  {text}
+                </button>
+              );
+            })}
           </div>
         );
+      // === MULTIPLE-ANSWER: pick many answers (nanny: 'multiple-choice', parent: 'multiple_answer') ===
       case 'multiple-choice':
+      case 'multiple_answer':
         return (
           <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleMultipleChoice(option)}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-4 text-[var(--text-primary)] ${(currentAnswer as string[]).includes(option)
-                  ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
-                  : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
-                  }`}
-              >
-                <div className={`w-5 h-5 border-2 rounded ${(currentAnswer as string[]).includes(option) ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)]' : 'border-gray-300'}`}></div>
-                <span>{option}</span>
-              </button>
-            ))}
+            {currentQuestion.options.map((option: any, index: number) => {
+              const value = getOptionValue(option);
+              const text = getOptionText(option);
+              const isSelected = (currentAnswer as string[]).includes(value);
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleMultipleChoice(value)}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-4 text-[var(--text-primary)] ${isSelected
+                    ? 'bg-[var(--bg-accent-light)] border-[var(--border-accent)] ring-2 ring-[var(--ring-accent)]'
+                    : 'bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-accent-light)] border-[var(--border-color)] hover:border-[var(--border-accent)]'
+                    }`}
+                >
+                  <div className={`w-5 h-5 border-2 rounded ${isSelected ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)]' : 'border-gray-300'}`}></div>
+                  <span>{text}</span>
+                </button>
+              );
+            })}
           </div>
         );
+      // === FREE TEXT: type an answer (nanny: 'open-ended', parent: 'text_input') ===
       case 'open-ended':
+      case 'text_input':
         return (
           <textarea
             value={currentAnswer as string}
@@ -230,6 +272,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
             className="mt-1 block w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[var(--ring-accent)] focus:border-[var(--border-accent)] sm:text-sm text-[var(--text-primary)]"
           />
         );
+      default:
+        return null;
     }
   }
 
@@ -237,7 +281,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
     <div className="p-6 sm:p-8">
       <div className="mb-6">
         <div className="flex justify-between mb-1">
-          <span className="text-base font-medium text-[var(--text-accent)]">{t('questionnaire_title')}</span>
+          <span className="text-base font-medium text-[var(--text-accent)]">{user.userType === 'parent' ? t('parent_assessment_title') : t('questionnaire_title')}</span>
           <span className="text-sm font-medium text-[var(--text-accent)]">{currentQuestionIndex + 1}/{questions.length}</span>
         </div>
         <div className="w-full bg-[var(--bg-accent-light)] rounded-full h-2.5">

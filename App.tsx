@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Answer, Screen, UserType, Subscription, Plan, User, NannyProfile, Rating, BookingRequest, Task, Activity, SharedOuting, OutingRequest, SkillRequest, SkillOffer, Child, ActivityCategory, SkillCategory, ChatMessage, Notification, NotificationType } from './types';
 import Header from './components/Header';
-import WelcomeScreen from './components/WelcomeScreen';
 import LandingPage from './components/LandingPage';
 import SmoothScroll from './components/SmoothScroll';
 import Questionnaire from './components/Questionnaire';
@@ -109,8 +108,9 @@ const RatingModal: React.FC<{ targetUser?: User, nanny?: User, onClose: () => vo
 };
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Welcome);
+  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.Landing);
   const [screenHistory, setScreenHistory] = useState<Screen[]>([]);
+  const [activeAssessmentType, setActiveAssessmentType] = useState<'parent' | 'nanny'>('parent');
   const [approvedNannies, setApprovedNannies] = useState<User[]>([]);
 
   // React Query Setup
@@ -276,12 +276,14 @@ const App: React.FC = () => {
         setCurrentUser(profile);
         // STRICT ENFORCEMENT: Redirect based on profile status
         if (profile.userType === 'parent') {
-          if (!profile.location) navigateTo(Screen.ParentProfileForm, true);
-          else if (currentScreen === Screen.Welcome || currentScreen === Screen.Login) navigateTo(Screen.Dashboard, true);
+          if (!profile.assessmentResult) navigateTo(Screen.Questionnaire, true);
+          else if (profile.assessmentResult.decision !== 'Approved') navigateTo(Screen.Result, true);
+          else if (!profile.location) navigateTo(Screen.ParentProfileForm, true);
+          else if (currentScreen === Screen.Landing || currentScreen === Screen.Login || currentScreen === Screen.SignUp) navigateTo(Screen.Dashboard, true);
         } else {
           // Nanny Logic
           if (profile.profile) {
-            if (currentScreen === Screen.Welcome || currentScreen === Screen.Login) navigateTo(Screen.Dashboard, true);
+            if (currentScreen === Screen.Landing || currentScreen === Screen.Login || currentScreen === Screen.SignUp) navigateTo(Screen.Dashboard, true);
           } else if (profile.assessmentResult?.decision === 'Approved') {
             navigateTo(Screen.NannyProfileForm, true);
           } else if (profile.assessmentResult) {
@@ -380,7 +382,7 @@ const App: React.FC = () => {
   }, [currentUser]);
 
   const navigateTo = (screen: Screen, replace = false) => { setError(null); if (replace) setScreenHistory([]); else setScreenHistory([...screenHistory, currentScreen]); setCurrentScreen(screen); };
-  const goBack = () => { setError(null); setViewingNannyId(null); const previousScreen = screenHistory.pop(); if (previousScreen !== undefined) { setScreenHistory([...screenHistory]); setCurrentScreen(previousScreen); } else { setCurrentScreen(Screen.Welcome); } };
+  const goBack = () => { setError(null); setViewingNannyId(null); const previousScreen = screenHistory.pop(); if (previousScreen !== undefined) { setScreenHistory([...screenHistory]); setCurrentScreen(previousScreen); } else { setCurrentScreen(Screen.Landing); } };
 
   const handleLogout = async () => {
     try {
@@ -405,7 +407,7 @@ const App: React.FC = () => {
       alert("Failed to delete account. Please try again.");
     }
   };
-  const handleSelectUserType = (type: UserType) => { setUserTypeForSignup(type); navigateTo(Screen.SignUp); };
+
   const handleSignUp = async (fullName: string, email: string, password: string, userType: UserType) => {
     try {
       const response = await authService.signup(fullName, email, password, userType);
@@ -416,7 +418,7 @@ const App: React.FC = () => {
       setError(err.response?.data?.message || 'Signup failed.');
     }
   };
-  const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); if (data.access_token) localStorage.setItem('token', data.access_token); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
+  const handleLogin = async (email: string, password: string, rememberMe: boolean) => { try { const data = await authService.login(email, password); if (data.access_token) localStorage.setItem('token', data.access_token); setCurrentUser(data.user); if (rememberMe) localStorage.setItem('rememberedUser', email); if (data.user.userType === 'parent') { if (!data.user.assessmentResult) navigateTo(Screen.Questionnaire); else if (data.user.assessmentResult.decision !== 'Approved') navigateTo(Screen.Result); else if (!data.user.location) navigateTo(Screen.ParentProfileForm); else navigateTo(Screen.Dashboard); } else { if (data.user.profile) navigateTo(Screen.Dashboard); else if (data.user.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); else if (data.user.assessmentResult) navigateTo(Screen.Result); else navigateTo(Screen.Questionnaire); } } catch (err: any) { setError(err.response?.data?.message || t('error_invalid_credentials')); } };
   const handleForgotPassword = async (email: string) => { await new Promise(resolve => setTimeout(resolve, 1500)); alert(t('alert_forgot_password_sent')); navigateTo(Screen.Login); };
 
   const submitAssessment = async (finalAnswers: Answer[]) => {
@@ -424,12 +426,18 @@ const App: React.FC = () => {
     setIsLoading(true);
     navigateTo(Screen.Loading);
     try {
-      // FIX: Corrected the usage of geminiService instance method
       const assessmentResult = await geminiService.evaluateAnswers(finalAnswers, language);
       let updatedUser = { ...currentUser, assessmentResult };
-      await userService.updateProfile({ assessmentResult });
+
+      // If upgrading to nanny and approved, update userType natively
+      if (activeAssessmentType === 'nanny' && assessmentResult.decision === 'Approved') {
+        updatedUser.userType = 'nanny';
+        await userService.updateProfile({ assessmentResult, userType: 'nanny' });
+      } else {
+        await userService.updateProfile({ assessmentResult });
+      }
+
       setCurrentUser(updatedUser);
-      // Clear backup on success
       localStorage.removeItem('questionnaire_backup');
       setCurrentScreen(Screen.Result);
     } catch (err) {
@@ -445,7 +453,13 @@ const App: React.FC = () => {
   const handleEditProfile = () => { if (!currentUser) return; currentUser.userType === 'parent' ? navigateTo(Screen.ParentProfileForm) : navigateTo(Screen.NannyProfileForm); };
   const handleViewSubscription = () => navigateTo(Screen.SubscriptionStatus);
   const handleCancelSubscription = async () => { if (currentUser?.subscription) { try { const updatedUser = await userService.updateProfile({ subscription: { ...currentUser.subscription, status: 'canceled' } }); setCurrentUser(updatedUser); } catch (e) { alert("Error canceling subscription"); } } };
-  const handleContinueFromResult = () => { if (currentUser?.userType === 'nanny' && currentUser.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm); };
+  const handleContinueFromResult = () => {
+    if (currentUser?.userType === 'nanny' && currentUser.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm);
+    else if (currentUser?.userType === 'parent' && currentUser.assessmentResult?.decision === 'Approved') {
+      if (!currentUser.location) navigateTo(Screen.ParentProfileForm);
+      else navigateTo(Screen.Dashboard);
+    }
+  };
 
   const handleViewNannyProfile = (nannyId: string) => { setViewingNannyId(nannyId); navigateTo(Screen.NannyProfileDetail); };
   const handleContactAttempt = (nanny: User) => { if (!currentUser) { setPendingAction({ type: 'contact', nanny }); navigateTo(Screen.Login); return; } if (currentUser.subscription?.status === 'active') setContactNannyInfo(nanny); else { setPendingAction({ type: 'contact', nanny }); navigateTo(Screen.Subscription); } };
@@ -892,12 +906,11 @@ const App: React.FC = () => {
       /> : null;
     }
     switch (currentScreen) {
-      case Screen.Landing: return <LandingPage onFinish={() => navigateTo(Screen.Welcome)} />;
-      case Screen.Welcome: return <WelcomeScreen onSelectUserType={handleSelectUserType} onLogin={() => navigateTo(Screen.Login)} />;
-      case Screen.SignUp: return <SignUpScreen userType={userTypeForSignup} onSignUp={handleSignUp} onBack={goBack} onLogin={() => navigateTo(Screen.Login)} error={error} />;
+      case Screen.Landing: return <LandingPage onFinish={() => navigateTo(Screen.SignUp)} onLogin={() => navigateTo(Screen.Login)} />;
+      case Screen.SignUp: return <SignUpScreen userType={'parent'} onSignUp={handleSignUp} onBack={goBack} onLogin={() => navigateTo(Screen.Login)} error={error} />;
       case Screen.Login: return <LoginScreen onLogin={handleLogin} onBack={goBack} onSignUp={() => navigateTo(Screen.SignUp)} onForgotPassword={() => navigateTo(Screen.ForgotPassword)} error={error} />;
       case Screen.ForgotPassword: return <ForgotPasswordScreen onBack={goBack} onSubmit={handleForgotPassword} />;
-      case Screen.Questionnaire: return currentUser ? <Questionnaire user={currentUser} onSubmit={submitAssessment} error={error} onBack={goBack} /> : null;
+      case Screen.Questionnaire: return currentUser ? <Questionnaire user={currentUser} assessmentType={activeAssessmentType} onSubmit={submitAssessment} error={error} onBack={goBack} /> : null;
       case Screen.Loading: return <div className="flex flex-col items-center justify-center text-center p-8 min-h-[400px]"><LoadingSpinner /><h2 className="text-2xl font-semibold text-[var(--text-secondary)] mt-6">{t('loading_title')}</h2><p className="text-[var(--text-light)] mt-2">{t('loading_message')}</p></div>;
       case Screen.Result: return currentUser?.assessmentResult ? <ResultScreen result={currentUser.assessmentResult} onContinue={handleContinueFromResult} onRestart={() => navigateTo(Screen.Questionnaire, true)} onBack={goBack} isSuspended={!!(currentUser.suspendedUntil && new Date(currentUser.suspendedUntil) > new Date())} /> : null;
       case Screen.NannyProfileForm: return currentUser ? <NannyProfileForm user={currentUser} onSubmit={handleNannyProfileSubmit} onBack={goBack} /> : null;
@@ -939,6 +952,10 @@ const App: React.FC = () => {
         onDeleteSkillRequests={handleDeleteAllSkillRequests}
         onUpdateOffer={handleUpdateSkillOfferStatus}
         onSubscribe={() => navigateTo(Screen.Subscription)}
+        onBecomeNanny={() => {
+          setActiveAssessmentType('nanny');
+          navigateTo(Screen.Questionnaire);
+        }}
       /> : null;
       case Screen.NannyListing: return <NannyListingScreen nannies={approvedNannies} onBack={goBack} onViewProfile={handleViewNannyProfile} />;
       case Screen.CommunityActivities: return currentUser ? <CommunityActivitiesScreen
@@ -977,7 +994,7 @@ const App: React.FC = () => {
         onDeleteAllSkillRequests={handleDeleteAllSkillRequests}
       /> : null;
       case Screen.VerifyEmail: return <VerifyEmailScreen onLogin={() => navigateTo(Screen.Login)} />;
-      default: return <WelcomeScreen onSelectUserType={handleSelectUserType} onLogin={() => navigateTo(Screen.Login)} />;
+      default: return <LandingPage onFinish={() => navigateTo(Screen.SignUp)} />;
     }
   };
 
@@ -1062,23 +1079,21 @@ const App: React.FC = () => {
       )}
 
       {/* Passing the correct toggle handler to the Header component */}
-      {currentScreen !== Screen.Landing && (
-        <Header
-          isAuthenticated={!!currentUser}
-          user={currentUser}
-          onLogout={handleLogout}
-          onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined}
-          onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined}
-          // FIX: The header button now toggles the state directly
-          onOpenSettings={() => setIsSettingsModalOpen(true)}
-          notifications={currentUser ? notifications.filter(n => !n.read) : []}
-          onClearNotifications={handleClearNotifications}
-          onNotificationClick={handleNotificationClick}
-          noiseReductionEnabled={noiseReductionEnabled}
-        />
-      )}
-      <main className={`w-full mx-auto flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
-        <div className={`transition-all duration-500 ${isWideScreen || isAuthScreen ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
+      <Header
+        isAuthenticated={!!currentUser}
+        user={currentUser}
+        onLogout={handleLogout}
+        onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined}
+        onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined}
+        // FIX: The header button now toggles the state directly
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
+        notifications={currentUser ? notifications.filter(n => !n.read) : []}
+        onClearNotifications={handleClearNotifications}
+        onNotificationClick={handleNotificationClick}
+        noiseReductionEnabled={noiseReductionEnabled}
+      />
+      <main className={`w-full mx-auto flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : currentScreen === Screen.Landing ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
+        <div className={`transition-all duration-500 ${isWideScreen || isAuthScreen || currentScreen === Screen.Landing ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
           {renderScreen()}
         </div>
       </main>
@@ -1091,9 +1106,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {currentScreen !== Screen.Landing && (
-        <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
-      )}
+      <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
     </div>
   );
 };

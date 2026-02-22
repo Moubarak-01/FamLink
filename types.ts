@@ -1,14 +1,14 @@
 // types.ts
 
 export interface Question {
-  id: number;
-  type: 'single-choice' | 'multiple-choice' | 'open-ended';
+  id: number | string;
+  type: 'single-choice' | 'multiple-choice' | 'open-ended' | 'multiple_choice' | 'multiple_answer' | 'text_input';
   text: string;
-  options: string[];
+  options?: any[];
 }
 
 export interface Answer {
-  questionId: number;
+  questionId: number | string;
   answer: string | string[];
 }
 

@@ -51,10 +51,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout, onEdit
 
     return (
         <header
-            className="w-full backdrop-blur-md border-b border-white/10 bg-gradient-to-br from-white/10 to-white/5 relative z-[1000] transition-colors duration-300"
-            style={{
-                borderColor: 'var(--header-border)'
-            }}
+            className="w-full relative z-[1000] transition-colors duration-300"
         >
             <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 py-2 sm:py-3 flex justify-between items-center">
                 <div className="flex items-center gap-2 sm:gap-4">
