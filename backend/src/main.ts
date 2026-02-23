@@ -38,12 +38,19 @@ async function bootstrap() {
         process.env.FRONTEND_URL, // Production URL from env
       ].filter(Boolean); // Remove empty strings if env var is missing
 
-      // Strictly Enforce Origin for browser requests
+      // Allow exact matches first
       if (allowedOrigins.includes(requestOrigin)) {
         callback(null, true);
-      } else {
-        callback(new Error(`CORS Error: Origin ${requestOrigin} not allowed`));
+        return;
       }
+
+      // Allow any Vercel preview deployment (*.vercel.app)
+      if (/^https:\/\/.*\.vercel\.app$/.test(requestOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS Error: Origin ${requestOrigin} not allowed`));
     },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

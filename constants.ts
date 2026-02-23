@@ -10,16 +10,25 @@ export const PPLX_MODEL = 'sonar-reasoning-pro';
 // NEW: OpenRouter API Key constant
 export const OPENROUTER_API_KEY_ENV = 'VITE_OPENROUTER_API_KEY';
 
-// NEW: OpenRouter Free Models - Tier 1 (Primary)
-// These are the best free models available on OpenRouter as of Jan 2026
+// NEW: OpenRouter Free Models — refreshed Feb 2026
+// Tier 1 = strongest instruction-followers; Tier 2 = solid fallbacks
 export const OPENROUTER_FREE_MODELS: string[] = [
-  'meta-llama/llama-3.3-70b-instruct:free', // TIER 1: Best Logic (volatile)
-  'google/gemini-2.0-flash-exp:free',       // Stable & Smart
-  'arcee-ai/trinity-large-preview:free',    // Corrected ID
-  'nvidia/nemotron-3-nano:free',            // Corrected ID
-  'xiaomi/mimo-v2-flash:free',              // Re-added (Recommended)
-  'openai/gpt-oss-120b:free',               // User Request
-  'z-ai/glm-4.5-air:free',                  // Stable Fallback (Last Resort)
+  // ── Tier 1: Primary (best for structured JSON / assessment) ──
+  'meta-llama/llama-3.3-70b-instruct:free',          // 70B instruct — strong logic
+  'qwen/qwen3-30b-a3b:free',                         // 30B MoE instruct — fast & smart
+  'nousresearch/hermes-3-llama-3.1-405b:free',        // 405B — largest free model
+  'arcee-ai/trinity-large-preview:free',              // Proven working fallback
+
+  // ── Tier 2: Fast fallbacks ──
+  'stepfun/step-3.5-flash:free',                      // Flash-class, very fast
+  'nvidia/nemotron-3-nano-30b-a3b:free',              // NVIDIA 30B nano MoE
+  'xiaomi/mimo-v2-flash:free',                        // Xiaomi flash model
+  'openai/gpt-oss-120b:free',                         // Open-source GPT weights
+
+  // ── Tier 3: Last-resort safety net ──
+  'arcee-ai/trinity-mini:free',                       // Tiny but reliable
+  'liquid/lfm-2.5-1.2b-instruct:free',                // Small instruct model
+  'z-ai/glm-4.5-air:free',                            // GLM stable fallback
 ];
 
 // FINALIZED: Array of all Gemini models for chat failover
