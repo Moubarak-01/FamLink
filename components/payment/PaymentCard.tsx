@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export type CardTheme = 'midnight' | 'ocean' | 'sunset' | 'gold' | 'royal' | 'holographic';
 
@@ -20,6 +21,7 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
     isFlipped,
     theme = 'midnight',
 }) => {
+    const { t } = useLanguage();
     const [brand, setBrand] = useState<'visa' | 'mastercard' | 'amex' | 'discover' | 'chip'>('chip');
 
     useEffect(() => {
@@ -195,11 +197,11 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
 
                         <div className="flex justify-between items-end uppercase text-xs tracking-widest font-bold text-white/60">
                             <div className='flex flex-col gap-1'>
-                                <span className="text-[0.55rem] tracking-[0.2em] opacity-50">Card Holder</span>
+                                <span className="text-[0.55rem] tracking-[0.2em] opacity-50">{t('payment_card_holder_label')}</span>
                                 <span className="text-sm text-white truncate max-w-[280px]">{cardHolder || 'FULL NAME'}</span>
                             </div>
                             <div className='flex flex-col gap-1 items-end'>
-                                <span className="text-[0.55rem] tracking-[0.2em] opacity-50">Expires</span>
+                                <span className="text-[0.55rem] tracking-[0.2em] opacity-50">{t('payment_expires_label')}</span>
                                 <span className="text-sm text-white">{expiry || 'MM/YY'}</span>
                             </div>
                         </div>
@@ -228,7 +230,7 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
 
                         <div className="px-8 relative">
                             <div className="flex justify-end mb-1">
-                                <span className="text-[0.6rem] text-white/50 uppercase tracking-wider pr-1">CVV</span>
+                                <span className="text-[0.6rem] text-white/50 uppercase tracking-wider pr-1">{t('payment_cvv_label')}</span>
                             </div>
                             <div className="w-full h-10 bg-white rounded flex items-center justify-end px-3 relative overflow-hidden">
                                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 2px, transparent 2px, transparent 6px)' }}></div>
@@ -240,7 +242,7 @@ const PaymentCard: React.FC<PaymentCardProps> = ({
                         </div>
 
                         <div className="mt-auto px-8 flex justify-between items-center opacity-40">
-                            <span className="text-[0.5rem] max-w-[120px] leading-tight text-white">This card is property of FamLink Inc. use subject to terms.</span>
+                            <span className="text-[0.5rem] max-w-[120px] leading-tight text-white">{t('payment_card_property_notice')}</span>
                             <div className="w-8 h-8 rounded-full border border-white/50 flex items-center justify-center">
                                 <div className="w-4 h-4 bg-white/50 rounded-full" />
                             </div>

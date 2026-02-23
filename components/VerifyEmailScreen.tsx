@@ -2,12 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface VerifyEmailScreenProps {
     onLogin: () => void;
 }
 
 const VerifyEmailScreen: React.FC<VerifyEmailScreenProps> = ({ onLogin }) => {
+    const { t } = useLanguage();
     const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
     const [message, setMessage] = useState('Verifying your email...');
 
@@ -59,7 +61,7 @@ const VerifyEmailScreen: React.FC<VerifyEmailScreenProps> = ({ onLogin }) => {
                     <div className="text-5xl mb-6">❌</div>
                 )}
 
-                <h2 className="text-2xl font-bold mb-4 dark:text-white">Email Verification</h2>
+                <h2 className="text-2xl font-bold mb-4 dark:text-white">{t('email_verification_title')}</h2>
                 <p className="text-gray-600 dark:text-gray-300 mb-8">{message}</p>
 
                 {status !== 'verifying' && (

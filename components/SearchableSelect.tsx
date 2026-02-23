@@ -141,7 +141,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ label, options, val
           )}
 
           {filteredOptions.length === 0 && !search && (
-            <li className="text-gray-500 cursor-default select-none py-2 pl-3 pr-9 italic text-sm">Start typing to search...</li>
+            <li className="text-gray-500 cursor-default select-none py-2 pl-3 pr-9 italic text-sm">{t('search_start_typing')}</li>
           )}
         </ul>
       )}

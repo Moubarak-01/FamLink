@@ -39,22 +39,22 @@ const SubscriptionStatusScreen: React.FC<SubscriptionStatusScreenProps> = ({ use
                 <span className="font-semibold text-[var(--text-primary)]">{subscription.renewalDate}</span>
               </div>
             </div>
-            
+
             <div className="mt-8">
-                 <button
-                    onClick={onCancelSubscription}
-                    disabled={subscription.status === 'canceled'}
-                    className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-                >
-                    {subscription.status === 'canceled' ? t('button_subscription_canceled') : t('button_cancel_subscription')}
-                </button>
+              <button
+                onClick={onCancelSubscription}
+                disabled={subscription.status === 'canceled'}
+                className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+              >
+                {subscription.status === 'canceled' ? t('button_subscription_canceled') : t('button_cancel_subscription')}
+              </button>
             </div>
-           
+
           </div>
         ) : (
-             <div className="text-center py-8">
-                 <p className="text-[var(--text-secondary)] mb-4">You do not have an active subscription.</p>
-             </div>
+          <div className="text-center py-8">
+            <p className="text-[var(--text-secondary)] mb-4">{t('no_active_subscription')}</p>
+          </div>
         )}
       </div>
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChatMessage, User } from '../../types';
 import ReactionPicker from './ReactionPicker';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MessageBubbleProps {
     message: ChatMessage;
@@ -25,6 +26,7 @@ const FULL_EMOJI_LIST = [
 ];
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onReaction, onRemoveReaction, onReply, onDelete, onScrollToMessage, messages }) => {
+    const { t } = useLanguage();
     const isMe = message.senderId === currentUser.id;
     const [showActions, setShowActions] = useState(false);
     // NEW STATE: To control the visibility of the full emoji picker
@@ -189,7 +191,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, currentUser, onR
                 {showFullPicker && (
                     <div className={`absolute ${isMe ? 'right-0' : 'left-0'} top-full mt-2 z-30 w-64 bg-[var(--bg-card)] shadow-2xl rounded-xl border border-[var(--border-color)] p-3 animate-fade-in`}>
                         <div className='flex justify-between items-center mb-2'>
-                            <h4 className='font-semibold text-sm'>Select Any Emoji</h4>
+                            <h4 className='font-semibold text-sm'>{t('select_any_emoji')}</h4>
                             <button onClick={handleCloseFullPicker} className='text-lg hover:text-red-500'>&times;</button>
                         </div>
                         {/* Scrollable Container */}

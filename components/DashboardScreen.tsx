@@ -361,17 +361,16 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                     <div className="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
 
                     <div className="z-10">
-                        <h3 className="text-2xl font-bold mb-2">Unlock Premium Features 🌟</h3>
+                        <h3 className="text-2xl font-bold mb-2">{t('premium_banner_title')}</h3>
                         <p className="opacity-90 max-w-lg">
-                            Get unlimited access to verified nannies, detailed background checks, and priority support.
-                            Start your journey with FamLink Premium today.
+                            {t('premium_banner_desc')}
                         </p>
                     </div>
                     <button
                         onClick={onSubscribe}
                         className="z-10 whitespace-nowrap bg-white text-indigo-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
                     >
-                        Subscribe Now
+                        {t('button_subscribe_now')}
                     </button>
                 </div>
             )}
@@ -382,16 +381,16 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                     <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
 
                     <div className="z-10">
-                        <h3 className="text-2xl font-bold mb-2">{t('dashboard_upgrade_nanny_title') || 'Become a Certified FamLink Nanny 🎓'}</h3>
+                        <h3 className="text-2xl font-bold mb-2">{t('dashboard_upgrade_nanny_title')}</h3>
                         <p className="opacity-90 max-w-lg">
-                            {t('dashboard_upgrade_nanny_desc') || 'Pass our professional assessment to unlock your Nanny profile and start taking bookings. It\'s completely free!'}
+                            {t('dashboard_upgrade_nanny_desc')}
                         </p>
                     </div>
                     <button
                         onClick={onBecomeNanny}
                         className="z-10 whitespace-nowrap bg-white text-pink-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
                     >
-                        {t('button_take_assessment') || 'Take the Assessment'}
+                        {t('button_take_assessment')}
                     </button>
                 </div>
             )}
@@ -447,7 +446,7 @@ const ParentDashboard: React.FC<DashboardScreenProps> = ({
                 <motion.div variants={itemVariants}>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
-                        {bookingRequests.length > 0 && <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">Clear All History</button>}
+                        {bookingRequests.length > 0 && <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">{t('button_clear_all_history')}</button>}
                     </div>
                     {bookingRequests.length > 0 ? (
                         <div className="space-y-4">

@@ -14,20 +14,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onFinish, onLogin }) => {
     return (
         <div className="min-h-full flex flex-col items-center justify-center p-4 pt-10 pb-10 relative overflow-hidden font-sans transition-colors duration-500">
 
-            {/* === ANIMATED BLOB ORBS — visible in BOTH modes === */}
-            {/* Top-left blob */}
-            <div className={`absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none animate-float-blob
-                ${isDark ? 'bg-purple-600/20' : 'bg-pink-400/25'}`}
-            />
-            {/* Top-right blob */}
-            <div className={`absolute top-[5%] right-[-100px] w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none animate-float-blob-reverse
-                ${isDark ? 'bg-indigo-500/20' : 'bg-purple-400/20'}`}
-            />
-            {/* Bottom-center blob */}
-            <div className={`absolute bottom-[-60px] left-1/3 w-[450px] h-[350px] rounded-full blur-[110px] pointer-events-none animate-float-blob-slow
-                ${isDark ? 'bg-pink-500/15' : 'bg-cyan-400/20'}`}
-            />
-
             <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}

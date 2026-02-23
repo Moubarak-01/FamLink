@@ -40,20 +40,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) =>
     return (
         <div className="min-h-screen w-full flex items-center justify-center overflow-hidden transition-colors duration-500 pt-[120px] pb-10 relative">
 
-            {/* === ANIMATED BLOB ORBS — identical mechanic to dark mode, light-mode colours === */}
-            {/* Top-left blob */}
-            <div className={`absolute top-[-60px] left-[-80px] w-[480px] h-[480px] rounded-full blur-[120px] pointer-events-none animate-float-blob
-                ${isDark ? 'bg-purple-600/25' : 'bg-pink-400/30'}`}
-            />
-            {/* Top-right blob */}
-            <div className={`absolute top-[10%] right-[-80px] w-[380px] h-[380px] rounded-full blur-[100px] pointer-events-none animate-float-blob-reverse
-                ${isDark ? 'bg-indigo-500/20' : 'bg-violet-400/25'}`}
-            />
-            {/* Bottom-center blob */}
-            <div className={`absolute bottom-[0px] left-[30%] w-[420px] h-[300px] rounded-full blur-[110px] pointer-events-none animate-float-blob-slow
-                ${isDark ? 'bg-pink-500/15' : 'bg-rose-300/30'}`}
-            />
-
             {/* Auth Form Card */}
             <motion.div
                 className="w-full flex items-center justify-center p-4 relative z-10"

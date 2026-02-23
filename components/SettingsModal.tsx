@@ -4,12 +4,10 @@ import { api } from '../services/api';
 
 interface SettingsModalProps {
   onClose: () => void;
-  noiseReductionEnabled: boolean;
-  onToggleNoiseReduction: () => void;
   onDeleteAccount: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, noiseReductionEnabled, onToggleNoiseReduction, onDeleteAccount }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onDeleteAccount }) => {
   const { t } = useLanguage();
   return (
     <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4" onClick={onClose}>
@@ -17,17 +15,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, noiseReductionEn
         <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">{t('settings_title')}</h2>
 
         <div className="mb-6">
-          {/* Audio Settings */}
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-[var(--text-secondary)]">{t('settings_noise_reduction')}</span>
-            <button onClick={onToggleNoiseReduction} className={`w-12 h-6 rounded-full transition-colors ${noiseReductionEnabled ? 'bg-green-500' : 'bg-gray-300'}`}>
-              <div className={`w-4 h-4 bg-white rounded-full shadow transform transition-transform ${noiseReductionEnabled ? 'translate-x-7' : 'translate-x-1'}`} />
-            </button>
-          </div>
-
           {/* Google Calendar Integration */}
           <div className="mb-6 border-t border-[var(--border-color)] pt-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Integrations</h3>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">{t('settings_integrations')}</h3>
             <button
               onClick={() => {
                 api.get('/calendar/auth-url')

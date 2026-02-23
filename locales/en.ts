@@ -245,6 +245,13 @@ export const en = {
     dashboard_no_offers: "No Offers",
     dashboard_offer_from: "Offer from",
 
+    // Premium & Upgrade
+    premium_banner_title: "Unlock Premium Features 🌟",
+    premium_banner_desc: "Get unlimited access to verified nannies, detailed background checks, and priority support. Start your journey with FamLink Premium today.",
+    dashboard_upgrade_nanny_title: "Become a Certified FamLink Nanny 🎓",
+    dashboard_upgrade_nanny_desc: "Pass our professional assessment to unlock your Nanny profile and start taking bookings. It's completely free!",
+    button_take_assessment: "Take the Assessment",
+
     // Community & Activities
     community_activities_title: "Community Activities",
     community_activities_subtitle: "Find playdates, walks, and other events hosted by parents like you.",
@@ -453,6 +460,20 @@ export const en = {
     confirm_delete_all_requests: "Delete ALL requests? This cannot be undone.",
     tooltip_chat_requires_acceptance: "Offer must be accepted to chat",
     experience_placeholder: "e.g., 5",
+
+    // Additional UI Strings
+    email_verification_title: "Email Verification",
+    no_active_subscription: "You do not have an active subscription.",
+    settings_integrations: "Integrations",
+    search_start_typing: "Start typing to search...",
+    payment_card_number_label: "Card Number",
+    payment_card_holder_label: "Card Holder",
+    payment_expires_label: "Expires",
+    payment_cvv_label: "CVV",
+    payment_card_property_notice: "This card is property of FamLink Inc. use subject to terms.",
+    select_highlighted_date: "Please select a highlighted date.",
+    button_clear_all_history: "Clear All History",
+    select_any_emoji: "Select Any Emoji",
 
     // Calendar
     unit_hours: "hours",

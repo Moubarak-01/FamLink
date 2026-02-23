@@ -245,6 +245,13 @@ export const ar = {
     dashboard_no_offers: "لا توجد عروض",
     dashboard_offer_from: "عرض من",
 
+    // Premium & Upgrade
+    premium_banner_title: "فتح الميزات المميزة 🌟",
+    premium_banner_desc: "احصل على وصول غير محدود إلى المربيات المعتمدات، والتحقق المستفيض من الخلفية، والدعم ذي الأولوية. ابدأ رحلتك مع فام لينك بريميوم اليوم.",
+    dashboard_upgrade_nanny_title: "تصبح مربية فام لينك معتمدة 🎓",
+    dashboard_upgrade_nanny_desc: "اجتز تقييمنا المهني لفتح ملفك الشخصي كمربية والبدء في تلقي الحجوزات. إنه مجاني تمامًا!",
+    button_take_assessment: "إجراء التقييم",
+
     // Community & Activities
     community_activities_title: "أنشطة المجتمع",
     community_activities_subtitle: "اعثر على مواعيد اللعب والمشي وغيرها من الأحداث التي يستضيفها آباء مثلك.",
@@ -450,7 +457,21 @@ export const ar = {
     alert_specify_category: "يرجى تحديد الفئة.",
     confirm_delete_all_requests: "حذف جميع الطلبات؟ لا يمكن التراجع عن هذا.",
     tooltip_chat_requires_acceptance: "يجب قبول العرض للدردشة",
-    experience_placeholder: "مثال: 5",
+    experience_placeholder: "مثل: 5",
+
+    // Additional UI Strings
+    email_verification_title: "التحقق من البريد الإلكتروني",
+    no_active_subscription: "ليس لديك اشتراك نشط.",
+    settings_integrations: "عمليات الدمج",
+    search_start_typing: "ابدأ في الكتابة للبحث...",
+    payment_card_number_label: "رقم البطاقة",
+    payment_card_holder_label: "حامل البطاقة",
+    payment_expires_label: "ينتهي",
+    payment_cvv_label: "CVV",
+    payment_card_property_notice: "هذه البطاقة ملك لشركة FamLink Inc. يخضع استخدامها للشروط.",
+    select_highlighted_date: "الرجاء تحديد تاريخ مظلل.",
+    button_clear_all_history: "مسح كل السجل",
+    select_any_emoji: "حدد أي رمز تعبيري",
 
     // Calendar
     unit_hours: "ساعات",

@@ -247,6 +247,13 @@ export const fr = {
     dashboard_no_offers: "Aucune offre",
     dashboard_offer_from: "Offre de",
 
+    // Premium & Upgrade
+    premium_banner_title: "Débloquez les fonctionnalités Premium 🌟",
+    premium_banner_desc: "Obtenez un accès illimité aux nounous vérifiées, aux vérifications complètes des antécédents et au support prioritaire. Commencez votre aventure avec FamLink Premium dès aujourd'hui.",
+    dashboard_upgrade_nanny_title: "Devenez une nounou certifiée FamLink 🎓",
+    dashboard_upgrade_nanny_desc: "Passez notre évaluation professionnelle pour débloquer votre profil de Nounou et commencer à accepter des réservations. C'est totalement gratuit !",
+    button_take_assessment: "Passer l'évaluation",
+
     // Community & Activities
     community_activities_title: "Activités communautaires",
     community_activities_subtitle: "Trouvez des dates de jeu, des promenades et d'autres événements organisés par des parents comme vous.",
@@ -453,6 +460,20 @@ export const fr = {
     confirm_delete_all_requests: "Supprimer TOUTES les demandes ? Cette action est irréversible.",
     tooltip_chat_requires_acceptance: "L'offre doit être acceptée pour discuter",
     experience_placeholder: "ex: 5",
+
+    // Additional UI Strings
+    email_verification_title: "Vérification de l'e-mail",
+    no_active_subscription: "Vous n'avez pas d'abonnement actif.",
+    settings_integrations: "Intégrations",
+    search_start_typing: "Commencez à taper pour rechercher...",
+    payment_card_number_label: "Numéro de carte",
+    payment_card_holder_label: "Titulaire de la carte",
+    payment_expires_label: "Expire le",
+    payment_cvv_label: "CVV",
+    payment_card_property_notice: "Cette carte est la propriété de FamLink Inc. Son utilisation est soumise aux conditions.",
+    select_highlighted_date: "Veuillez sélectionner une date en surbrillance.",
+    button_clear_all_history: "Effacer tout l'historique",
+    select_any_emoji: "Sélectionnez n'importe quel emoji",
 
     // Calendar
     unit_hours: "heures",

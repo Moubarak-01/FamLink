@@ -245,6 +245,13 @@ export const ja = {
     dashboard_no_offers: "オファーなし",
     dashboard_offer_from: "オファー元",
 
+    // Premium & Upgrade
+    premium_banner_title: "プレミアム機能のロックを解除 🌟",
+    premium_banner_desc: "認証済みのベビーシッター、詳細な身元調査、優先サポートへの無制限アクセスを取得します。今日からFamLink Premiumの旅を始めましょう。",
+    dashboard_upgrade_nanny_title: "認定FamLinkベビーシッターになる 🎓",
+    dashboard_upgrade_nanny_desc: "プロフェッショナル評価に合格して、ベビーシッターのプロフィールを解禁し、予約の受付を開始してください。完全無料です！",
+    button_take_assessment: "評価を受ける",
+
     // Community & Activities
     community_activities_title: "コミュニティ活動",
     community_activities_subtitle: "あなたのような親たちが主催するプレイデート、散歩、その他のイベントを見つけましょう。",
@@ -451,6 +458,20 @@ export const ja = {
     confirm_delete_all_requests: "すべてのリクエストを削除しますか？これは元に戻せません。",
     tooltip_chat_requires_acceptance: "チャットするにはオファーを受け入れる必要があります",
     experience_placeholder: "例：5",
+
+    // Additional UI Strings
+    email_verification_title: "メール認証",
+    no_active_subscription: "有効なサブスクリプションがありません。",
+    settings_integrations: "統合",
+    search_start_typing: "検索するために入力してください...",
+    payment_card_number_label: "カード番号",
+    payment_card_holder_label: "カード名義人",
+    payment_expires_label: "有効期限",
+    payment_cvv_label: "CVV",
+    payment_card_property_notice: "このカードはFamLink Inc.の所有物であり、利用規約に従って使用されます。",
+    select_highlighted_date: "ハイライトされた日付を選択してください。",
+    button_clear_all_history: "すべての履歴を消去",
+    select_any_emoji: "絵文字を選択",
 
     // Calendar
     unit_hours: "時間",

@@ -17,6 +17,7 @@ import ParentProfileForm from './components/ParentProfileForm';
 import NannyListingScreen from './components/NannyListingScreen';
 import VerifyEmailScreen from './components/VerifyEmailScreen';
 import { useLanguage } from './contexts/LanguageContext';
+import { useTheme } from './contexts/ThemeContext';
 import NannyProfileDetailScreen from './components/NannyProfileDetailScreen';
 import ContactModal from './components/ContactModal';
 import BookingRequestModal from './components/BookingRequestModal';
@@ -34,8 +35,6 @@ import ChatModal from './components/ChatModal';
 import SubscriptionStatusScreen from './components/SubscriptionStatusScreen';
 import AiAssistant, { AiAssistantRef } from './components/AiAssistant';
 import SettingsModal from './components/SettingsModal';
-import VideoCallModal from './components/VideoCallModal';
-import CallHistoryModal from './components/chat/CallHistoryModal';
 import { socketService } from './services/socketService';
 import { authService } from './services/authService';
 import { userService } from './services/userService';
@@ -132,6 +131,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [viewingNannyId, setViewingNannyId] = useState<string | null>(null);
   const [contactNannyInfo, setContactNannyInfo] = useState<User | null>(null);
   const [ratingTargetUser, setRatingTargetUser] = useState<User | null>(null);
@@ -146,16 +147,8 @@ const App: React.FC = () => {
   const [activeChat, setActiveChat] = useState<{ type: 'activity' | 'outing' | 'skill' | 'booking', item: Activity | SharedOuting | SkillRequest | BookingRequest } | null>(null);
   const activeChatRef = useRef(activeChat);
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
-  const [noiseReductionEnabled, setNoiseReductionEnabled] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAiVisible, setIsAiVisible] = useState(true);
-
-  // Video Call State
-  // Video Call State
-  const [outgoingCallTarget, setOutgoingCallTarget] = useState<string | null>(null);
-  const [outgoingCallName, setOutgoingCallName] = useState<string | null>(null);
-  const [outgoingCallType, setOutgoingCallType] = useState<'video' | 'voice'>('video');
-  const [showCallHistory, setShowCallHistory] = useState(false);
 
   const aiAssistantRef = useRef<AiAssistantRef>(null);
 
@@ -494,7 +487,7 @@ const App: React.FC = () => {
       queryClient.setQueryData(['bookings', currentUser.id], (old: BookingRequest[] = []) => [...old, populatedBooking]);
       setBookingNannyInfo(null);
       alert(t('alert_booking_request_sent'));
-      queryClient.invalidateQueries({ queryKey: ['bookings', currentUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
     } catch (e) { alert("Error creating booking"); }
   };
 
@@ -1004,109 +997,72 @@ const App: React.FC = () => {
   const isAuthScreen = [Screen.Welcome, Screen.Login, Screen.SignUp, Screen.ForgotPassword, Screen.VerifyEmail].includes(currentScreen);
 
   return (
-    <div className="min-h-screen flex flex-col items-center">
-      {currentScreen !== Screen.Landing && <SmoothScroll />}
-      {contactNannyInfo && <ContactModal nanny={contactNannyInfo} onClose={() => setContactNannyInfo(null)} onOpenChat={handleOpenContactChat} />}
-      {ratingTargetUser && <RatingModal targetUser={ratingTargetUser} onClose={() => setRatingTargetUser(null)} onSubmit={(rating, comment) => handleSubmitRating(ratingTargetUser.id, rating, comment)} />}
-      {bookingNannyInfo && currentUser && (
-        <BookingRequestModal nanny={bookingNannyInfo} onClose={() => setBookingNannyInfo(null)} onSubmit={handleSubmitBookingRequest} existingBookings={bookingRequests} currentUserId={currentUser.id} />
-      )}
-      {taskModalNanny && <TaskModal nanny={taskModalNanny} onClose={() => setTaskModalNanny(null)} onSubmit={handleAddTask} />}
-      {isCreateActivityModalOpen && <CreateActivityModal onClose={() => setIsCreateActivityModalOpen(false)} onSubmit={handleCreateActivity} />}
-      {isCreateOutingModalOpen && <CreateOutingModal onClose={() => setIsCreateOutingModalOpen(false)} onSubmit={handleCreateOuting} />}
-      {requestOutingInfo && <RequestOutingJoinModal outing={requestOutingInfo} onClose={() => setRequestOutingInfo(null)} onSubmit={handleRequestOutingJoin} existingRequests={requestOutingInfo.requests} currentUserId={currentUser?.id || ''} />}
-      {isCreateSkillRequestModalOpen && <CreateSkillRequestModal onClose={() => setIsCreateSkillRequestModalOpen(false)} onSubmit={handleCreateSkillRequest} />}
-      {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
-      {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} onStartCall={(userId, type = 'video', name) => {
-        setOutgoingCallType(type);
-        setOutgoingCallTarget(userId);
-        setOutgoingCallName(name || 'User');
-      }} />}
+    <div className="min-h-screen flex flex-col items-center relative transition-colors duration-500">
 
-      {isSettingsModalOpen && (
-        <SettingsModal
-          onClose={() => setIsSettingsModalOpen(false)}
-          noiseReductionEnabled={noiseReductionEnabled}
-          onToggleNoiseReduction={() => {
-            setNoiseReductionEnabled(!noiseReductionEnabled);
-            alert(!noiseReductionEnabled ? "Audio processing enabled for clearer calls." : "Noise reduction disabled.");
-          }}
-          onDeleteAccount={handleDeleteAccount}
+      {/* === GLOBAL ANIMATED BLOB ORBS === */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className={`absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none animate-float-blob
+            ${isDark ? 'bg-purple-600/20' : 'bg-pink-400/25'}`}
         />
-      )}
-
-      {/* Call History Modal */}
-      {currentUser && (
-        <CallHistoryModal
-          isOpen={showCallHistory}
-          onClose={() => setShowCallHistory(false)}
-          currentUserId={currentUser.id}
-          onCallUser={(userId, type = 'video', name) => {
-            setShowCallHistory(false);
-            setOutgoingCallType(type);
-            setOutgoingCallTarget(userId);
-            setOutgoingCallName(name || 'User');
-          }}
+        <div className={`absolute top-[5%] right-[-100px] w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none animate-float-blob-reverse
+            ${isDark ? 'bg-indigo-500/20' : 'bg-purple-400/20'}`}
         />
-      )}
-
-      {/* Floating Call History Button */}
-      {currentUser && !activeChat && (
-        <button
-          onClick={() => setShowCallHistory(true)}
-          className="fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center text-2xl"
-          title={t('calls_tab') || 'Calls'}
-        >
-          📞
-        </button>
-      )}
-
-      {/* Global Video Call Overlay */}
-      {currentUser && (
-        <VideoCallModal
-          currentUserId={currentUser.id}
-          currentUserName={currentUser.fullName}
-          outgoingCallTarget={outgoingCallTarget}
-          outgoingCallName={outgoingCallName}
-          callType={outgoingCallType}
-          onClose={() => {
-            setOutgoingCallTarget(null);
-            setOutgoingCallName(null);
-            // Reset type to video default
-            setOutgoingCallType('video');
-          }}
+        <div className={`absolute bottom-[-60px] left-1/3 w-[450px] h-[350px] rounded-full blur-[110px] pointer-events-none animate-float-blob-slow
+            ${isDark ? 'bg-pink-500/15' : 'bg-cyan-400/20'}`}
         />
-      )}
+      </div>
 
-      {/* Passing the correct toggle handler to the Header component */}
-      <Header
-        isAuthenticated={!!currentUser}
-        user={currentUser}
-        onLogout={handleLogout}
-        onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined}
-        onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined}
-        // FIX: The header button now toggles the state directly
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
-        notifications={currentUser ? notifications.filter(n => !n.read) : []}
-        onClearNotifications={handleClearNotifications}
-        onNotificationClick={handleNotificationClick}
-        noiseReductionEnabled={noiseReductionEnabled}
-      />
-      <main className={`w-full mx-auto flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : currentScreen === Screen.Landing ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
-        <div className={`transition-all duration-500 ${isWideScreen || isAuthScreen || currentScreen === Screen.Landing ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
-          {renderScreen()}
-        </div>
-      </main>
+      <div className="relative z-10 w-full flex flex-col flex-grow items-center">
+        {currentScreen !== Screen.Landing && <SmoothScroll />}
+        {contactNannyInfo && <ContactModal nanny={contactNannyInfo} onClose={() => setContactNannyInfo(null)} onOpenChat={handleOpenContactChat} />}
+        {ratingTargetUser && <RatingModal targetUser={ratingTargetUser} onClose={() => setRatingTargetUser(null)} onSubmit={(rating, comment) => handleSubmitRating(ratingTargetUser.id, rating, comment)} />}
+        {bookingNannyInfo && currentUser && (
+          <BookingRequestModal nanny={bookingNannyInfo} onClose={() => setBookingNannyInfo(null)} onSubmit={handleSubmitBookingRequest} existingBookings={bookingRequests} currentUserId={currentUser.id} />
+        )}
+        {taskModalNanny && <TaskModal nanny={taskModalNanny} onClose={() => setTaskModalNanny(null)} onSubmit={handleAddTask} />}
+        {isCreateActivityModalOpen && <CreateActivityModal onClose={() => setIsCreateActivityModalOpen(false)} onSubmit={handleCreateActivity} />}
+        {isCreateOutingModalOpen && <CreateOutingModal onClose={() => setIsCreateOutingModalOpen(false)} onSubmit={handleCreateOuting} />}
+        {requestOutingInfo && <RequestOutingJoinModal outing={requestOutingInfo} onClose={() => setRequestOutingInfo(null)} onSubmit={handleRequestOutingJoin} existingRequests={requestOutingInfo.requests} currentUserId={currentUser?.id || ''} />}
+        {isCreateSkillRequestModalOpen && <CreateSkillRequestModal onClose={() => setIsCreateSkillRequestModalOpen(false)} onSubmit={handleCreateSkillRequest} />}
+        {makeOfferSkillRequestInfo && <MakeSkillOfferModal request={makeOfferSkillRequestInfo} onClose={() => setMakeOfferSkillRequestInfo(null)} onSubmit={handleMakeSkillOffer} />}
+        {activeChat && currentUser && <ChatModal activity={activeChat.type === 'activity' ? activeChat.item as Activity : undefined} outing={activeChat.type === 'outing' ? activeChat.item as SharedOuting : undefined} skillRequest={activeChat.type === 'skill' ? activeChat.item as SkillRequest : undefined} bookingRequest={activeChat.type === 'booking' ? activeChat.item as BookingRequest : undefined} currentUser={currentUser} onClose={() => setActiveChat(null)} onDeleteMessage={handleDeleteMessage} onDeleteAllMessages={handleDeleteAllMessages} onReportUser={handleReportUser} />}
 
-      {showAiAssistant && isAiVisible && currentUser && (
-        <AiAssistant
-          ref={aiAssistantRef}
+        {isSettingsModalOpen && (
+          <SettingsModal
+            onClose={() => setIsSettingsModalOpen(false)}
+            onDeleteAccount={handleDeleteAccount}
+          />
+        )}
+
+        {/* Passing the correct toggle handler to the Header component */}
+        <Header
+          isAuthenticated={!!currentUser}
           user={currentUser}
-          currentScreen={currentScreen}
+          onLogout={handleLogout}
+          onEditProfile={(currentUser?.userType === 'parent' || (currentUser?.userType === 'nanny' && currentUser?.assessmentResult?.decision === 'Approved')) ? handleEditProfile : undefined}
+          onViewSubscription={currentUser?.userType === 'parent' ? handleViewSubscription : undefined}
+          // FIX: The header button now toggles the state directly
+          onOpenSettings={() => setIsSettingsModalOpen(true)}
+          notifications={currentUser ? notifications.filter(n => !n.read) : []}
+          onClearNotifications={handleClearNotifications}
+          onNotificationClick={handleNotificationClick}
         />
-      )}
+        <main className={`w-full mx-auto flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : currentScreen === Screen.Landing ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
+          <div className={`transition-all duration-500 ${isWideScreen || isAuthScreen || currentScreen === Screen.Landing ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
+            {renderScreen()}
+          </div>
+        </main>
 
-      <footer className="text-center p-4 text-[var(--text-accent)] text-sm"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
+        {showAiAssistant && isAiVisible && currentUser && (
+          <AiAssistant
+            ref={aiAssistantRef}
+            user={currentUser}
+            currentScreen={currentScreen}
+          />
+        )}
+
+        <footer className="text-center py-1 px-4 text-[var(--text-accent)] text-xs"><p>© {new Date().getFullYear()} {t('footer_text')}{' '}<span className="font-bold text-xs animate-rainbow">Moubarak</span>{t('footer_rights_reserved')}</p></footer>
+      </div>
     </div>
   );
 };

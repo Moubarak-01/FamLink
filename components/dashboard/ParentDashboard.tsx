@@ -129,7 +129,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('dashboard_my_booking_requests')}</h3>
                         {bookingRequests.length > 0 && (
-                            <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">Clear All History</button>
+                            <button onClick={onClearAllBookings} className="text-xs text-red-500 hover:text-red-700 underline">{t('button_clear_all_history')}</button>
                         )}
                     </div>
                     {bookingRequests.length > 0 ? (
@@ -233,7 +233,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({
                                         <p className="text-sm text-[var(--text-secondary)]">{t('skill_card_view_offers', { count: req.offers.length })}</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">View</button>
+                                        <button onClick={onViewSkillMarketplace} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full">{t('button_view')}</button>
                                         <StatusTag status={req.status} />
                                     </div>
                                 </div>

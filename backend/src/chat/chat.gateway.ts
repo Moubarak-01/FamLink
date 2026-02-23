@@ -9,7 +9,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
-import { CallLogService } from './call-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { JwtService } from '@nestjs/jwt'; // <--- Import JwtService
 import { ConfigService } from '@nestjs/config'; // <--- Import ConfigService for CORS URL
@@ -23,11 +22,9 @@ import { ConfigService } from '@nestjs/config'; // <--- Import ConfigService for
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private connectedUsers = new Map<string, string[]>();
-  private activeCalls = new Map<string, { callLogId: string, startTime: number }>();
 
   constructor(
     private readonly chatService: ChatService,
-    private readonly callLogService: CallLogService,
     private readonly notificationsService: NotificationsService,
     private readonly jwtService: JwtService, // <--- Inject
   ) { }
@@ -291,161 +288,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { status: 'offline', lastSeen: dbStatus.lastSeen ? dbStatus.lastSeen : null };
   }
 
-  // --- WebRTC Signaling with Call Logging ---
-
-  @SubscribeMessage('call_user')
-  async handleCallUser(
-    @MessageBody() data: { userToCall: string, signalData: any, name: string, callType?: 'video' | 'voice' },
-    @ConnectedSocket() client: Socket
-  ) {
-    const from = client.data.userId;
-    console.log(`📞 [Gateway] Call (${data.callType || 'video'}) from ${from} to ${data.userToCall}`);
-
-    // Create call log entry
-    try {
-      const callerInfo = await this.chatService.getUserById(from);
-      const receiverInfo = await this.chatService.getUserById(data.userToCall);
-
-      const callLog = await this.callLogService.createCallLog({
-        callerId: from,
-        callerName: data.name || callerInfo?.fullName || 'Unknown',
-        callerPhoto: callerInfo?.photo,
-        receiverId: data.userToCall,
-        receiverName: receiverInfo?.fullName || 'Unknown',
-        receiverPhoto: receiverInfo?.photo,
-        callType: data.callType || 'video',
-      });
-
-      // Store active call reference with caller-receiver key
-      const callKey = `${from}_${data.userToCall}`;
-      this.activeCalls.set(callKey, {
-        callLogId: callLog._id.toString(),
-        startTime: Date.now()
-      });
-
-      // Also emit callLogId to caller for tracking
-      client.emit('call_log_created', { callLogId: callLog._id.toString() });
-
-      this.server.to(`user_${data.userToCall}`).emit('call_received', {
-        signal: data.signalData,
-        from: from,
-        name: data.name,
-        callType: data.callType || 'video'
-      });
-    } catch (err) {
-      console.error('Error creating call log:', err);
-      // Still emit the call even if logging fails
-      this.server.to(`user_${data.userToCall}`).emit('call_received', {
-        signal: data.signalData,
-        from: from,
-        name: data.name,
-        callType: data.callType || 'video'
-      });
-    }
-  }
-
-  @SubscribeMessage('answer_call')
-  async handleAnswerCall(
-    @MessageBody() data: { to: string, signal: any },
-    @ConnectedSocket() client: Socket
-  ) {
-    const answererId = client.data.userId;
-    console.log(`✅ [Gateway] Call answered by ${answererId} for caller ${data.to}`);
-
-    // Update call log to 'in_progress' (will be 'completed' on end)
-    const callKey = `${data.to}_${answererId}`;
-    const activeCall = this.activeCalls.get(callKey);
-    if (activeCall) {
-      // Reset start time to when call was actually connected
-      this.activeCalls.set(callKey, { ...activeCall, startTime: Date.now() });
-    }
-
-    const targets = this.connectedUsers.get(data.to);
-    if (targets) {
-      targets.forEach(socketId => {
-        this.server.to(socketId).emit('call_accepted', data.signal);
-      });
-    } else {
-      console.warn(`⚠️ [Gateway] Caller ${data.to} not found/connected during answer_call`);
-    }
-  }
-
-  @SubscribeMessage('ice_candidate')
-  handleIceCandidate(@MessageBody() data: { to: string, candidate: any }) {
-    const targets = this.connectedUsers.get(data.to);
-    if (targets) {
-      targets.forEach(socketId => {
-        this.server.to(socketId).emit('ice_candidate_received', data.candidate);
-      });
-    }
-  }
-
-  @SubscribeMessage('end_call')
-  async handleEndCall(
-    @MessageBody() data: { to: string, callLogId?: string, duration?: number },
-    @ConnectedSocket() client: Socket
-  ) {
-    const enderId = client.data.userId;
-    console.log(`🛑 [Gateway] Call ended by ${enderId} for ${data.to}`);
-
-    // Try to find and update the call log
-    // Check both directions since either party can end the call
-    const callKey1 = `${enderId}_${data.to}`;
-    const callKey2 = `${data.to}_${enderId}`;
-    const activeCall = this.activeCalls.get(callKey1) || this.activeCalls.get(callKey2);
-
-    if (activeCall) {
-      const duration = Math.floor((Date.now() - activeCall.startTime) / 1000);
-      try {
-        await this.callLogService.updateCallStatus(
-          activeCall.callLogId,
-          duration > 0 ? 'completed' : 'no_answer',
-          duration
-        );
-      } catch (err) {
-        console.error('Failed to update call log:', err);
-      }
-
-      // Cleanup
-      this.activeCalls.delete(callKey1);
-      this.activeCalls.delete(callKey2);
-    }
-
-    const targets = this.connectedUsers.get(data.to);
-    if (targets) {
-      targets.forEach(socketId => {
-        this.server.to(socketId).emit('call_ended');
-      });
-    }
-  }
-
-  @SubscribeMessage('reject_call')
-  async handleRejectCall(
-    @MessageBody() data: { callerId: string },
-    @ConnectedSocket() client: Socket
-  ) {
-    const rejecterId = client.data.userId;
-    console.log(`❌ [Gateway] Call rejected by ${rejecterId} from ${data.callerId}`);
-
-    const callKey = `${data.callerId}_${rejecterId}`;
-    const activeCall = this.activeCalls.get(callKey);
-
-    if (activeCall) {
-      try {
-        await this.callLogService.updateCallStatus(activeCall.callLogId, 'rejected', 0);
-      } catch (err) {
-        console.error('Failed to update call log:', err);
-      }
-      this.activeCalls.delete(callKey);
-    }
-
-    // Notify caller that call was rejected
-    const targets = this.connectedUsers.get(data.callerId);
-    if (targets) {
-      targets.forEach(socketId => {
-        this.server.to(socketId).emit('call_rejected');
-      });
-    }
-  }
 }
-

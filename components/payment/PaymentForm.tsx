@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import PaymentCard from './PaymentCard';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const PaymentForm: React.FC = () => {
+    const { t } = useLanguage();
     const [cardNumber, setCardNumber] = useState('');
     const [cardHolder, setCardHolder] = useState('');
     const [expiry, setExpiry] = useState('');
@@ -51,11 +53,11 @@ const PaymentForm: React.FC = () => {
             <form className="w-full max-w-md bg-white p-6 rounded-2xl shadow-xl space-y-6 border border-gray-100">
                 {/* Card Number */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Card Number</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('payment_card_number_label')}</label>
                     <input
                         type="text"
                         className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono"
-                        placeholder="0000 0000 0000 0000"
+                        placeholder={t('placeholder_card_number')}
                         value={cardNumber}
                         onChange={handleCardNumberChange}
                     />
@@ -63,11 +65,11 @@ const PaymentForm: React.FC = () => {
 
                 {/* Card Holder */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Card Holder</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('payment_card_holder_label')}</label>
                     <input
                         type="text"
                         className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all uppercase"
-                        placeholder="JOHN DOE"
+                        placeholder={t('placeholder_name_example')}
                         value={cardHolder}
                         onChange={(e) => setCardHolder(e.target.value)}
                     />
@@ -76,11 +78,11 @@ const PaymentForm: React.FC = () => {
                 <div className="flex space-x-4">
                     {/* Expiry Date */}
                     <div className="space-y-2 flex-1">
-                        <label className="block text-sm font-medium text-gray-700">Expires</label>
+                        <label className="block text-sm font-medium text-gray-700">{t('payment_expires_label')}</label>
                         <input
                             type="text"
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                            placeholder="MM/YY"
+                            placeholder={t('placeholder_expiry')}
                             value={expiry}
                             onChange={handleExpiryChange}
                         />
@@ -88,11 +90,11 @@ const PaymentForm: React.FC = () => {
 
                     {/* CVV */}
                     <div className="space-y-2 flex-1">
-                        <label className="block text-sm font-medium text-gray-700">CVV</label>
+                        <label className="block text-sm font-medium text-gray-700">{t('payment_cvv_label')}</label>
                         <input
                             type="text"
                             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                            placeholder="123"
+                            placeholder={t('placeholder_cvv')}
                             maxLength={4}
                             value={cvv}
                             onChange={(e) => setCvv(e.target.value)}

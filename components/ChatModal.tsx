@@ -18,10 +18,9 @@ interface ChatModalProps {
     onDeleteMessage: (contextId: string, messageId: string) => void;
     onDeleteAllMessages?: (contextId: string) => void;
     onReportUser?: (userId: string) => void;
-    onStartCall?: (userId: string, type?: 'video' | 'voice', name?: string) => void;
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose, onDeleteMessage, onDeleteAllMessages, onReportUser, onStartCall }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, bookingRequest, currentUser, onClose, onDeleteMessage, onDeleteAllMessages, onReportUser }) => {
     const { t } = useLanguage();
     const [messageText, setMessageText] = useState('');
     const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
@@ -456,43 +455,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
                             )}
                         </div>
                     </div>
-                    <div className="flex gap-3 items-center">
-                        {/* Voice Call Button */}
-                        {onStartCall && otherUserId && (
-                            <button
-                                onClick={() => onStartCall(otherUserId, 'voice', title)}
-                                className="p-2 rounded-full hover:bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] transition-colors"
-                                title={t('start_voice_call') || 'Start Voice Call'}
-                            >
-                                📞
-                            </button>
-                        )}
-                        {/* Video Call Button */}
-                        {onStartCall && otherUserId && (
-                            <button
-                                onClick={() => onStartCall(otherUserId, 'video', title)}
-                                className="p-2 rounded-full hover:bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] transition-colors"
-                                title={t('start_video_call')}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </button>
-                        )}
-
-                        <button
-                            onClick={() => {
-                                if (window.confirm(t('confirm_delete_chat'))) {
-                                    onDeleteAllMessages(contextId);
-                                }
-                            }}
-                            className="p-2 rounded-full hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-500 transition-colors"
-                            title={t('delete_chat')}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                    <div className="flex gap-3 items-center">                        <button
+                        onClick={() => {
+                            if (window.confirm(t('confirm_delete_chat'))) {
+                                onDeleteAllMessages(contextId);
+                            }
+                        }}
+                        className="p-2 rounded-full hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-500 transition-colors"
+                        title={t('delete_chat')}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
                         <button onClick={onClose} className="p-2 rounded-full hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

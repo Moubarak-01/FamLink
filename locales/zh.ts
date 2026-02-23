@@ -245,6 +245,13 @@ export const zh = {
     dashboard_no_offers: "暂无报价",
     dashboard_offer_from: "报价来自",
 
+    // Premium & Upgrade
+    premium_banner_title: "解锁高级功能 🌟",
+    premium_banner_desc: "获得无限制访问经过验证的保姆、详细的背景调查和优先支持。立即开始您的FamLink高级版体验。",
+    dashboard_upgrade_nanny_title: "成为FamLink认证保姆 🎓",
+    dashboard_upgrade_nanny_desc: "通过我们的专业评估，解锁您的保姆个人资料并开始接受预订。这是完全免费的！",
+    button_take_assessment: "参加评估",
+
     // Community & Activities
     community_activities_title: "社区活动",
     community_activities_subtitle: "查找像您一样的家长们举办的聚会、散步和其他活动。",
@@ -451,6 +458,20 @@ export const zh = {
     confirm_delete_all_requests: "删除所有请求？此操作无法撤销。",
     tooltip_chat_requires_acceptance: "必须接受报价才能聊天",
     experience_placeholder: "例如：5",
+
+    // Additional UI Strings
+    email_verification_title: "电子邮件验证",
+    no_active_subscription: "您没有活跃的订阅。",
+    settings_integrations: "集成",
+    search_start_typing: "开始输入以搜索...",
+    payment_card_number_label: "卡号",
+    payment_card_holder_label: "持卡人",
+    payment_expires_label: "过期时间",
+    payment_cvv_label: "CVV",
+    payment_card_property_notice: "此卡归 FamLink Inc. 所有，使用受条款约束。",
+    select_highlighted_date: "请选择一个突出显示的日期。",
+    button_clear_all_history: "清除所有历史记录",
+    select_any_emoji: "选择任何表情符号",
 
     // Calendar
     unit_hours: "小时",

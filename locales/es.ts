@@ -245,6 +245,13 @@ export const es = {
     dashboard_no_offers: "Sin ofertas",
     dashboard_offer_from: "Oferta de",
 
+    // Premium & Upgrade
+    premium_banner_title: "Desbloquea funciones Premium 🌟",
+    premium_banner_desc: "Obtén acceso ilimitado a niñeras verificadas, verificaciones de antecedentes detalladas y soporte prioritario. Comienza tu viaje con FamLink Premium hoy.",
+    dashboard_upgrade_nanny_title: "Conviértete en una Niñera Certificada de FamLink 🎓",
+    dashboard_upgrade_nanny_desc: "Aprueba nuestra evaluación profesional para desbloquear tu perfil de Niñera y comenzar a recibir reservas. ¡Es completamente gratis!",
+    button_take_assessment: "Tomar la Evaluación",
+
     // Community & Activities
     community_activities_title: "Actividades de la comunidad",
     community_activities_subtitle: "Encuentra citas de juego, paseos y otros eventos organizados por padres como tú.",
@@ -450,6 +457,20 @@ export const es = {
     confirm_delete_all_requests: "¿Eliminar TODAS las solicitudes? Esto no se puede deshacer.",
     tooltip_chat_requires_acceptance: "La oferta debe ser aceptada para chatear",
     experience_placeholder: "ej: 5",
+
+    // Additional UI Strings
+    email_verification_title: "Verificación de correo electrónico",
+    no_active_subscription: "No tienes una suscripción activa.",
+    settings_integrations: "Integraciones",
+    search_start_typing: "Empieza a escribir para buscar...",
+    payment_card_number_label: "Número de tarjeta",
+    payment_card_holder_label: "Titular de la tarjeta",
+    payment_expires_label: "Expira",
+    payment_cvv_label: "CVV",
+    payment_card_property_notice: "Esta tarjeta es propiedad de FamLink Inc. Uso sujeto a términos.",
+    select_highlighted_date: "Por favor, selecciona una fecha resaltada.",
+    button_clear_all_history: "Borrar todo el historial",
+    select_any_emoji: "Selecciona cualquier emoji",
 
     // Calendar
     unit_hours: "horas",
