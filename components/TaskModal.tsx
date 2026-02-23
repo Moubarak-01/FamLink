@@ -34,7 +34,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ nanny, onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-[1001] p-4 backdrop-blur-sm modal-scroll-lock" onClick={onClose}>
-      <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="outline-none bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()} tabIndex={-1} ref={(el) => { if (el) el.focus(); }}>
         <form onSubmit={handleSubmit} className="p-8 text-center">
             {/* FIX: The 'photo' property is on the 'nanny' (User) object, not 'nanny.profile'. */}
             <img src={nanny.photo} alt={nanny.fullName} className="w-24 h-24 rounded-full object-cover mx-auto -mt-20 border-4 border-[var(--bg-card)] shadow-lg" />

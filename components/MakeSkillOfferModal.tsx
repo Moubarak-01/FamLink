@@ -27,7 +27,7 @@ const MakeSkillOfferModal: React.FC<MakeSkillOfferModalProps> = ({ request, onCl
 
     return (
         <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-[1001] p-4 backdrop-blur-sm modal-scroll-lock" onClick={onClose}>
-            <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="outline-none bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()} tabIndex={-1} ref={(el) => { if (el) el.focus(); }}>
                 <form onSubmit={handleSubmit} className="p-8">
                     <div className="text-center mb-6">
                         <h2 className="text-2xl font-bold text-[var(--text-primary)]">{t('make_offer_title', { taskTitle: request.title })}</h2>

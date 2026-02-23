@@ -53,7 +53,7 @@ const CreateOutingModal: React.FC<CreateOutingModalProps> = ({ onClose, onSubmit
 
     return (
         <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-[1001] p-4 backdrop-blur-sm modal-scroll-lock" onClick={onClose}>
-            <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="outline-none bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()} tabIndex={-1} ref={(el) => { if (el) el.focus(); }}>
                 <form onSubmit={handleSubmit} className="p-8">
                     <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">{t('modal_create_outing_title')}</h2>
 

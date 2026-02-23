@@ -422,10 +422,12 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
         }
       `}</style>
             <div
-                className="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden border border-[var(--border-color)]"
+                className="outline-none bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden border border-[var(--border-color)]"
                 onClick={e => e.stopPropagation()}
                 onWheel={e => e.stopPropagation()}
                 data-lenis-prevent
+                tabIndex={-1}
+                ref={(el) => { if (el) el.focus(); }}
             >
 
                 {/* Header - Sticky */}

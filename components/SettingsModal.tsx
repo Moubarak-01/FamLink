@@ -11,7 +11,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onDeleteAccount 
   const { t } = useLanguage();
   return (
     <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-[1001] p-4 backdrop-blur-sm modal-scroll-lock" onClick={onClose}>
-      <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-md p-6 border border-[var(--border-color)]" onClick={e => e.stopPropagation()}>
+      <div
+        className="outline-none bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-md p-6 border border-[var(--border-color)]"
+        onClick={e => e.stopPropagation()}
+        tabIndex={-1}
+        ref={(el) => { if (el) el.focus(); }}
+      >
         <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">{t('settings_title')}</h2>
 
         <div className="mb-6">
