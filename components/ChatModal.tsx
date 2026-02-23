@@ -405,7 +405,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ activity, outing, skillRequest, b
     };
 
     return (
-        <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-[1001] p-4 backdrop-blur-sm modal-scroll-lock" onClick={onClose}>
             <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;

@@ -14,7 +14,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ nanny, onClose, onOpenChat 
   if (!nanny.profile) return null;
 
   return (
-    <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-[var(--modal-overlay)] flex justify-center items-center z-[1001] p-4 backdrop-blur-sm modal-scroll-lock" onClick={onClose}>
       <div className="bg-[var(--bg-card)] rounded-2xl shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
         <div className="p-6 text-center">
             <img src={nanny.photo} alt={nanny.fullName} className="w-24 h-24 rounded-full object-cover mx-auto -mt-16 border-4 border-[var(--bg-card)] shadow-lg" />

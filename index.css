@@ -470,3 +470,6 @@ code {
 .card-glow-light {
     animation: card-glow-light-pulse 3.5s ease-in-out infinite;
 }
+body:has(.modal-scroll-lock) {
+    overflow: hidden;
+}
