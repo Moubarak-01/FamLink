@@ -1047,8 +1047,8 @@ const App: React.FC = () => {
           onClearNotifications={handleClearNotifications}
           onNotificationClick={handleNotificationClick}
         />
-        <main className={`w-full mx-auto flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : currentScreen === Screen.Landing ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
-          <div className={`transition-all duration-500 ${isWideScreen || isAuthScreen || currentScreen === Screen.Landing ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
+        <main className={`w-full mx-auto flex flex-col flex-grow transition-all duration-500 ${isWideScreen ? 'p-4 sm:p-6 md:p-8 max-w-[95%] xl:max-w-[1400px]' : isAuthScreen ? 'p-0' : currentScreen === Screen.Landing ? 'p-0' : 'p-4 sm:p-6 md:p-8 max-w-xl'}`}>
+          <div className={`w-full flex flex-col flex-grow transition-all duration-500 ${isWideScreen || isAuthScreen || currentScreen === Screen.Landing ? 'bg-transparent' : 'bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden'}`}>
             {renderScreen()}
           </div>
         </main>

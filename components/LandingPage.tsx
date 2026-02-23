@@ -12,7 +12,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onFinish, onLogin }) => {
     const isDark = theme === 'dark';
 
     return (
-        <div className="min-h-full flex flex-col items-center justify-center p-4 pt-10 pb-10 relative overflow-hidden font-sans transition-colors duration-500">
+        <div className="flex-grow w-full flex flex-col items-center justify-center p-4 pt-10 pb-10 relative overflow-hidden font-sans transition-colors duration-500">
 
             <motion.div
                 initial={{ opacity: 0, y: 15 }}
