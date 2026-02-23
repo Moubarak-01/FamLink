@@ -352,7 +352,6 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
                             ],
                             temperature: 0.3,
                             // Attempt to enforce JSON mode where supported
-                            response_format: { type: "json_object" },
                             // OpenRouter specifics
                             include_reasoning: false,
                             transforms: ["middle-out", "reasoning"]
@@ -378,12 +377,10 @@ CRITICAL REQUIREMENT: The text for the 'feedback' field in your JSON response mu
                             }
                         }
                     } else {
-                        // Quick failover on error status
-                        const status = orResponse.status;
-                        if (status === 402 || status === 429 || status >= 500) {
-                            console.warn(`[Assessment] ⚠️ ${openrouterModel} failed (${status}). Waterfalling...`);
-                            continue;
-                        }
+                        // All non-200 responses should fail over, not just specific subset.
+                        const errorMsg = await orResponse.text();
+                        console.warn(`[Assessment] ⚠️ ${openrouterModel} failed (${orResponse.status}): ${errorMsg}. Waterfalling...`);
+                        continue;
                     }
 
                 } catch (error) {
