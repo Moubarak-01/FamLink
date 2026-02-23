@@ -46,8 +46,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   // Initialize questions once on mount to prevent reshuffling on language change
   useEffect(() => {
     if (user.userType === 'parent') {
-      // Pull 25 random psychometric IDs from the 80-question bank
-      setSelectedQuestionIds(getRandomParentQuestionIds(25));
+      // Pull 15 random psychometric IDs from the 80-question bank
+      setSelectedQuestionIds(getRandomParentQuestionIds(15));
       return;
     }
 
