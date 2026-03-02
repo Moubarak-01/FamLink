@@ -197,7 +197,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
             type="text"
             value={inputValue}
             onChange={handleSearchChange}
-            placeholder={placeholder || "Search city (e.g. Paris)..."}
+            placeholder={placeholder || t('placeholder_search_city_ex')}
             className={baseInputClass}
             autoComplete="off"
           />

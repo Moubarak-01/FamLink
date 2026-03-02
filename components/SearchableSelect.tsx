@@ -88,7 +88,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ label, options, val
           ref={inputRef}
           type="text"
           className="w-full px-3 py-2 bg-transparent border-none focus:outline-none text-[var(--text-primary)] placeholder-gray-400 rounded-md"
-          placeholder={disabled ? "Select above first..." : (placeholder || "Search or type...")}
+          placeholder={disabled ? t('placeholder_select_above_first') : (placeholder || t('placeholder_search_or_type'))}
           value={search}
           onChange={handleChange}
           onFocus={(e) => {

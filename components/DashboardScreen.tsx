@@ -127,7 +127,7 @@ const InteractiveTaskItem: React.FC<{ task: Task, onUpdateStatus: DashboardScree
                         <StatusTag status={task.status} />
                         {onDelete && (
                             <button
-                                onClick={() => { if (window.confirm("Delete this task?")) onDelete(task.id); }}
+                                onClick={() => { if (window.confirm(t('confirm_delete_task'))) onDelete(task.id); }}
                                 className="text-gray-400 hover:text-red-500 transition-colors"
                                 title="Delete Task"
                             >

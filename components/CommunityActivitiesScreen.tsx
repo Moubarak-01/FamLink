@@ -116,7 +116,7 @@ const CommunityActivitiesScreen: React.FC<CommunityActivitiesScreenProps> = ({ u
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleClearAll = () => {
-        if (window.confirm("Delete ALL activities? This cannot be undone.")) {
+        if (window.confirm(t('confirm_delete_all_activities'))) {
             onDeleteAllActivities();
         }
     };

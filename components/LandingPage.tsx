@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LandingPageProps {
     onFinish: () => void;
@@ -9,6 +10,7 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onFinish, onLogin }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const isDark = theme === 'dark';
 
     return (
@@ -47,7 +49,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onFinish, onLogin }) => {
                         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <span className="text-3xl mb-1 block">🏠</span>
                         <span className="text-lg font-bold tracking-wide">I'm a Parent</span>
-                        <span className="text-sm font-medium opacity-90 mt-1">Find trusted help</span>
+                        <span className="text-sm font-medium opacity-90 mt-1">{t('landing_find_trusted')}</span>
                     </motion.button>
                 </div>
 

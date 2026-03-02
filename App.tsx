@@ -85,7 +85,7 @@ const RatingModal: React.FC<{ targetUser?: User, nanny?: User, onClose: () => vo
   if (!userToRate) return null;
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) { alert("Please select a star rating."); return; }
+    if (rating === 0) { alert(t('alert_rating_select_star')); return; }
     onSubmit(rating, comment);
   };
   return (
@@ -394,10 +394,10 @@ const App: React.FC = () => {
     if (!currentUser) return;
     try {
       await userService.deleteAccount();
-      alert("Your account has been permanently deleted.");
+      alert(t('alert_account_deleted'));
       handleLogout();
     } catch (e) {
-      alert("Failed to delete account. Please try again.");
+      alert(t('alert_delete_account_failed'));
     }
   };
 
@@ -440,12 +440,12 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   };
-  const handleSubscribe = async (plan: Plan) => { if (!currentUser) return; const renewalDate = new Date(); renewalDate.setMonth(renewalDate.getMonth() + 1); const newSubscription: Subscription = { plan, status: 'active', renewalDate: renewalDate.toLocaleDateString() }; try { const updatedUser = await userService.updateProfile({ subscription: newSubscription }); setCurrentUser(updatedUser); alert(t('alert_subscription_success')); if (pendingAction) { const action = { ...pendingAction }; setPendingAction(null); if (action.type === 'contact') setContactNannyInfo(action.nanny); if (action.type === 'book') setBookingNannyInfo(action.nanny); } navigateTo(Screen.Dashboard); } catch (e) { alert("Subscription failed"); } };
-  const handleNannyProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile({ fullName: profileData.fullName, email: profileData.email, photo: profileData.photo, profile: { ...profileData } }); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e) { alert("Failed to save profile"); } };
+  const handleSubscribe = async (plan: Plan) => { if (!currentUser) return; const renewalDate = new Date(); renewalDate.setMonth(renewalDate.getMonth() + 1); const newSubscription: Subscription = { plan, status: 'active', renewalDate: renewalDate.toLocaleDateString() }; try { const updatedUser = await userService.updateProfile({ subscription: newSubscription }); setCurrentUser(updatedUser); alert(t('alert_subscription_success')); if (pendingAction) { const action = { ...pendingAction }; setPendingAction(null); if (action.type === 'contact') setContactNannyInfo(action.nanny); if (action.type === 'book') setBookingNannyInfo(action.nanny); } navigateTo(Screen.Dashboard); } catch (e) { alert(t('alert_subscription_failed')); } };
+  const handleNannyProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile({ fullName: profileData.fullName, email: profileData.email, photo: profileData.photo, profile: { ...profileData } }); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e) { alert(t('alert_profile_save_failed')); } };
   const handleParentProfileSubmit = async (profileData: any) => { if (!currentUser) return; try { const updatedUser = await userService.updateProfile(profileData); setCurrentUser(updatedUser); alert(t('alert_profile_success')); navigateTo(Screen.Dashboard); } catch (e: any) { console.error("Profile save error:", e); alert(`Failed to save profile: ${e.response?.data?.message || e.message}`); } };
   const handleEditProfile = () => { if (!currentUser) return; currentUser.userType === 'parent' ? navigateTo(Screen.ParentProfileForm) : navigateTo(Screen.NannyProfileForm); };
   const handleViewSubscription = () => navigateTo(Screen.SubscriptionStatus);
-  const handleCancelSubscription = async () => { if (currentUser?.subscription) { try { const updatedUser = await userService.updateProfile({ subscription: { ...currentUser.subscription, status: 'canceled' } }); setCurrentUser(updatedUser); } catch (e) { alert("Error canceling subscription"); } } };
+  const handleCancelSubscription = async () => { if (currentUser?.subscription) { try { const updatedUser = await userService.updateProfile({ subscription: { ...currentUser.subscription, status: 'canceled' } }); setCurrentUser(updatedUser); } catch (e) { alert(t('alert_cancel_subscription_error')); } } };
   const handleContinueFromResult = () => {
     if (currentUser?.userType === 'nanny' && currentUser.assessmentResult?.decision === 'Approved') navigateTo(Screen.NannyProfileForm);
     else if (currentUser?.userType === 'parent' && currentUser.assessmentResult?.decision === 'Approved') {
@@ -456,7 +456,7 @@ const App: React.FC = () => {
 
   const handleViewNannyProfile = (nannyId: string) => { setViewingNannyId(nannyId); navigateTo(Screen.NannyProfileDetail); };
   const handleContactAttempt = (nanny: User) => { if (!currentUser) { setPendingAction({ type: 'contact', nanny }); navigateTo(Screen.Login); return; } if (currentUser.subscription?.status === 'active') setContactNannyInfo(nanny); else { setPendingAction({ type: 'contact', nanny }); navigateTo(Screen.Subscription); } };
-  const handleAddNanny = async (nannyId: string) => { if (!currentUser) return; try { const updatedUser = await userService.addNanny(nannyId); setCurrentUser(updatedUser); alert(t('alert_nanny_added_dashboard')); } catch (e) { alert("Error adding nanny"); } };
+  const handleAddNanny = async (nannyId: string) => { if (!currentUser) return; try { const updatedUser = await userService.addNanny(nannyId); setCurrentUser(updatedUser); alert(t('alert_nanny_added_dashboard')); } catch (e) { alert(t('alert_add_nanny_error')); } };
   const handleRemoveNanny = async (nannyId: string) => {
     if (!currentUser) return;
     if (!window.confirm(t('confirm_remove_nanny') || "Remove this nanny from your dashboard?")) return;
@@ -465,11 +465,11 @@ const App: React.FC = () => {
       setCurrentUser(updatedUser);
       alert(t('alert_nanny_removed') || "Nanny removed from your dashboard.");
     } catch (e) {
-      alert("Error removing nanny");
+      alert(t('alert_remove_nanny_error'));
     }
   };
   const handleOpenRatingModal = (userToRate: User) => setRatingTargetUser(userToRate);
-  const handleSubmitRating = async (targetUserId: string, ratingValue: number, comment: string) => { if (!currentUser) return; try { await reviewService.create(targetUserId, ratingValue, comment); setRatingTargetUser(null); alert(t('alert_rating_success')); const nanniesRes = await userService.getNannies(); setApprovedNannies(nanniesRes.filter(n => n.profile)); } catch (e) { alert("Error submitting rating"); } };
+  const handleSubmitRating = async (targetUserId: string, ratingValue: number, comment: string) => { if (!currentUser) return; try { await reviewService.create(targetUserId, ratingValue, comment); setRatingTargetUser(null); alert(t('alert_rating_success')); const nanniesRes = await userService.getNannies(); setApprovedNannies(nanniesRes.filter(n => n.profile)); } catch (e) { alert(t('alert_rating_error')); } };
   const handleOpenBookingModal = (nanny: User) => { if (!currentUser) { setPendingAction({ type: 'book', nanny }); navigateTo(Screen.Login); return; } if (currentUser.subscription?.status !== 'active') { setPendingAction({ type: 'book', nanny }); alert(t('alert_subscribe_to_book')); navigateTo(Screen.Subscription); return; } setBookingNannyInfo(nanny); };
 
   const handleSubmitBookingRequest = async (nannyId: string, date: string, startTime: string, endTime: string, message: string) => {
@@ -488,18 +488,18 @@ const App: React.FC = () => {
       setBookingNannyInfo(null);
       alert(t('alert_booking_request_sent'));
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-    } catch (e) { alert("Error creating booking"); }
+    } catch (e) { alert(t('alert_booking_error')); }
   };
 
-  const handleUpdateBookingStatus = async (requestId: string, status: 'accepted' | 'declined') => { try { await bookingService.updateStatus(requestId, status); queryClient.invalidateQueries({ queryKey: ['bookings'] }); } catch (e) { alert("Error updating booking"); } };
-  const handleNannyHideBooking = (id: string) => { if (window.confirm("Remove this from your history?")) { setHiddenBookingIds(prev => [...prev, id]); } };
+  const handleUpdateBookingStatus = async (requestId: string, status: 'accepted' | 'declined') => { try { await bookingService.updateStatus(requestId, status); queryClient.invalidateQueries({ queryKey: ['bookings'] }); } catch (e) { alert(t('alert_booking_update_error')); } };
+  const handleNannyHideBooking = (id: string) => { if (window.confirm(t('confirm_remove_history'))) { setHiddenBookingIds(prev => [...prev, id]); } };
   const handleCancelBooking = async (id: string) => {
-    if (window.confirm("Cancel this request?")) {
+    if (window.confirm(t('confirm_cancel_request'))) {
       try {
         await bookingService.delete(id);
         queryClient.setQueryData(['bookings', currentUser?.id], (old: BookingRequest[] = []) => old.filter(b => b.id !== id));
         queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      } catch (e) { alert("Failed to cancel"); }
+      } catch (e) { alert(t('alert_cancel_failed')); }
     }
   };
   const handleClearAllBookings = async () => {
@@ -512,7 +512,7 @@ const App: React.FC = () => {
         await bookingService.deleteAll();
       } catch (e) {
         // Revert on failure (or just alert and re-fetch)
-        alert("Failed to clear history");
+        alert(t('alert_clear_history_failed'));
       } finally {
         queryClient.invalidateQueries({ queryKey: ['bookings'] });
       }
@@ -528,7 +528,7 @@ const App: React.FC = () => {
       setTaskModalNanny(null);
       alert(t('alert_task_added'));
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    } catch (e) { alert("Error adding task"); }
+    } catch (e) { alert(t('alert_add_task_error')); }
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -538,7 +538,7 @@ const App: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     } catch (e) {
       refreshData();
-      alert("Failed to delete task");
+      alert(t('alert_delete_task_failed'));
     }
   };
 
@@ -547,7 +547,7 @@ const App: React.FC = () => {
       const updatedTask = await taskService.updateStatus(taskId, status);
       queryClient.setQueryData(['tasks', currentUser?.id], (old: Task[] = []) => old.map(task => task.id === taskId ? updatedTask : task));
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    } catch (e) { alert("Error updating task status"); }
+    } catch (e) { alert(t('alert_update_task_error')); }
   };
 
   const handleKeepTask = async (id: string) => {
@@ -555,7 +555,7 @@ const App: React.FC = () => {
       await taskService.keepTask(id);
       queryClient.setQueryData(['tasks', currentUser?.id], (old: Task[] = []) => old.map(t => t.id === id ? { ...t, keepPermanently: true } : t));
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    } catch (e) { alert("Failed to update task"); }
+    } catch (e) { alert(t('alert_update_task_failed')); }
   };
 
   const handleOpenCreateActivityModal = () => setIsCreateActivityModalOpen(true);
@@ -576,19 +576,19 @@ const App: React.FC = () => {
       queryClient.setQueryData(['activities'], (old: Activity[] = []) => [populatedActivity, ...old]);
       handleCloseCreateActivityModal();
       queryClient.invalidateQueries({ queryKey: ['activities'] });
-    } catch (e) { alert("Error creating activity"); }
+    } catch (e) { alert(t('alert_create_activity_error')); }
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (!window.confirm("Delete this activity?")) return;
+    if (!window.confirm(t('confirm_delete_activity'))) return;
     queryClient.setQueryData(['activities'], (old: Activity[] = []) => old.filter(a => a.id !== id));
-    try { await activityService.delete(id); queryClient.invalidateQueries({ queryKey: ['activities'] }); } catch (e) { refreshData(); alert("Delete failed"); }
+    try { await activityService.delete(id); queryClient.invalidateQueries({ queryKey: ['activities'] }); } catch (e) { refreshData(); alert(t('alert_delete_failed')); }
   };
 
   const handleDeleteAllActivities = async () => {
-    if (!window.confirm("Delete all activities?")) return;
+    if (!window.confirm(t('confirm_delete_all_activities'))) return;
     queryClient.setQueryData(['activities'], []);
-    try { await activityService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['activities'] }); } catch (e) { refreshData(); alert("Delete all failed"); }
+    try { await activityService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['activities'] }); } catch (e) { refreshData(); alert(t('alert_delete_all_failed')); }
   };
 
   const handleJoinActivity = async (activityId: string) => {
@@ -597,7 +597,7 @@ const App: React.FC = () => {
       const updatedActivity = await activityService.join(activityId);
       queryClient.setQueryData(['activities'], (old: Activity[] = []) => old.map(act => act.id === activityId ? updatedActivity : act));
       queryClient.invalidateQueries({ queryKey: ['activities'] });
-    } catch (e) { alert("Error joining activity"); }
+    } catch (e) { alert(t('alert_join_activity_error')); }
   };
 
   const handleSendMessage = (id: string, messageText: string) => {
@@ -648,7 +648,7 @@ const App: React.FC = () => {
     queryClient.setQueryData(['bookings', currentUser?.id], (old: BookingRequest[]) => cacheUpdate(old));
 
     setActiveChat(prev => { if (prev && prev.item.id === contextId) return { ...prev, item: filterMsgs(prev.item) }; return prev; });
-    try { await chatService.deleteMessage(messageId); queryClient.invalidateQueries(); } catch (e) { alert("Failed to delete message"); }
+    try { await chatService.deleteMessage(messageId); queryClient.invalidateQueries(); } catch (e) { alert(t('alert_delete_message_failed')); }
   };
 
   const handleDeleteAllMessages = async (contextId: string) => {
@@ -670,7 +670,7 @@ const App: React.FC = () => {
     try {
       await chatService.deleteAllMessages(contextId);
     } catch (e) {
-      alert("Failed to delete messages");
+      alert(t('alert_delete_messages_failed'));
     } finally {
       queryClient.invalidateQueries();
     }
@@ -692,19 +692,19 @@ const App: React.FC = () => {
       };
       queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => [populatedOuting, ...old]);
       handleCloseCreateOutingModal();
-    } catch (e) { alert("Error creating outing"); }
+    } catch (e) { alert(t('alert_create_outing_error')); }
   };
 
   const handleDeleteOuting = async (id: string) => {
-    if (!window.confirm("Delete this outing?")) return;
+    if (!window.confirm(t('confirm_delete_outing'))) return;
     queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => old.filter(o => o.id !== id));
-    try { await outingService.delete(id); queryClient.invalidateQueries({ queryKey: ['outings'] }); } catch (e) { refreshData(); alert("Delete failed"); }
+    try { await outingService.delete(id); queryClient.invalidateQueries({ queryKey: ['outings'] }); } catch (e) { refreshData(); alert(t('alert_delete_failed')); }
   };
 
   const handleDeleteAllOutings = async () => {
-    if (!window.confirm("Delete ALL outings?")) return;
+    if (!window.confirm(t('confirm_delete_all_outings'))) return;
     queryClient.setQueryData(['outings'], []);
-    try { await outingService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['outings'] }); } catch (e) { refreshData(); alert("Delete all failed"); }
+    try { await outingService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['outings'] }); } catch (e) { refreshData(); alert(t('alert_delete_all_failed')); }
   };
 
   const handleRequestOutingJoin = async (outing: SharedOuting, childName: string, childAge: number, emergencyContactName: string, emergencyContactPhone: string) => {
@@ -714,14 +714,14 @@ const App: React.FC = () => {
       queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => old.map(o => o.id === outing.id ? updatedOuting : o));
       setRequestOutingInfo(null);
       alert(t('alert_outing_request_sent'));
-    } catch (e) { alert("Error requesting join"); }
+    } catch (e) { alert(t('alert_request_join_error')); }
   };
   const handleUpdateOutingRequestStatus = async (outingId: string, parentId: string, status: 'accepted' | 'declined') => {
     try {
       const updatedOuting = await outingService.updateRequestStatus(outingId, parentId, status);
       queryClient.setQueryData(['outings'], (old: SharedOuting[] = []) => old.map(o => o.id === outingId ? updatedOuting : o));
       queryClient.invalidateQueries({ queryKey: ['outings'] });
-    } catch (e) { alert("Error updating status"); }
+    } catch (e) { alert(t('alert_update_status_error')); }
   };
 
   const handleCreateSkillRequest = async (requestData: any) => {
@@ -738,19 +738,19 @@ const App: React.FC = () => {
       queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => [populatedSkill, ...old]);
       setIsCreateSkillRequestModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
-    } catch (e) { alert("Error creating skill request"); }
+    } catch (e) { alert(t('alert_create_skill_request_error')); }
   };
 
   const handleDeleteSkillRequest = async (id: string) => {
-    if (!window.confirm("Delete this skill request?")) return;
+    if (!window.confirm(t('confirm_delete_skill_request'))) return;
     queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => old.filter(r => r.id !== id));
-    try { await marketplaceService.delete(id); queryClient.invalidateQueries({ queryKey: ['skillRequests'] }); } catch (e) { refreshData(); alert("Delete failed"); }
+    try { await marketplaceService.delete(id); queryClient.invalidateQueries({ queryKey: ['skillRequests'] }); } catch (e) { refreshData(); alert(t('alert_delete_failed')); }
   };
 
   const handleDeleteAllSkillRequests = async () => {
-    if (!window.confirm("Delete ALL skill requests?")) return;
+    if (!window.confirm(t('confirm_delete_all_requests'))) return;
     queryClient.setQueryData(['skillRequests'], []);
-    try { await marketplaceService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['skillRequests'] }); } catch (e) { refreshData(); alert("Delete all failed"); }
+    try { await marketplaceService.deleteAll(); queryClient.invalidateQueries({ queryKey: ['skillRequests'] }); } catch (e) { refreshData(); alert(t('alert_delete_all_failed')); }
   };
 
   const handleMakeSkillOffer = async (request: SkillRequest, offerAmount: number, message: string) => {
@@ -760,16 +760,16 @@ const App: React.FC = () => {
       queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => old.map(r => r.id === request.id ? updatedSkill : r));
       setMakeOfferSkillRequestInfo(null);
       queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
-    } catch (e) { alert("Error making offer"); }
+    } catch (e) { alert(t('alert_make_offer_error')); }
   };
   const handleUpdateSkillOfferStatus = async (requestId: string, helperId: string, status: 'accepted' | 'declined') => {
     try {
       const updatedSkill = await marketplaceService.updateOfferStatus(requestId, helperId, status);
       queryClient.setQueryData(['skillRequests'], (old: SkillRequest[] = []) => old.map(r => r.id === requestId ? updatedSkill : r));
       queryClient.invalidateQueries({ queryKey: ['skillRequests'] });
-    } catch (e) { alert("Error updating offer"); }
+    } catch (e) { alert(t('alert_update_offer_error')); }
   };
-  const handleReportUser = (userId: string) => alert("User reported. Our team will review the case.");
+  const handleReportUser = (userId: string) => alert(t('alert_user_reported'));
 
   const handleNotificationClick = async (notification: Notification) => {
     try {
@@ -869,7 +869,7 @@ const App: React.FC = () => {
 
   const handleOpenContactChat = (nanny: User) => {
     const booking = bookingRequests.find(req => req.nannyId === nanny.id && req.parentId === currentUser?.id && req.status === 'accepted');
-    if (booking) { setContactNannyInfo(null); setActiveChat({ type: 'booking', item: booking }); } else { alert("You must have an accepted booking with this nanny to chat."); }
+    if (booking) { setContactNannyInfo(null); setActiveChat({ type: 'booking', item: booking }); } else { alert(t('alert_chat_booking_required')); }
   };
 
   if (isCheckingAuth) {

@@ -214,7 +214,7 @@ const ChildOutingScreen: React.FC<ChildOutingScreenProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleClearAll = async () => {
-        if (window.confirm("Delete ALL outings? This cannot be undone.")) {
+        if (window.confirm(t('confirm_delete_all_outings'))) {
             onDeleteAllOutings();
         }
     };

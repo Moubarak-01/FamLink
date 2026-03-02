@@ -141,7 +141,7 @@ const PaymentForm: React.FC<{ plan: { id: Plan, name: string, price: number }, o
               id="expiryDate"
               value={expiryDate}
               onChange={e => validateAndSet('expiryDate', e.target.value, /^[0-9/\s]*$/, t('error_numbers_only'))}
-              placeholder="MM / YY"
+              placeholder={t('placeholder_mm_yy')}
               required
               className={inputStyles}
             />

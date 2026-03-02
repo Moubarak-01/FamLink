@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { locationService, GeoLocation } from '../services/locationService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LocationAutocompleteProps {
   value: string;
@@ -16,6 +17,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({ value, onCh
   const [suggestions, setSuggestions] = useState<GeoLocation[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -31,18 +33,18 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({ value, onCh
   }, []);
 
   const fetchSuggestions = async (query: string) => {
-      if (query.length < 3) { setSuggestions([]); return; }
-      setLoading(true);
-      try {
-          const results = await locationService.searchCities(query);
-          setSuggestions(results);
-          setShowSuggestions(true);
-      } catch (e) {
-          console.error(e);
-          setSuggestions([]);
-      } finally {
-          setLoading(false);
-      }
+    if (query.length < 3) { setSuggestions([]); return; }
+    setLoading(true);
+    try {
+      const results = await locationService.searchCities(query);
+      setSuggestions(results);
+      setShowSuggestions(true);
+    } catch (e) {
+      console.error(e);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,9 +53,9 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({ value, onCh
     onChange(val);
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    
+
     debounceTimeout.current = setTimeout(() => {
-        fetchSuggestions(val);
+      fetchSuggestions(val);
     }, 400); // 400ms Debounce
   };
 
@@ -66,26 +68,26 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({ value, onCh
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <input 
-        type="text" 
-        value={inputValue} 
-        onChange={handleInputChange} 
-        placeholder={placeholder || "Search city..."} 
-        className={className} 
-        autoComplete="off" 
+      <input
+        type="text"
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholder || t('placeholder_search_city')}
+        className={className}
+        autoComplete="off"
       />
       {loading && <div className="absolute right-3 top-3 text-xs text-gray-400">Loading...</div>}
-      
+
       {showSuggestions && suggestions.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-md shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((place, index) => (
-            <li 
-                key={index} 
-                onClick={() => handleSelect(place)} 
-                className="cursor-pointer px-4 py-2 hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] border-b border-[var(--border-color)] last:border-0"
+            <li
+              key={index}
+              onClick={() => handleSelect(place)}
+              className="cursor-pointer px-4 py-2 hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] border-b border-[var(--border-color)] last:border-0"
             >
-               <span className="font-bold">{place.name}</span>
-               <span className="text-xs text-[var(--text-light)] ml-2">{place.region}, {place.country}</span>
+              <span className="font-bold">{place.name}</span>
+              <span className="text-xs text-[var(--text-light)] ml-2">{place.region}, {place.country}</span>
             </li>
           ))}
         </ul>

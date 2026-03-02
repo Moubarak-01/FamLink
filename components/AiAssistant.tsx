@@ -215,7 +215,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   // Attach a listener for a custom event 'reset-ai-chat'
   useEffect(() => {
     const handleReset = () => {
-      if (window.confirm("Clear all AI chat history?")) {
+      if (window.confirm(t('confirm_clear_ai_history'))) {
         handleClearChat();
       }
     };
@@ -263,7 +263,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
   // Instead, we create a global event listener so the Profile page can trigger it.
   useEffect(() => {
     const resetHandler = () => {
-      if (window.confirm("Clear all AI chat history?")) {
+      if (window.confirm(t('confirm_clear_ai_history'))) {
         handleClearChat();
       }
     };
@@ -303,7 +303,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
 
   // Clear Chat Button Handler (In-modal version)
   const handleClearButtonClick = () => {
-    if (window.confirm("Are you sure you want to clear the conversation history?")) {
+    if (window.confirm(t('confirm_clear_conversation'))) {
       handleClearChat();
     }
   };
@@ -573,7 +573,7 @@ const AiAssistant = forwardRef<AiAssistantRef, AiAssistantProps>(({ user, curren
                 <img src="/famlink-icon.png" alt="FamLink" className="w-full h-full object-cover" />
               </div>
               <div>
-                <h3 className="font-bold text-[var(--text-primary)] text-sm">FamLink Assistant</h3>
+                <h3 className="font-bold text-[var(--text-primary)] text-sm">{t('ai_assistant_title')}</h3>
                 <div className="flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                   <p className="text-[10px] text-[var(--text-secondary)] font-medium">{t('ai_status_online')}</p>

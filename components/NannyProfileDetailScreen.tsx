@@ -82,7 +82,7 @@ const NannyProfileDetailScreen: React.FC<NannyProfileDetailScreenProps> = ({ nan
                 {onReportUser && (
                     <button
                         onClick={() => {
-                            if (window.confirm("Report this user for inappropriate behavior?")) {
+                            if (window.confirm(t('confirm_report_user'))) {
                                 onReportUser(nanny.id);
                             }
                         }}

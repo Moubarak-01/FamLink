@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 interface QuestionnaireProps {
   user: User;
+  assessmentType?: 'nanny' | 'parent';
   onSubmit: (answers: Answer[]) => void;
   error: string | null;
   onBack: () => void;
@@ -24,7 +25,8 @@ const shuffleArray = (array: any[]) => {
 };
 
 
-const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, onBack }) => {
+const Questionnaire: React.FC<QuestionnaireProps> = ({ user, assessmentType, onSubmit, error, onBack }) => {
+  const currentAssessmentType = assessmentType || user.userType;
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   // Auto-load saved answers
   const [answers, setAnswers] = useState<Answer[]>(() => {
@@ -45,7 +47,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
 
   // Initialize questions once on mount to prevent reshuffling on language change
   useEffect(() => {
-    if (user.userType === 'parent') {
+    if (currentAssessmentType === 'parent') {
       // Pull 15 random psychometric IDs from the 80-question bank
       setSelectedQuestionIds(getRandomParentQuestionIds(15));
       return;
@@ -75,7 +77,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
   const questions = useMemo(() => {
     if (selectedQuestionIds.length === 0) return [];
 
-    if (user.userType === 'parent') {
+    if (currentAssessmentType === 'parent') {
       const allParentQuestions = getParentAssessmentQuestionsBank(t);
       return selectedQuestionIds.map(id =>
         allParentQuestions.find(q => q.id === id)
@@ -87,7 +89,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
     return selectedQuestionIds.map(id =>
       allTranslatedQuestions.find(q => q.id === id)
     ).filter((q): q is Question => !!q);
-  }, [t, selectedQuestionIds, user.userType]);
+  }, [t, selectedQuestionIds, currentAssessmentType]);
 
   // HOOKS MUST BE UNCONDITIONAL - MOVED UP
   const isSuspended = useMemo(() => {
@@ -281,7 +283,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ user, onSubmit, error, on
     <div className="p-6 sm:p-8">
       <div className="mb-6">
         <div className="flex justify-between mb-1">
-          <span className="text-base font-medium text-[var(--text-accent)]">{user.userType === 'parent' ? t('parent_assessment_title') : t('questionnaire_title')}</span>
+          <span className="text-base font-medium text-[var(--text-accent)]">{currentAssessmentType === 'parent' ? t('parent_assessment_title') : t('questionnaire_title')}</span>
           <span className="text-sm font-medium text-[var(--text-accent)]">{currentQuestionIndex + 1}/{questions.length}</span>
         </div>
         <div className="w-full bg-[var(--bg-accent-light)] rounded-full h-2.5">
